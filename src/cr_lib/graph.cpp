@@ -138,3 +138,8 @@ std::ostream& operator<<(std::ostream& s, const Graph& g)
   }
   return s;
 }
+
+std::vector<NodeOffset> const& Graph::getOffsets() const
+{
+  return offsets;
+}

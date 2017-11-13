@@ -116,6 +116,8 @@ class Graph {
 
   friend std::ostream& operator<<(std::ostream&, const Graph&);
 
+  std::vector<NodeOffset> const& getOffsets() const;
+
   private:
   void swap(Graph& other);
 
