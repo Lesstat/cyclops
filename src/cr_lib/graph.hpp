@@ -1,5 +1,6 @@
 #ifndef GRAPH_H
 #define GRAPH_H
+
 #include "namedType.hpp"
 #include <cstdlib>
 #include <optional>
@@ -12,6 +13,8 @@ using Lng = NamedType<double, struct LngParameter>;
 using Height = NamedType<double, struct HeightParameter>;
 using Length = NamedType<double, struct LengthParameter>;
 using Unsuitability = NamedType<double, struct UnsuitabilityParameter>;
+
+class Dijkstra;
 
 struct Cost {
   Length length;
@@ -117,6 +120,7 @@ class Graph {
   friend std::ostream& operator<<(std::ostream&, const Graph&);
 
   std::vector<NodeOffset> const& getOffsets() const;
+  Dijkstra createDijkstra() const;
 
   private:
   void swap(Graph& other);

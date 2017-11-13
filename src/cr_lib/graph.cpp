@@ -1,4 +1,5 @@
 #include "graph.hpp"
+#include "dijkstra.hpp"
 #include <iostream>
 #include <unordered_map>
 
@@ -142,4 +143,9 @@ std::ostream& operator<<(std::ostream& s, const Graph& g)
 std::vector<NodeOffset> const& Graph::getOffsets() const
 {
   return offsets;
+}
+
+Dijkstra Graph::createDijkstra() const
+{
+  return Dijkstra{ *this, nodes.size() };
 }
