@@ -16,12 +16,12 @@ class Dijkstra {
   Dijkstra& operator=(Dijkstra&& other) noexcept;
 
   private:
-  void clear_state();
+  void clearState();
 
-  std::vector<Cost> cost_s;
-  std::vector<Cost> cost_t;
-  std::vector<NodeId> touched_s;
-  std::vector<NodeId> touched_t;
+  std::vector<Cost> costS;
+  std::vector<Cost> costT;
+  std::vector<NodeId> touchedS;
+  std::vector<NodeId> touchedT;
   const Graph& graph;
 };
 

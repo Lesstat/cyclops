@@ -55,7 +55,7 @@ typedef std::optional<size_t>
 class Edge {
   public:
   Edge(OsmId osmId, NodeId source, NodeId dest);
-  Edge(OsmId osmId, NodeId source, NodeId dest, ReplacedEdge edge_a, ReplacedEdge edge_b);
+  Edge(OsmId osmId, NodeId source, NodeId dest, ReplacedEdge edgeA, ReplacedEdge edgeB);
   Edge(const Edge& other) noexcept;
   Edge(Edge&& other) noexcept;
   virtual ~Edge() noexcept;
@@ -77,11 +77,11 @@ class Edge {
   OsmId osmId;
   NodeId source;
   NodeId destination;
-  size_t source_pos;
-  size_t dest_pos;
+  size_t sourcePos;
+  size_t destPos;
   Cost cost;
-  ReplacedEdge edge_a;
-  ReplacedEdge edge_b;
+  ReplacedEdge edgeA;
+  ReplacedEdge edgeB;
 };
 
 class Node {

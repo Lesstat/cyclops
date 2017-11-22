@@ -2,22 +2,23 @@
 #include <iostream>
 #include <vector>
 
-size_t last_id = 0;
+size_t lastId = 0;
 
 Edge::Edge(OsmId id, NodeId source, NodeId dest)
     : Edge(id, source, dest, {}, {})
 {
 }
 
-Edge::Edge(OsmId id, NodeId source, NodeId dest, ReplacedEdge edge_a, ReplacedEdge edge_b)
-    : osmId(id)
+Edge::Edge(OsmId id, NodeId source, NodeId dest, const ReplacedEdge edgeA, const ReplacedEdge edgeB)
+    : internalId(lastId++)
+    , osmId(id)
     , source(source)
     , destination(dest)
-    , edge_a(edge_a)
-    , edge_b(edge_b)
+    , sourcePos(0)
+    , destPos(0)
+    , edgeA(edgeA)
+    , edgeB(edgeB)
 {
-
-  internalId = last_id++;
 }
 
 Edge::~Edge() noexcept
@@ -42,7 +43,7 @@ Edge& Edge::operator=(Edge&& rhs) noexcept
 }
 
 Edge::Edge(const Edge& other) noexcept
-    : Edge(other.osmId, other.source, other.destination, other.edge_a, other.edge_b)
+    : Edge(other.osmId, other.source, other.destination, other.edgeA, other.edgeB)
 {
 }
 
@@ -52,11 +53,11 @@ void Edge::swap(Edge& other)
   std::swap(osmId, other.osmId);
   std::swap(source, other.source);
   std::swap(destination, other.destination);
-  std::swap(source_pos, other.source_pos);
-  std::swap(dest_pos, other.dest_pos);
+  std::swap(sourcePos, other.sourcePos);
+  std::swap(destPos, other.destPos);
   std::swap(cost, other.cost);
-  std::swap(edge_a, other.edge_a);
-  std::swap(edge_b, other.edge_b);
+  std::swap(edgeA, other.edgeA);
+  std::swap(edgeB, other.edgeB);
 }
 
 OsmId Edge::getSourceId() const
@@ -69,18 +70,18 @@ OsmId Edge::getDestId() const
 }
 void Edge::setSourcePos(size_t pos)
 {
-  source_pos = pos;
+  sourcePos = pos;
 }
 void Edge::setDestPos(size_t pos)
 {
-  dest_pos = pos;
+  destPos = pos;
 }
 
 size_t Edge::getSourcePos() const
 {
-  return source_pos;
+  return sourcePos;
 }
 size_t Edge::getDestPos() const
 {
-  return dest_pos;
+  return destPos;
 }
