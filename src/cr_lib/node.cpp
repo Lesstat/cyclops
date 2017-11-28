@@ -5,6 +5,7 @@ Node::Node(OsmId osmId, Lat lat, Lng lng, Height height)
     , lat(lat)
     , lng(lng)
     , height(height)
+    , level(0)
 {
 }
 
@@ -14,11 +15,12 @@ Node::Node(const Node& other)
 }
 
 Node::Node(Node&& other) noexcept
+    : level(other.level)
 {
   swap(other);
 }
 
-Node::~Node() noexcept {}
+Node::~Node() noexcept = default;
 
 Node& Node::operator=(const Node& other)
 {

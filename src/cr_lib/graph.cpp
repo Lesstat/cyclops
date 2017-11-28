@@ -74,8 +74,9 @@ Graph::Graph(std::vector<Node>&& nodes, std::vector<Edge>&& edges)
   connectEdgesToNodes(nodes, edges);
   this->nodes = std::move(nodes);
   offsets.reserve(this->nodes.size() + 1);
-  for (size_t i = 0; i < this->nodes.size() + 1; ++i)
+  for (size_t i = 0; i < this->nodes.size() + 1; ++i) {
     offsets.push_back(NodeOffset{});
+  }
 
   calculateOffsets(edges, offsets, Pos::source);
 
@@ -124,7 +125,7 @@ std::ostream& operator<<(std::ostream& s, const Graph& g)
 {
 
   s << "Node positions" << '\n';
-  for (auto node : g.nodes) {
+  for (auto const& node : g.nodes) {
     s << node << ", ";
   }
   s << '\n';

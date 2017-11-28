@@ -4,27 +4,29 @@
 
 size_t lastId = 0;
 
-Edge::Edge(OsmId id, NodeId source, NodeId dest)
-    : Edge(id, source, dest, {}, {})
+Edge::Edge(OsmId osmId, NodeId source, NodeId dest)
+    : Edge(osmId, source, dest, {}, {})
 {
 }
 
-Edge::Edge(OsmId id, NodeId source, NodeId dest, const ReplacedEdge edgeA, const ReplacedEdge edgeB)
+Edge::Edge(OsmId osmId, NodeId source, NodeId dest, ReplacedEdge edgeA, ReplacedEdge edgeB)
     : internalId(lastId++)
-    , osmId(id)
+    , osmId(osmId)
     , source(source)
     , destination(dest)
     , sourcePos(0)
     , destPos(0)
-    , edgeA(edgeA)
-    , edgeB(edgeB)
+    , edgeA(std::move(edgeA))
+    , edgeB(std::move(edgeB))
 {
 }
 
-Edge::~Edge() noexcept
-{
-}
+Edge::~Edge() noexcept = default;
+
 Edge::Edge(Edge&& other) noexcept
+    : internalId(other.internalId)
+    , sourcePos(other.sourcePos)
+    , destPos(other.destPos)
 {
   swap(other);
 }
@@ -36,9 +38,9 @@ Edge& Edge::operator=(const Edge& other)
   return *this;
 }
 
-Edge& Edge::operator=(Edge&& rhs) noexcept
+Edge& Edge::operator=(Edge&& other) noexcept
 {
-  swap(rhs);
+  swap(other);
   return *this;
 }
 
