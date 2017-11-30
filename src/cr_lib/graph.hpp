@@ -110,7 +110,9 @@ class Node {
   friend std::ostream& operator<<(std::ostream& os, const Node& n);
 
   static Node createByText(const std::string& text);
+  friend void testNodeInternals(const Node& n, size_t osmId, double lat, double lng, size_t level);
 
+  private:
   void swap(Node& other);
 
   OsmId osmId;
