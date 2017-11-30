@@ -19,8 +19,10 @@ void connectEdgesToNodes(const std::vector<Node>& nodes, std::vector<Edge>& edge
   });
 }
 
-enum class Pos { source,
-  dest };
+enum class Pos {
+  source,
+  dest
+};
 void sortEdgesByNodePos(std::vector<Edge>& edges, Pos p)
 {
   auto sourceSort = [](const Edge& a, const Edge& b) { return a.getSourcePos() < b.getSourcePos(); };
@@ -75,7 +77,7 @@ Graph::Graph(std::vector<Node>&& nodes, std::vector<Edge>&& edges)
   this->nodes = std::move(nodes);
   offsets.reserve(this->nodes.size() + 1);
   for (size_t i = 0; i < this->nodes.size() + 1; ++i) {
-    offsets.push_back(NodeOffset{});
+    offsets.emplace_back(NodeOffset{});
   }
 
   calculateOffsets(edges, offsets, Pos::source);
@@ -99,7 +101,7 @@ Graph::Graph(Graph&& other) noexcept
   swap(other);
 }
 
-Graph::~Graph() noexcept {}
+Graph::~Graph() noexcept = default;
 Graph& Graph::operator=(const Graph& other)
 {
   Graph tmp{ other };

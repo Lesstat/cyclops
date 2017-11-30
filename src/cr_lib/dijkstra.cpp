@@ -9,14 +9,7 @@ Dijkstra::Dijkstra(Graph const& g, size_t nodeCount)
     , graph(g)
 {
 }
-Dijkstra::Dijkstra(const Dijkstra& other)
-    : costS(other.costS)
-    , costT(other.costT)
-    , touchedS(other.touchedS)
-    , touchedT(other.touchedT)
-    , graph(other.graph)
-{
-}
+Dijkstra::Dijkstra(const Dijkstra& other) = default;
 
 Dijkstra::Dijkstra(Dijkstra&& other) noexcept
     : costS(std::move(other.costS))
@@ -27,7 +20,7 @@ Dijkstra::Dijkstra(Dijkstra&& other) noexcept
 {
 }
 
-Dijkstra::~Dijkstra() noexcept {}
+Dijkstra::~Dijkstra() noexcept = default;
 
 //Dijkstra& Dijkstra::operator=(const Dijkstra& other) {}
 //Dijkstra& Dijkstra::operator=(Dijkstra&& other) noexcept {}
