@@ -1,4 +1,5 @@
 #include "graph.hpp"
+#include <sstream>
 
 Node::Node(OsmId osmId, Lat lat, Lng lng, Height height)
     : osmId(osmId)
@@ -62,4 +63,16 @@ std::ostream& operator<<(std::ostream& os, const Node& n)
 {
   os << std::to_string(n.osmId.get());
   return os;
+}
+
+Node Node::createByText(const std::string& text)
+{
+  std::stringstream ss{ text };
+  size_t id, osmId, level;
+  double lat, lng, height;
+  ss >> id >> osmId >> lat >> lng >> height >> level;
+
+  Node n{ OsmId(osmId), Lat(lat), Lng(lng), Height(height) };
+  n.level = level;
+  return n;
 }

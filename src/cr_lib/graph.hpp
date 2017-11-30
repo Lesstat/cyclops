@@ -98,7 +98,8 @@ class Node {
   OsmId getOsmId() const;
   friend std::ostream& operator<<(std::ostream& os, const Node& n);
 
-  private:
+  static Node createByText(const std::string& text);
+
   void swap(Node& other);
 
   OsmId osmId;
