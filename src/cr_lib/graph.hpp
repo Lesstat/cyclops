@@ -72,6 +72,16 @@ class Edge {
   void setSourcePos(size_t pos);
   void setDestPos(size_t pos);
 
+  friend void testEdgeInternals(const Edge& e,
+      size_t source,
+      size_t destination,
+      double length,
+      double height,
+      double unsuitability,
+      const ReplacedEdge& edgeA,
+      const ReplacedEdge& edgeB);
+
+  private:
   void swap(Edge& other);
 
   size_t internalId;

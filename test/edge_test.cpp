@@ -1,30 +1,36 @@
 #include "catch.hpp"
 #include "graph.hpp"
 
+void testEdgeInternals(const Edge& e,
+    size_t source,
+    size_t destination,
+    double length,
+    double height,
+    double unsuitability,
+    const ReplacedEdge& edgeA,
+    const ReplacedEdge& edgeB)
+{
+  REQUIRE(e.source.get() == source);
+  REQUIRE(e.destination.get() == destination);
+  REQUIRE(e.cost.length.get() == length);
+  REQUIRE(e.cost.height.get() == height);
+  REQUIRE(e.cost.unsuitability.get() == unsuitability);
+  REQUIRE(e.edgeA == edgeA);
+  REQUIRE(e.edgeB == edgeB);
+}
+
 TEST_CASE("Parse Edge from text format")
 {
 
   SECTION("Original Edge")
   {
     Edge e = Edge::createFromText("595292 595293 13 17 30 -1 -1");
-
-    REQUIRE(e.source.get() == 595292);
-    REQUIRE(e.destination.get() == 595293);
-    REQUIRE(e.cost.length.get() == 13);
-    REQUIRE(e.edgeA.has_value() == false);
-    REQUIRE(e.edgeB.has_value() == false);
+    testEdgeInternals(e, 595292, 595293, 13, 0, 0, {}, {});
   }
 
   SECTION("Shortcut Edge")
   {
     Edge e = Edge::createFromText("3 4 20 0 -1 11 2294937");
-
-    REQUIRE(e.source.get() == 3);
-    REQUIRE(e.destination.get() == 4);
-    REQUIRE(e.cost.length.get() == 20);
-    REQUIRE(e.edgeA.has_value());
-    REQUIRE(e.edgeA.value() == 11);
-    REQUIRE(e.edgeB.has_value());
-    REQUIRE(e.edgeB.value() == 2294937);
+    testEdgeInternals(e, 3, 4, 20, 0, 0, 11, 2294937);
   }
 }
