@@ -67,10 +67,11 @@ class Edge {
   size_t getSourcePos() const;
   size_t getDestPos() const;
 
+  static Edge createFromText(const std::string& text);
+
   void setSourcePos(size_t pos);
   void setDestPos(size_t pos);
 
-  private:
   void swap(Edge& other);
 
   size_t internalId;

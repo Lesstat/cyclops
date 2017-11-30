@@ -1,5 +1,6 @@
 #include "graph.hpp"
 #include <iostream>
+#include <sstream>
 #include <vector>
 
 size_t lastId = 0;
@@ -86,4 +87,23 @@ size_t Edge::getSourcePos() const
 size_t Edge::getDestPos() const
 {
   return destPos;
+}
+
+Edge Edge::createFromText(const std::string& text)
+{
+  std::stringstream ss{ text };
+
+  size_t source, dest, type;
+  double length, speed;
+  long edgeA, edgeB;
+
+  ss >> source >> dest >> length >> type >> speed >> edgeA >> edgeB;
+
+  Edge e{ OsmId(0), NodeId(source), NodeId(dest) };
+  if (edgeA > 0) {
+    e.edgeA = edgeA;
+    e.edgeB = edgeB;
+  }
+  e.cost.length = Length(length);
+  return e;
 }
