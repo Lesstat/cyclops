@@ -65,7 +65,7 @@ std::ostream& operator<<(std::ostream& os, const Node& n)
   return os;
 }
 
-Node Node::createByText(const std::string& text)
+Node Node::createFromText(const std::string& text)
 {
   std::stringstream ss{ text };
   size_t id, osmId, level;

@@ -1,6 +1,9 @@
 
 #include "catch.hpp"
+#include "dijkstra.hpp"
 #include "graph.hpp"
+#include <iostream>
+#include <sstream>
 
 TEST_CASE("Offset array is correctly initialized")
 {
@@ -31,4 +34,37 @@ TEST_CASE("Offset array is correctly initialized")
   REQUIRE(offsets[2].in == 2);
   REQUIRE(offsets[3].in == 4);
   REQUIRE(offsets[4].in == 4);
+}
+
+TEST_CASE("Read small file into graph")
+{
+  std::string file{ R"!!(# Type : chgraph
+# Id : f5c398be8e451b8fe2b170dca6a87563
+# Revision : 1
+# Timestamp : 1493032504
+# Origin : ch_constructor
+# OriginId : 0
+# OriginRevision : 1
+# OriginTimestamp : 1491925284
+# OriginType : maxspeed
+
+3
+2
+0 470552 49.3413737 7.3014905 0 3
+1 470553 49.3407609 7.3007752 0 0
+2 470554 49.3405748 7.3002951 0 2
+0 1 85 2 70 -1 -1
+1 2 16 2 70 -1 -1
+
+)!!" };
+  auto iss = std::istringstream(file);
+  Graph g = Graph::createFromStream(iss);
+
+  auto dij = g.createDijkstra();
+  auto route = dij.findBestRoute(NodeId(0), NodeId(2), Config{ Length{ 1.0 }, Height{ 0 }, Unsuitability{ 0 } });
+
+  REQUIRE(route.nodes[0].getOsmId().get() == 470552);
+  REQUIRE(route.nodes[1].getOsmId().get() == 470553);
+  REQUIRE(route.nodes[2].getOsmId().get() == 470554);
+  //  REQUIRE(route.costs.length.get() == 101);
 }

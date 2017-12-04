@@ -11,6 +11,6 @@ void testNodeInternals(const Node& n, size_t osmId, double lat, double lng, size
 
 TEST_CASE("Create Node from text repersentation")
 {
-  Node n = Node::createByText("0 470552 49.3413737 7.3014905 0 3");
+  Node n = Node::createFromText("0 470552 49.3413737 7.3014905 0 3");
   testNodeInternals(n, 470552, 49.3413737, 7.3014905, 3);
 }

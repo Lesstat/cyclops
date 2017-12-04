@@ -152,3 +152,47 @@ Dijkstra Graph::createDijkstra() const
 {
   return Dijkstra{ *this, nodes.size() };
 }
+
+size_t readCount(std::istream& file)
+{
+  std::string line;
+  std::getline(file, line);
+  return std::stoi(line);
+}
+
+template <class Obj>
+void parseLines(std::vector<Obj>& v, std::istream& file, size_t count)
+{
+  std::string line{};
+  for (size_t i = 0; i < count; ++i) {
+    std::getline(file, line);
+    v.push_back(Obj::createFromText(line));
+  }
+}
+
+Graph Graph::createFromStream(std::istream& file)
+{
+  std::string line{};
+  std::vector<Node> nodes{};
+  std::vector<Edge> edges{};
+
+  std::getline(file, line);
+  while (line.front() == '#') {
+    std::getline(file, line);
+  }
+  size_t nodeCount = readCount(file);
+  nodes.reserve(nodeCount);
+
+  size_t edgeCount = readCount(file);
+  edges.reserve(edgeCount);
+
+  parseLines(nodes, file, nodeCount);
+  parseLines(edges, file, edgeCount);
+
+  return Graph{ std::move(nodes), std::move(edges) };
+}
+
+const Node& Graph::getNode(NodeId id) const
+{
+  return nodes[id.get()];
+}

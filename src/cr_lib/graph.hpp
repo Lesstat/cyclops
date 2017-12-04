@@ -3,6 +3,7 @@
 
 #include "namedType.hpp"
 #include <cstdlib>
+#include <memory>
 #include <optional>
 #include <vector>
 
@@ -109,7 +110,7 @@ class Node {
   OsmId getOsmId() const;
   friend std::ostream& operator<<(std::ostream& os, const Node& n);
 
-  static Node createByText(const std::string& text);
+  static Node createFromText(const std::string& text);
   friend void testNodeInternals(const Node& n, size_t osmId, double lat, double lng, size_t level);
 
   private:
@@ -135,6 +136,10 @@ class Graph {
 
   std::vector<NodeOffset> const& getOffsets() const;
   Dijkstra createDijkstra() const;
+
+  static Graph createFromStream(std::istream& file);
+
+  const Node& getNode(NodeId id) const;
 
   private:
   void swap(Graph& other);

@@ -3,7 +3,26 @@
 #define DIJKSTRA_H
 
 #include "graph.hpp"
+#include <deque>
 #include <vector>
+
+struct Config {
+  Length length;
+  Height height;
+  Unsuitability unsuitability;
+
+  Config(Length l, Height h, Unsuitability u)
+      : length(l)
+      , height(h)
+      , unsuitability(u)
+  {
+  }
+};
+
+struct Route {
+  Cost costs;
+  std::deque<Node> nodes;
+};
 
 class Dijkstra {
   public:
@@ -14,6 +33,8 @@ class Dijkstra {
 
   Dijkstra& operator=(const Dijkstra& other);
   Dijkstra& operator=(Dijkstra&& other) noexcept;
+
+  Route findBestRoute(NodeId from, NodeId to, Config config);
 
   private:
   void clearState();
