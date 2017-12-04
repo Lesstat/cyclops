@@ -10,11 +10,11 @@ void testEdgeInternals(const Edge& e,
     const ReplacedEdge& edgeA,
     const ReplacedEdge& edgeB)
 {
-  REQUIRE(e.source.get() == source);
-  REQUIRE(e.destination.get() == destination);
-  REQUIRE(e.cost.length.get() == length);
-  REQUIRE(e.cost.height.get() == height);
-  REQUIRE(e.cost.unsuitability.get() == unsuitability);
+  REQUIRE(e.source == source);
+  REQUIRE(e.destination == destination);
+  REQUIRE(e.cost.length == length);
+  REQUIRE(e.cost.height == height);
+  REQUIRE(e.cost.unsuitability == unsuitability);
   REQUIRE(e.edgeA == edgeA);
   REQUIRE(e.edgeB == edgeB);
 }

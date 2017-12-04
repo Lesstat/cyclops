@@ -3,9 +3,9 @@
 
 void testNodeInternals(const Node& n, size_t osmId, double lat, double lng, size_t level)
 {
-  REQUIRE(n.osmId.get() == osmId);
-  REQUIRE(n.lat.get() == lat);
-  REQUIRE(n.lng.get() == lng);
+  REQUIRE(n.osmId == osmId);
+  REQUIRE(n.lat == lat);
+  REQUIRE(n.lng == lng);
   REQUIRE(n.level == level);
 }
 

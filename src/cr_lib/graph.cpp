@@ -8,13 +8,13 @@ void connectEdgesToNodes(const std::vector<Node>& nodes, std::vector<Edge>& edge
   std::unordered_map<size_t, size_t> map;
   map.reserve(nodes.size());
   for (size_t i = 0; i < nodes.size(); i++) {
-    map.insert({ nodes[i].getOsmId().get(), i });
+    map.insert({ nodes[i].getOsmId(), i });
   }
 
   std::for_each(begin(edges), end(edges), [&map](Edge& e) {
-    size_t sourcePos = map[e.getSourceId().get()];
+    size_t sourcePos = map[e.getSourceId()];
     e.setSourcePos(sourcePos);
-    size_t destPos = map[e.getDestId().get()];
+    size_t destPos = map[e.getDestId()];
     e.setDestPos(destPos);
   });
 }
@@ -194,5 +194,5 @@ Graph Graph::createFromStream(std::istream& file)
 
 const Node& Graph::getNode(NodeId id) const
 {
-  return nodes[id.get()];
+  return nodes[id];
 }

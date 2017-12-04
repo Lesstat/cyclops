@@ -63,8 +63,8 @@ TEST_CASE("Read small file into graph")
   auto dij = g.createDijkstra();
   auto route = dij.findBestRoute(NodeId(0), NodeId(2), Config{ Length{ 1.0 }, Height{ 0 }, Unsuitability{ 0 } });
 
-  REQUIRE(route.nodes[0].getOsmId().get() == 470552);
-  REQUIRE(route.nodes[1].getOsmId().get() == 470553);
-  REQUIRE(route.nodes[2].getOsmId().get() == 470554);
-  //  REQUIRE(route.costs.length.get() == 101);
+  REQUIRE(route.nodes[0].getOsmId() == 470552);
+  REQUIRE(route.nodes[1].getOsmId() == 470553);
+  REQUIRE(route.nodes[2].getOsmId() == 470554);
+  //  REQUIRE(route.costs.length == 101);
 }

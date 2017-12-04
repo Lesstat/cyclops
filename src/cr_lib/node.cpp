@@ -61,7 +61,7 @@ OsmId Node::getOsmId() const
 
 std::ostream& operator<<(std::ostream& os, const Node& n)
 {
-  os << std::to_string(n.osmId.get());
+  os << std::to_string(n.osmId);
   return os;
 }
 

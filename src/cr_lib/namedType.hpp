@@ -30,6 +30,7 @@ class NamedType {
 
   T& get() { return value_; }
   T const& get() const { return value_; }
+  operator T() const { return value_; }
 
   private:
   T value_;
