@@ -44,13 +44,9 @@ struct Cost {
 };
 
 struct NodeOffset {
-  size_t in;
-  size_t out;
-  NodeOffset()
-      : in(0)
-      , out(0)
-  {
-  }
+  size_t in{ 0 };
+  size_t out{ 0 };
+  NodeOffset() = default;
   NodeOffset(size_t in, size_t out)
       : in(in)
       , out(out)
@@ -58,8 +54,7 @@ struct NodeOffset {
   }
 };
 
-typedef std::optional<size_t>
-    ReplacedEdge;
+using ReplacedEdge = std::optional<size_t>;
 
 class Edge {
   public:
@@ -137,7 +132,7 @@ class Graph {
   Graph& operator=(const Graph& other);
   Graph& operator=(Graph&& other) noexcept;
 
-  friend std::ostream& operator<<(std::ostream&, const Graph&);
+  friend std::ostream& operator<<(std::ostream& /*s*/, const Graph& /*g*/);
 
   std::vector<NodeOffset> const& getOffsets() const;
   Dijkstra createDijkstra() const;

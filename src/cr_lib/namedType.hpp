@@ -24,7 +24,7 @@ class NamedType {
   explicit NamedType(T&& value,
       typename std::enable_if<!std::is_reference<T_>{},
           std::nullptr_t>::type
-      = nullptr)
+       /*unused*/= nullptr)
       : value_(std::move(value))
   {
   }
