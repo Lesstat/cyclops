@@ -34,13 +34,15 @@ class Dijkstra {
   Dijkstra& operator=(const Dijkstra& other);
   Dijkstra& operator=(Dijkstra&& other) noexcept;
 
-  Route findBestRoute(NodeId from, NodeId to, Config config);
+  std::optional<Route> findBestRoute(NodeId from, NodeId to, Config config);
 
   private:
   void clearState();
 
-  std::vector<Cost> costS;
-  std::vector<Cost> costT;
+  using NodeToEdgeMap = std::unordered_map<NodeId, EdgeId>;
+  Route buildRoute(NodeId node, NodeToEdgeMap previousEdgeS, NodeToEdgeMap previousEdgeT, NodeId from, NodeId to);
+  std::vector<double> costS;
+  std::vector<double> costT;
   std::vector<NodeId> touchedS;
   std::vector<NodeId> touchedT;
   const Graph& graph;

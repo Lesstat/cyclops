@@ -2,6 +2,7 @@
 #define NAMEDTYPE_H
 
 #include <algorithm>
+#include <functional>
 #include <type_traits>
 
 // Named Type idiom taken from
@@ -37,3 +38,17 @@ class NamedType {
 };
 
 #endif /* NAMEDTYPE_H */
+
+namespace std {
+
+template <typename T, typename Parameter>
+struct hash<NamedType<T, Parameter>> {
+
+  //using checkIfHashable = typename std::enable_if<StrongType::is_hashable, void>::type;
+
+  size_t operator()(const NamedType<T, Parameter>& x) const
+  {
+    return std::hash<T>()(x.get());
+  }
+};
+}

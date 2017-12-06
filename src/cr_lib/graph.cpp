@@ -1,23 +1,24 @@
 #include "graph.hpp"
 #include "dijkstra.hpp"
 #include <iostream>
+#include <iterator>
 #include <unordered_map>
 
-void connectEdgesToNodes(const std::vector<Node>& nodes, std::vector<Edge>& edges)
-{
-  std::unordered_map<size_t, size_t> map;
-  map.reserve(nodes.size());
-  for (size_t i = 0; i < nodes.size(); i++) {
-    map.insert({ nodes[i].getOsmId(), i });
-  }
+// void connectEdgesToNodes(const std::vector<Node>& nodes, std::vector<Edge>& edges)
+// {
+//   std::unordered_map<size_t, size_t> map;
+//   map.reserve(nodes.size());
+//   for (size_t i = 0; i < nodes.size(); i++) {
+//     map.insert({ nodes[i].getOsmId(), i });
+//   }
 
-  std::for_each(begin(edges), end(edges), [&map](Edge& e) {
-    size_t sourcePos = map[e.getSourceId()];
-    e.setSourcePos(sourcePos);
-    size_t destPos = map[e.getDestId()];
-    e.setDestPos(destPos);
-  });
-}
+//   std::for_each(begin(edges), end(edges), [&map](Edge& e) {
+//     size_t sourcePos = map[e.getSourceId()];
+//     e.setSourcePos(sourcePos);
+//     size_t destPos = map[e.getDestId()];
+//     e.setDestPos(destPos);
+//   });
+// }
 
 enum class Pos {
   source,
@@ -25,8 +26,8 @@ enum class Pos {
 };
 void sortEdgesByNodePos(std::vector<Edge>& edges, Pos p)
 {
-  auto sourceSort = [](const Edge& a, const Edge& b) { return a.getSourcePos() < b.getSourcePos(); };
-  auto destSort = [](const Edge& a, const Edge& b) { return a.getDestPos() < b.getDestPos(); };
+  auto sourceSort = [](const Edge& a, const Edge& b) { return a.getSourceId() < b.getSourceId(); };
+  auto destSort = [](const Edge& a, const Edge& b) { return a.getDestId() < b.getDestId(); };
 
   if (p == Pos::source) {
     std::sort(edges.begin(), edges.end(), sourceSort);
@@ -37,9 +38,8 @@ void sortEdgesByNodePos(std::vector<Edge>& edges, Pos p)
 
 void calculateOffsets(std::vector<Edge>& edges, std::vector<NodeOffset>& offsets, Pos p)
 {
-  size_t lastOffset = 0;
-  auto sourcePos = [&edges](size_t j) { return edges[j].getSourcePos(); };
-  auto destPos = [&edges](size_t j) { return edges[j].getDestPos(); };
+  auto sourcePos = [&edges](size_t j) { return edges[j].getSourceId(); };
+  auto destPos = [&edges](size_t j) { return edges[j].getDestId(); };
   auto setOut = [&offsets](size_t i, size_t j) { offsets[i].out = j; };
   auto setIn = [&offsets](size_t i, size_t j) { offsets[i].in = j; };
 
@@ -47,33 +47,36 @@ void calculateOffsets(std::vector<Edge>& edges, std::vector<NodeOffset>& offsets
     return p == Pos::source ? sourcePos(j) : destPos(j);
   };
 
-  auto setOffset = [p, setOut, setIn, &lastOffset](size_t i, size_t j) {
-    lastOffset = j + 1;
-    p == Pos::source ? setOut(i, lastOffset) : setIn(i, lastOffset);
+  auto setOffset = [p, setOut, setIn](size_t i, size_t j) {
+    p == Pos::source ? setOut(i, j) : setIn(i, j);
   };
 
   sortEdgesByNodePos(edges, p);
 
-  size_t index = offsets.size() - 1;
-  size_t value = edges.size() - 1;
-  setOffset(index, value);
-  size_t j = edges.size();
+  size_t lastNode = 0;
 
-  for (size_t i = offsets.size() - 1; i-- > 0;) {
-    for (; j-- > 0;) {
-      size_t pos = getPos(j);
-      if (pos < i) {
-        setOffset(i, j);
-        j++;
-        break;
-      }
+  for (size_t i = 0; i < edges.size(); ++i) {
+    size_t curNode = getPos(i);
+    for (size_t j = lastNode + 1; j < curNode + 1; ++j) {
+      setOffset(j, i);
     }
+    lastNode = curNode;
+  }
+
+  for (size_t i = lastNode + 1; i < offsets.size(); ++i) {
+    setOffset(i, edges.size());
   }
 }
 
 Graph::Graph(std::vector<Node>&& nodes, std::vector<Edge>&& edges)
 {
-  connectEdgesToNodes(nodes, edges);
+  for (const auto& node : nodes) {
+    level.push_back(node.getLevel());
+  }
+  for (const auto& edge : edges) {
+    this->edges.insert({ edge.getId(), edge });
+  }
+  //  connectEdgesToNodes(nodes, edges);
   this->nodes = std::move(nodes);
   offsets.reserve(this->nodes.size() + 1);
   for (size_t i = 0; i < this->nodes.size() + 1; ++i) {
@@ -81,8 +84,9 @@ Graph::Graph(std::vector<Node>&& nodes, std::vector<Edge>&& edges)
   }
 
   calculateOffsets(edges, offsets, Pos::source);
-
+  outEdges = edges;
   calculateOffsets(edges, offsets, Pos::dest);
+  inEdges = std::move(edges);
 }
 
 Graph::Graph(const Graph& other)
@@ -195,4 +199,32 @@ Graph Graph::createFromStream(std::istream& file)
 const Node& Graph::getNode(NodeId id) const
 {
   return nodes[id];
+}
+
+const Edge& Graph::getEdge(EdgeId e) const
+{
+  return edges.at(e);
+}
+
+Graph::EdgeRange Graph::getOutgoingEdgesOf(NodeId n) const
+{
+  auto start = outEdges.begin();
+  std::advance(start, offsets[n].out);
+  auto end = outEdges.begin();
+  std::advance(end, offsets[n + 1].out);
+  return std::make_pair(start, end);
+}
+
+Graph::EdgeRange Graph::getIngoingEdgesOf(NodeId n) const
+{
+  auto start = inEdges.begin();
+  std::advance(start, offsets[n].in);
+  auto end = inEdges.begin();
+  std::advance(end, offsets[n + 1].in);
+  return std::make_pair(start, end);
+}
+
+size_t Graph::getLevelOf(NodeId n) const
+{
+  return level[n];
 }

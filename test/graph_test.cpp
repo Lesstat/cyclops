@@ -14,10 +14,10 @@ TEST_CASE("Offset array is correctly initialized")
   nodes.emplace_back(Node{ OsmId(4), Lat(3.4), Lng(4.6), Height(3.4) });
 
   std::vector<Edge> edges;
-  edges.emplace_back(Edge{ OsmId(7), NodeId(2), NodeId(1) });
-  edges.emplace_back(Edge{ OsmId(4), NodeId(1), NodeId(3) });
-  edges.emplace_back(Edge{ OsmId(5), NodeId(1), NodeId(3) });
-  edges.emplace_back(Edge{ OsmId(6), NodeId(2), NodeId(2) });
+  edges.emplace_back(Edge{ OsmId(7), NodeId(1), NodeId(0) });
+  edges.emplace_back(Edge{ OsmId(4), NodeId(0), NodeId(2) });
+  edges.emplace_back(Edge{ OsmId(5), NodeId(0), NodeId(2) });
+  edges.emplace_back(Edge{ OsmId(6), NodeId(1), NodeId(1) });
 
   Graph g{ std::move(nodes), std::move(edges) };
 
@@ -50,9 +50,9 @@ TEST_CASE("Read small file into graph")
 
 3
 2
-0 470552 49.3413737 7.3014905 0 3
+0 470552 49.3413737 7.3014905 0 0
 1 470553 49.3407609 7.3007752 0 0
-2 470554 49.3405748 7.3002951 0 2
+2 470554 49.3405748 7.3002951 0 0
 0 1 85 2 70 -1 -1
 1 2 16 2 70 -1 -1
 
@@ -61,10 +61,12 @@ TEST_CASE("Read small file into graph")
   Graph g = Graph::createFromStream(iss);
 
   auto dij = g.createDijkstra();
-  auto route = dij.findBestRoute(NodeId(0), NodeId(2), Config{ Length{ 1.0 }, Height{ 0 }, Unsuitability{ 0 } });
+  auto optionalRoute = dij.findBestRoute(NodeId(0), NodeId(2), Config{ Length{ 1.0 }, Height{ 0 }, Unsuitability{ 0 } });
 
+  REQUIRE(optionalRoute.has_value());
+  auto route = optionalRoute.value();
   REQUIRE(route.nodes[0].getOsmId() == 470552);
   REQUIRE(route.nodes[1].getOsmId() == 470553);
   REQUIRE(route.nodes[2].getOsmId() == 470554);
-  //  REQUIRE(route.costs.length == 101);
+  REQUIRE(route.costs.length == 101);
 }

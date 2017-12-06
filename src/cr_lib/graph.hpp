@@ -5,10 +5,12 @@
 #include <cstdlib>
 #include <memory>
 #include <optional>
+#include <unordered_map>
 #include <vector>
 
 using OsmId = NamedType<size_t, struct OsmIdParameter>;
 using NodeId = NamedType<size_t, struct OsmIdParameter>;
+using EdgeId = NamedType<size_t, struct EdgeParameter>;
 using Lat = NamedType<double, struct LatParameter>;
 using Lng = NamedType<double, struct LngParameter>;
 using Height = NamedType<double, struct HeightParameter>;
@@ -16,6 +18,7 @@ using Length = NamedType<double, struct LengthParameter>;
 using Unsuitability = NamedType<double, struct UnsuitabilityParameter>;
 
 class Dijkstra;
+struct Config;
 
 struct Cost {
   Length length;
@@ -33,6 +36,11 @@ struct Cost {
       , unsuitability(0)
   {
   }
+
+  Cost operator+(Cost c)
+  {
+    return Cost{ Length(length.get() + c.length.get()), Height(height.get() + c.height.get()), Unsuitability(unsuitability.get() + c.unsuitability.get()) };
+  };
 };
 
 struct NodeOffset {
@@ -57,21 +65,20 @@ class Edge {
   public:
   Edge(OsmId osmId, NodeId source, NodeId dest);
   Edge(OsmId osmId, NodeId source, NodeId dest, ReplacedEdge edgeA, ReplacedEdge edgeB);
-  Edge(const Edge& other) noexcept;
+  Edge(const Edge& other);
   Edge(Edge&& other) noexcept;
   virtual ~Edge() noexcept;
   Edge& operator=(const Edge& other);
   Edge& operator=(Edge&& other) noexcept;
 
-  OsmId getSourceId() const;
-  OsmId getDestId() const;
-  size_t getSourcePos() const;
-  size_t getDestPos() const;
+  NodeId getSourceId() const;
+  NodeId getDestId() const;
+
+  EdgeId getId() const;
+  const Cost& getCost() const;
+  double costByConfiguration(const Config& conf) const;
 
   static Edge createFromText(const std::string& text);
-
-  void setSourcePos(size_t pos);
-  void setDestPos(size_t pos);
 
   friend void testEdgeInternals(const Edge& e,
       size_t source,
@@ -85,12 +92,10 @@ class Edge {
   private:
   void swap(Edge& other);
 
-  size_t internalId;
+  EdgeId internalId;
   OsmId osmId;
   NodeId source;
   NodeId destination;
-  size_t sourcePos;
-  size_t destPos;
   Cost cost;
   ReplacedEdge edgeA;
   ReplacedEdge edgeB;
@@ -137,6 +142,13 @@ class Graph {
   std::vector<NodeOffset> const& getOffsets() const;
   Dijkstra createDijkstra() const;
 
+  using EdgeRange = std::pair<std::vector<Edge>::const_iterator, std::vector<Edge>::const_iterator>;
+  EdgeRange getOutgoingEdgesOf(NodeId n) const;
+  EdgeRange getIngoingEdgesOf(NodeId n) const;
+
+  size_t getLevelOf(NodeId n) const;
+  const Edge& getEdge(EdgeId e) const;
+
   static Graph createFromStream(std::istream& file);
 
   const Node& getNode(NodeId id) const;
@@ -149,6 +161,7 @@ class Graph {
   std::vector<Edge> inEdges;
   std::vector<Edge> outEdges;
   std::vector<size_t> level;
+  std::unordered_map<EdgeId, Edge> edges;
 };
 
 #endif /* GRAPH_H */
