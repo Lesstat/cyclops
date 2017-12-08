@@ -66,13 +66,12 @@ OsmId Edge::getDestId() const
 
 Edge Edge::createFromText(const std::string& text)
 {
-  std::stringstream ss{ text };
 
   size_t source, dest, type;
   double length, speed;
   long edgeA, edgeB;
 
-  ss >> source >> dest >> length >> type >> speed >> edgeA >> edgeB;
+  std::sscanf(text.c_str(), "%lu%lu%lf%lu%lf%li%li", &source, &dest, &length, &type, &speed, &edgeA, &edgeB); //NOLINT
 
   Edge e{ NodeId(source), NodeId(dest) };
   if (edgeA > 0) {
