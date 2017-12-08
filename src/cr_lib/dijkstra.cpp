@@ -1,6 +1,4 @@
 #include "dijkstra.hpp"
-#include <chrono>
-#include <iostream>
 #include <queue>
 #include <thread>
 #include <unordered_map>
@@ -26,9 +24,6 @@ Dijkstra::Dijkstra(Dijkstra&& other) noexcept
 }
 
 Dijkstra::~Dijkstra() noexcept = default;
-
-//Dijkstra& Dijkstra::operator=(const Dijkstra& other) {}
-//Dijkstra& Dijkstra::operator=(Dijkstra&& other) noexcept {}
 
 void Dijkstra::clearState()
 {
@@ -116,6 +111,7 @@ std::optional<Route> Dijkstra::findBestRoute(NodeId from, NodeId to, Config conf
 
     if (!heapS.empty()) {
       auto[node, cost] = heapS.top();
+      heapS.pop();
       if (cost > costS[node]) {
         continue;
       }
@@ -128,9 +124,9 @@ std::optional<Route> Dijkstra::findBestRoute(NodeId from, NodeId to, Config conf
         minNode = node;
       }
 
-      auto[edge, end] = graph.getOutgoingEdgesOf(node);
+      auto[edge, end] = graph.getOutgoingEdgesOf(node); //NOLINT
       for (; edge != end; ++edge) {
-        auto& e = *edge;
+        const auto& e = *edge;
         NodeId nextNode = e.getDestId();
         if (graph.getLevelOf(nextNode) >= graph.getLevelOf(node)) {
           double nextCost = cost + e.costByConfiguration(config);
@@ -143,11 +139,11 @@ std::optional<Route> Dijkstra::findBestRoute(NodeId from, NodeId to, Config conf
           }
         }
       }
-      heapS.pop();
     }
 
     if (!heapT.empty()) {
       auto[node, cost] = heapT.top();
+      heapT.pop();
       if (cost > costT[node]) {
         continue;
       }
@@ -160,9 +156,9 @@ std::optional<Route> Dijkstra::findBestRoute(NodeId from, NodeId to, Config conf
         minNode = node;
       }
 
-      auto[edge, end] = graph.getIngoingEdgesOf(node);
+      auto[edge, end] = graph.getIngoingEdgesOf(node); //NOLINT
       for (; edge != end; ++edge) {
-        const Edge& e = *edge;
+        const auto& e = *edge;
         NodeId nextNode = e.getSourceId();
         if (graph.getLevelOf(nextNode) >= graph.getLevelOf(node)) {
           double nextCost = cost + e.costByConfiguration(config);
@@ -175,7 +171,6 @@ std::optional<Route> Dijkstra::findBestRoute(NodeId from, NodeId to, Config conf
           }
         }
       }
-      heapT.pop();
     }
   }
 }
