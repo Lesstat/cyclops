@@ -4,22 +4,6 @@
 #include <iterator>
 #include <unordered_map>
 
-// void connectEdgesToNodes(const std::vector<Node>& nodes, std::vector<Edge>& edges)
-// {
-//   std::unordered_map<size_t, size_t> map;
-//   map.reserve(nodes.size());
-//   for (size_t i = 0; i < nodes.size(); i++) {
-//     map.insert({ nodes[i].getOsmId(), i });
-//   }
-
-//   std::for_each(begin(edges), end(edges), [&map](Edge& e) {
-//     size_t sourcePos = map[e.getSourceId()];
-//     e.setSourcePos(sourcePos);
-//     size_t destPos = map[e.getDestId()];
-//     e.setDestPos(destPos);
-//   });
-// }
-
 enum class Pos {
   source,
   dest
@@ -85,6 +69,7 @@ Graph::Graph(std::vector<Node>&& nodes, std::vector<Edge>&& edges)
 
   calculateOffsets(edges, offsets, Pos::source);
   outEdges = edges;
+
   calculateOffsets(edges, offsets, Pos::dest);
   inEdges = std::move(edges);
 }
