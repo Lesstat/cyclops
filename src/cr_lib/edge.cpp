@@ -6,14 +6,14 @@
 
 size_t lastId = 0;
 
-Edge::Edge(OsmId osmId, NodeId source, NodeId dest)
-    : Edge(osmId, source, dest, {}, {})
+Edge::Edge(NodeId source, NodeId dest)
+    : Edge(source, dest, {}, {})
 {
 }
 
-Edge::Edge(OsmId osmId, NodeId source, NodeId dest, ReplacedEdge edgeA, ReplacedEdge edgeB)
+Edge::Edge(NodeId source, NodeId dest, ReplacedEdge edgeA, ReplacedEdge edgeB)
     : internalId(lastId++)
-    , osmId(osmId)
+    // , osmId(osmId)
     , source(source)
     , destination(dest)
     , edgeA(std::move(edgeA))
@@ -47,7 +47,7 @@ Edge::Edge(const Edge& other) = default;
 void Edge::swap(Edge& other)
 {
   std::swap(internalId, other.internalId);
-  std::swap(osmId, other.osmId);
+  // std::swap(osmId, other.osmId);
   std::swap(source, other.source);
   std::swap(destination, other.destination);
   std::swap(cost, other.cost);
@@ -74,7 +74,7 @@ Edge Edge::createFromText(const std::string& text)
 
   ss >> source >> dest >> length >> type >> speed >> edgeA >> edgeB;
 
-  Edge e{ OsmId(0), NodeId(source), NodeId(dest) };
+  Edge e{ NodeId(source), NodeId(dest) };
   if (edgeA > 0) {
     e.edgeA = edgeA;
     e.edgeB = edgeB;

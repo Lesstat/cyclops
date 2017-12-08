@@ -14,10 +14,10 @@ TEST_CASE("Offset array is correctly initialized")
   nodes.emplace_back(Node{ OsmId(4), Lat(3.4), Lng(4.6), Height(3.4) });
 
   std::vector<Edge> edges;
-  edges.emplace_back(Edge{ OsmId(7), NodeId(1), NodeId(0) });
-  edges.emplace_back(Edge{ OsmId(4), NodeId(0), NodeId(2) });
-  edges.emplace_back(Edge{ OsmId(5), NodeId(0), NodeId(2) });
-  edges.emplace_back(Edge{ OsmId(6), NodeId(1), NodeId(1) });
+  edges.emplace_back(Edge{ NodeId(1), NodeId(0) });
+  edges.emplace_back(Edge{ NodeId(0), NodeId(2) });
+  edges.emplace_back(Edge{ NodeId(0), NodeId(2) });
+  edges.emplace_back(Edge{ NodeId(1), NodeId(1) });
 
   Graph g{ std::move(nodes), std::move(edges) };
 

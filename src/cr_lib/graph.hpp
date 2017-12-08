@@ -58,8 +58,8 @@ using ReplacedEdge = std::optional<size_t>;
 
 class Edge {
   public:
-  Edge(OsmId osmId, NodeId source, NodeId dest);
-  Edge(OsmId osmId, NodeId source, NodeId dest, ReplacedEdge edgeA, ReplacedEdge edgeB);
+  Edge(NodeId source, NodeId dest);
+  Edge(NodeId source, NodeId dest, ReplacedEdge edgeA, ReplacedEdge edgeB);
   Edge(const Edge& other);
   Edge(Edge&& other) noexcept;
   virtual ~Edge() noexcept;
@@ -88,7 +88,7 @@ class Edge {
   void swap(Edge& other);
 
   EdgeId internalId;
-  OsmId osmId;
+  // OsmId osmId;
   NodeId source;
   NodeId destination;
   Cost cost;
