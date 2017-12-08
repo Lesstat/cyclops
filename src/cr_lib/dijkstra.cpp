@@ -126,7 +126,7 @@ std::optional<Route> Dijkstra::findBestRoute(NodeId from, NodeId to, Config conf
 
       auto[edge, end] = graph.getOutgoingEdgesOf(node); //NOLINT
       for (; edge != end; ++edge) {
-        const auto& e = *edge;
+        const auto& e = graph.getEdge(*edge);
         NodeId nextNode = e.getDestId();
         if (graph.getLevelOf(nextNode) >= graph.getLevelOf(node)) {
           double nextCost = cost + e.costByConfiguration(config);
@@ -158,7 +158,7 @@ std::optional<Route> Dijkstra::findBestRoute(NodeId from, NodeId to, Config conf
 
       auto[edge, end] = graph.getIngoingEdgesOf(node); //NOLINT
       for (; edge != end; ++edge) {
-        const auto& e = *edge;
+        const auto& e = graph.getEdge(*edge);
         NodeId nextNode = e.getSourceId();
         if (graph.getLevelOf(nextNode) >= graph.getLevelOf(node)) {
           double nextCost = cost + e.costByConfiguration(config);

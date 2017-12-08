@@ -60,7 +60,6 @@ Graph::Graph(std::vector<Node>&& nodes, std::vector<Edge>&& edges)
   for (const auto& edge : edges) {
     this->edges.insert({ edge.getId(), edge });
   }
-  //  connectEdgesToNodes(nodes, edges);
   this->nodes = std::move(nodes);
   offsets.reserve(this->nodes.size() + 1);
   for (size_t i = 0; i < this->nodes.size() + 1; ++i) {
@@ -68,10 +67,10 @@ Graph::Graph(std::vector<Node>&& nodes, std::vector<Edge>&& edges)
   }
 
   calculateOffsets(edges, offsets, Pos::source);
-  outEdges = edges;
+  std::transform(edges.begin(), edges.end(), std::back_inserter(outEdges), [](const Edge& e) { return e.getId(); });
 
   calculateOffsets(edges, offsets, Pos::dest);
-  inEdges = std::move(edges);
+  std::transform(edges.begin(), edges.end(), std::back_inserter(inEdges), [](const Edge& e) { return e.getId(); });
 }
 
 Graph::Graph(const Graph& other)

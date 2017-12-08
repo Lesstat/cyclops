@@ -137,7 +137,7 @@ class Graph {
   std::vector<NodeOffset> const& getOffsets() const;
   Dijkstra createDijkstra() const;
 
-  using EdgeRange = std::pair<std::vector<Edge>::const_iterator, std::vector<Edge>::const_iterator>;
+  using EdgeRange = std::pair<std::vector<EdgeId>::const_iterator, std::vector<EdgeId>::const_iterator>;
   EdgeRange getOutgoingEdgesOf(NodeId n) const;
   EdgeRange getIngoingEdgesOf(NodeId n) const;
 
@@ -153,8 +153,8 @@ class Graph {
 
   std::vector<Node> nodes;
   std::vector<NodeOffset> offsets;
-  std::vector<Edge> inEdges;
-  std::vector<Edge> outEdges;
+  std::vector<EdgeId> inEdges;
+  std::vector<EdgeId> outEdges;
   std::vector<size_t> level;
   std::unordered_map<EdgeId, Edge> edges;
 };
