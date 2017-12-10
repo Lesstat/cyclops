@@ -120,8 +120,10 @@ std::optional<Route> Dijkstra::findBestRoute(NodeId from, NodeId to, Config conf
       }
       if (costT[node] != max) {
         double candidate = costT[node] + costS[node];
-        minCandidate = std::min(candidate, minCandidate);
-        minNode = node;
+        if (candidate < minCandidate) {
+          minCandidate = candidate;
+          minNode = node;
+        }
       }
 
       auto[edge, end] = graph.getOutgoingEdgesOf(node); //NOLINT
@@ -148,12 +150,14 @@ std::optional<Route> Dijkstra::findBestRoute(NodeId from, NodeId to, Config conf
         continue;
       }
       if (cost > minCandidate) {
-        sBigger = true;
+        tBigger = true;
       }
       if (costS[node] != max) {
         double candidate = costS[node] + costT[node];
-        minCandidate = std::min(candidate, minCandidate);
-        minNode = node;
+        if (candidate < minCandidate) {
+          minCandidate = candidate;
+          minNode = node;
+        }
       }
 
       auto[edge, end] = graph.getIngoingEdgesOf(node); //NOLINT
