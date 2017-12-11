@@ -3,12 +3,13 @@
 #include <thread>
 #include <unordered_map>
 
-const double max = std::numeric_limits<double>::max();
-const Cost maxCost{ Length(max), Height(max), Unsuitability(max) };
+const double dmax = std::numeric_limits<double>::max();
+const short smax = std::numeric_limits<short>::max();
+const Cost maxCost{ Length(dmax), Height(smax), Unsuitability(smax) };
 
 Dijkstra::Dijkstra(Graph const& g, size_t nodeCount)
-    : costS(nodeCount, max)
-    , costT(nodeCount, max)
+    : costS(nodeCount, dmax)
+    , costT(nodeCount, dmax)
     , graph(g)
 {
 }
@@ -28,11 +29,11 @@ Dijkstra::~Dijkstra() noexcept = default;
 void Dijkstra::clearState()
 {
   for (auto nodeId : touchedS) {
-    costS[nodeId] = max;
+    costS[nodeId] = dmax;
   }
   touchedS.clear();
   for (auto nodeId : touchedT) {
-    costT[nodeId] = max;
+    costT[nodeId] = dmax;
   }
   touchedT.clear();
 }
@@ -95,7 +96,7 @@ std::optional<Route> Dijkstra::findBestRoute(NodeId from, NodeId to, Config conf
 
   bool sBigger = false;
   bool tBigger = false;
-  double minCandidate = max;
+  double minCandidate = dmax;
   std::optional<NodeId> minNode = {};
 
   while (true) {
@@ -118,7 +119,7 @@ std::optional<Route> Dijkstra::findBestRoute(NodeId from, NodeId to, Config conf
       if (cost > minCandidate) {
         sBigger = true;
       }
-      if (costT[node] != max) {
+      if (costT[node] != dmax) {
         double candidate = costT[node] + costS[node];
         if (candidate < minCandidate) {
           minCandidate = candidate;
@@ -152,7 +153,7 @@ std::optional<Route> Dijkstra::findBestRoute(NodeId from, NodeId to, Config conf
       if (cost > minCandidate) {
         tBigger = true;
       }
-      if (costS[node] != max) {
+      if (costS[node] != dmax) {
         double candidate = costS[node] + costT[node];
         if (candidate < minCandidate) {
           minCandidate = candidate;

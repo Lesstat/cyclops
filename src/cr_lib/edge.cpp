@@ -47,7 +47,6 @@ Edge::Edge(const Edge& other) = default;
 void Edge::swap(Edge& other)
 {
   std::swap(internalId, other.internalId);
-  // std::swap(osmId, other.osmId);
   std::swap(source, other.source);
   std::swap(destination, other.destination);
   std::swap(cost, other.cost);
@@ -67,18 +66,21 @@ OsmId Edge::getDestId() const
 Edge Edge::createFromText(const std::string& text)
 {
 
-  size_t source, dest, type;
-  double length, speed;
+  size_t source, dest;
+  double length;
+  short height, unsuitability;
   long edgeA, edgeB;
 
-  std::sscanf(text.c_str(), "%lu%lu%lf%lu%lf%li%li", &source, &dest, &length, &type, &speed, &edgeA, &edgeB); //NOLINT
+  std::sscanf(text.c_str(), "%lu%lu%lf%hd%hd%li%li", &source, &dest, &length, &height, &unsuitability, &edgeA, &edgeB); //NOLINT
 
   Edge e{ NodeId(source), NodeId(dest) };
   if (edgeA > 0) {
-    e.edgeA = edgeA;
-    e.edgeB = edgeB;
+    e.edgeA = EdgeId{ static_cast<size_t>(edgeA) };
+    e.edgeB = EdgeId{ static_cast<size_t>(edgeB) };
   }
   e.cost.length = Length(length);
+  e.cost.height = Height(height);
+  e.cost.unsuitability = Unsuitability(unsuitability);
   return e;
 }
 

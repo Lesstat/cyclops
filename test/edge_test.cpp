@@ -2,11 +2,11 @@
 #include "graph.hpp"
 
 void testEdgeInternals(const Edge& e,
-    size_t source,
-    size_t destination,
-    double length,
-    double height,
-    double unsuitability,
+    OsmId source,
+    OsmId destination,
+    Length length,
+    Height height,
+    Unsuitability unsuitability,
     const ReplacedEdge& edgeA,
     const ReplacedEdge& edgeB)
 {
@@ -24,13 +24,13 @@ TEST_CASE("Parse Edge from text format")
 
   SECTION("Original Edge")
   {
-    Edge e = Edge::createFromText("595292 595293 13 17 30 -1 -1");
-    testEdgeInternals(e, 595292, 595293, 13, 0, 0, {}, {});
+    Edge e = Edge::createFromText("10990 689504 24.340902087980123 7 4 -1 -1");
+    testEdgeInternals(e, NodeId{ 10990 }, NodeId{ 689504 }, Length{ 24.340902087980123 }, Height{ 7 }, Unsuitability{ 4 }, {}, {});
   }
 
   SECTION("Shortcut Edge")
   {
-    Edge e = Edge::createFromText("3 4 20 0 -1 11 2294937");
-    testEdgeInternals(e, 3, 4, 20, 0, 0, 11, 2294937);
+    Edge e = Edge::createFromText("10990 689504 24.340902087980123 7 4 259 687");
+    testEdgeInternals(e, NodeId{ 10990 }, NodeId{ 689504 }, Length{ 24.340902087980123 }, Height{ 7 }, Unsuitability{ 4 }, EdgeId{ 259 }, EdgeId{ 687 });
   }
 }

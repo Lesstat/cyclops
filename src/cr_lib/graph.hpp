@@ -13,9 +13,9 @@ using NodeId = NamedType<size_t, struct OsmIdParameter>;
 using EdgeId = NamedType<size_t, struct EdgeParameter>;
 using Lat = NamedType<double, struct LatParameter>;
 using Lng = NamedType<double, struct LngParameter>;
-using Height = NamedType<double, struct HeightParameter>;
+using Height = NamedType<short, struct HeightParameter>;
 using Length = NamedType<double, struct LengthParameter>;
-using Unsuitability = NamedType<double, struct UnsuitabilityParameter>;
+using Unsuitability = NamedType<short, struct UnsuitabilityParameter>;
 
 class Dijkstra;
 struct Config;
@@ -54,7 +54,7 @@ struct NodeOffset {
   }
 };
 
-using ReplacedEdge = std::optional<size_t>;
+using ReplacedEdge = std::optional<EdgeId>;
 
 class Edge {
   public:
@@ -76,11 +76,11 @@ class Edge {
   static Edge createFromText(const std::string& text);
 
   friend void testEdgeInternals(const Edge& e,
-      size_t source,
-      size_t destination,
-      double length,
-      double height,
-      double unsuitability,
+      NodeId source,
+      NodeId destination,
+      Length length,
+      Height height,
+      Unsuitability unsuitability,
       const ReplacedEdge& edgeA,
       const ReplacedEdge& edgeB);
 
@@ -111,7 +111,7 @@ class Node {
   friend std::ostream& operator<<(std::ostream& os, const Node& n);
 
   static Node createFromText(const std::string& text);
-  friend void testNodeInternals(const Node& n, size_t osmId, double lat, double lng, size_t level);
+  friend void testNodeInternals(const Node& n, OsmId osmId, Lat lat, Lng lng, Height height, size_t level);
 
   private:
   void swap(Node& other);

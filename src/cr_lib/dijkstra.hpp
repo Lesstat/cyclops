@@ -6,12 +6,16 @@
 #include <deque>
 #include <vector>
 
-struct Config {
-  Length length;
-  Height height;
-  Unsuitability unsuitability;
+using LengthConfig = NamedType<double, struct LengthConfigParameter>;
+using HeightConfig = NamedType<double, struct HeightConfigParameter>;
+using UnsuitabilityConfig = NamedType<double, struct UnsuitabilityConfigParameter>;
 
-  Config(Length l, Height h, Unsuitability u)
+struct Config {
+  LengthConfig length;
+  HeightConfig height;
+  UnsuitabilityConfig unsuitability;
+
+  Config(LengthConfig l, HeightConfig h, UnsuitabilityConfig u)
       : length(l)
       , height(h)
       , unsuitability(u)
