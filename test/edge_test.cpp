@@ -2,8 +2,8 @@
 #include "graph.hpp"
 
 void testEdgeInternals(const Edge& e,
-    OsmId source,
-    OsmId destination,
+    NodeId source,
+    NodeId destination,
     Length length,
     Height height,
     Unsuitability unsuitability,
@@ -18,7 +18,6 @@ void testEdgeInternals(const Edge& e,
   REQUIRE(e.edgeA == edgeA);
   REQUIRE(e.edgeB == edgeB);
 }
-
 TEST_CASE("Parse Edge from text format")
 {
 

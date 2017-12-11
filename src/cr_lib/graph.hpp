@@ -9,7 +9,7 @@
 #include <vector>
 
 using OsmId = NamedType<size_t, struct OsmIdParameter>;
-using NodeId = NamedType<size_t, struct OsmIdParameter>;
+using NodeId = NamedType<size_t, struct NodeIdParameter>;
 using EdgeId = NamedType<size_t, struct EdgeParameter>;
 using Lat = NamedType<double, struct LatParameter>;
 using Lng = NamedType<double, struct LngParameter>;
@@ -37,7 +37,7 @@ struct Cost {
   {
   }
 
-  Cost operator+(Cost c)
+  Cost operator+(const Cost& c) const
   {
     return Cost{ Length(length.get() + c.length.get()), Height(height.get() + c.height.get()), Unsuitability(unsuitability.get() + c.unsuitability.get()) };
   };
@@ -72,6 +72,7 @@ class Edge {
   EdgeId getId() const;
   const Cost& getCost() const;
   double costByConfiguration(const Config& conf) const;
+  void setCost(Cost c);
 
   static Edge createFromText(const std::string& text);
 

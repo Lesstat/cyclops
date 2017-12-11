@@ -54,11 +54,11 @@ void Edge::swap(Edge& other)
   std::swap(edgeB, other.edgeB);
 }
 
-OsmId Edge::getSourceId() const
+NodeId Edge::getSourceId() const
 {
   return source;
 }
-OsmId Edge::getDestId() const
+NodeId Edge::getDestId() const
 {
   return destination;
 }
@@ -99,4 +99,9 @@ EdgeId Edge::getId() const
 const Cost& Edge::getCost() const
 {
   return cost;
+}
+
+void Edge::setCost(Cost c)
+{
+  this->cost = c;
 }
