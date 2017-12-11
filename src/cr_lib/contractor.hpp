@@ -1,5 +1,6 @@
 #ifndef CONTRACTOR_H
 #define CONTRACTOR_H
+#include "dijkstra.hpp"
 #include "graph.hpp"
 
 class Contractor {
@@ -24,6 +25,8 @@ class Contractor {
   Contractor& operator=(Contractor&& other) noexcept = default;
 
   Edge createShortcut(const Edge& e1, const Edge& e2);
+
+  bool isShortestPath(const Graph& g, const EdgeId& startEdgeId, const EdgeId& destEdgeId, const Config& conf);
 
   protected:
   private:
