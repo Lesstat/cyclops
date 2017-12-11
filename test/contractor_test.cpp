@@ -2,7 +2,6 @@
 #include "catch.hpp"
 #include "contractor.hpp"
 #include "graph.hpp"
-#include <cstring>
 
 TEST_CASE("Shortcut creation")
 {
@@ -13,8 +12,8 @@ TEST_CASE("Shortcut creation")
   {
 
     Edge shortcut = c.createShortcut(e1, e2);
-
-    testEdgeInternals(shortcut, NodeId{ 10 }, NodeId{ 22 }, Length{ 30.9 }, Height{ 7 }, Unsuitability{ 6 }, e1.getId(), e2.getId());
+    testEdgeInternals(shortcut, NodeId{ 10 }, NodeId{ 22 },
+        Length{ 30.9 }, Height{ 7 }, Unsuitability{ 6 }, e1.getId(), e2.getId());
   }
 
   SECTION("Shortcut creation fails if edges do not connect on middle node")

@@ -25,7 +25,7 @@ struct Config {
 
 struct Route {
   Cost costs;
-  std::deque<Node> nodes;
+  std::deque<Edge> edges;
 };
 
 class Dijkstra {

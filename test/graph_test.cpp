@@ -65,8 +65,9 @@ TEST_CASE("Read small file into graph")
 
   REQUIRE(optionalRoute.has_value());
   auto route = optionalRoute.value();
-  REQUIRE(route.nodes[0].getOsmId() == 470552);
-  REQUIRE(route.nodes[1].getOsmId() == 470553);
-  REQUIRE(route.nodes[2].getOsmId() == 470554);
+  REQUIRE(route.edges[0].getSourceId() == 0);
+  REQUIRE(route.edges[1].getSourceId() == 1);
   REQUIRE(route.costs.length == 101);
+  REQUIRE(route.costs.height == 4);
+  REQUIRE(route.costs.unsuitability == 140);
 }

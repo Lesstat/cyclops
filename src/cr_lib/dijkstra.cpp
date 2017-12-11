@@ -46,22 +46,18 @@ Route Dijkstra::buildRoute(NodeId node, NodeToEdgeMap previousEdgeS, NodeToEdgeM
     const auto& edgeId = previousEdgeS[curNode];
     const auto& edge = graph.getEdge(edgeId);
     route.costs = route.costs + edge.getCost();
-    route.nodes.push_front(graph.getNode(curNode));
+    route.edges.push_front(edge);
     curNode = edge.getSourceId();
   }
-  route.nodes.push_front(graph.getNode(curNode));
 
   curNode = node;
   while (curNode != to) {
     const auto& edgeId = previousEdgeT[curNode];
     const auto& edge = graph.getEdge(edgeId);
     route.costs = route.costs + edge.getCost();
-    if (curNode != node) {
-      route.nodes.push_back(graph.getNode(curNode));
-    }
+    route.edges.push_back(edge);
     curNode = edge.getDestId();
   }
-  route.nodes.push_back(graph.getNode(curNode));
 
   return route;
 }
