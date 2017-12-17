@@ -20,6 +20,7 @@
 
 LinearProgram::LinearProgram(size_t cols)
 {
+  glp_term_out(GLP_OFF);
   lp = glp_create_prob();
   glp_add_cols(lp, cols);
   for (size_t i = 1; i < cols + 1; ++i) {
