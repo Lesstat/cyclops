@@ -52,18 +52,18 @@ std::vector<Edge> Contractor::contract(Graph& g, const NodeId& node)
   Config config{ LengthConfig{ 0.33 }, HeightConfig{ 0.33 },
     UnsuitabilityConfig{ 0.33 } };
   auto d = g.createDijkstra();
-  auto[in, inEnd] = g.getIngoingEdgesOf(node); // NOLINT
-  auto[out, outEnd] = g.getOutgoingEdgesOf(node); // NOLINT
-  for (; in != inEnd; ++in) {
-    for (; out != outEnd; ++out) {
+  const auto& inEdges = g.getIngoingEdgesOf(node);
+  const auto& outEdges = g.getOutgoingEdgesOf(node);
+  for (const auto& in : inEdges) {
+    for (const auto& out : outEdges) {
       LinearProgram lp{ 3 };
       lp.objective({ 1.0, 1.0, 1.0 });
       lp.addConstraint({ 1.0, 1.0, 1.0 }, 1.0, GLP_FX);
       while (true) {
-        const auto& inEdge = g.getEdge(*in);
-        const auto& outEdge = g.getEdge(*out);
+        const auto& inEdge = g.getEdge(in);
+        const auto& outEdge = g.getEdge(out);
 
-        if (isShortestPath(g, *in, *out, config)) {
+        if (isShortestPath(g, in, out, config)) {
           shortcuts.push_back(createShortcut(inEdge, outEdge));
           break;
         }

@@ -21,23 +21,26 @@
 #include "graph.hpp"
 #include <sstream>
 
-TEST_CASE("Shortcut creation") {
+TEST_CASE("Shortcut creation")
+{
   Contractor c{};
   Edge e1 = Edge::createFromText("10 15 13.2 5 2 -1 -1");
   Edge e2 = Edge::createFromText("15 22 17.7 2 4 -1 -1");
-  SECTION("Creating a shortcut from 2 Edges") {
+  SECTION("Creating a shortcut from 2 Edges")
+  {
 
     Edge shortcut = c.createShortcut(e1, e2);
-    testEdgeInternals(shortcut, NodeId{10}, NodeId{22}, Length{30.9}, Height{7},
-                      Unsuitability{6}, e1.getId(), e2.getId());
+    testEdgeInternals(shortcut, NodeId{ 10 }, NodeId{ 22 }, Length{ 30.9 }, Height{ 7 },
+        Unsuitability{ 6 }, e1.getId(), e2.getId());
   }
 
-  SECTION("Shortcut creation fails if edges do not connect on middle node") {
+  SECTION("Shortcut creation fails if edges do not connect on middle node")
+  {
     REQUIRE_THROWS_WITH(c.createShortcut(e2, e1), "Edges are not connected");
   }
 }
 
-const std::string threeNodeGraph{R"!!(# Build by: pbfextractor
+const std::string threeNodeGraph{ R"!!(# Build by: pbfextractor
 # Build on: SystemTime { tv_sec: 1512985452, tv_nsec: 881838750 }
 
 3
@@ -49,56 +52,62 @@ const std::string threeNodeGraph{R"!!(# Build by: pbfextractor
 1 2 3.2 9 2 -1 -1
 0 2 8.276483027784113 0 2 -1 -1
 
-)!!"};
+)!!" };
 
-TEST_CASE("Test if edges form shortest path") {
+TEST_CASE("Test if edges form shortest path")
+{
 
   auto iss = std::istringstream(threeNodeGraph);
   auto g = Graph::createFromStream(iss);
-  NodeId nodeId1{1};
-  auto[inEdge, end] = g.getIngoingEdgesOf(nodeId1); // NOLINT
-  EdgeId edgeId0 = *inEdge;
+  NodeId nodeId1{ 1 };
+  const auto& inEdges = g.getIngoingEdgesOf(nodeId1);
+  EdgeId edgeId0 = *inEdges.begin();
 
-  auto[outEdge, outEnd] = g.getOutgoingEdgesOf(nodeId1); // NOLINT
-  EdgeId edgeId1 = *outEdge;
+  const auto& outEdges = g.getOutgoingEdgesOf(nodeId1);
+  EdgeId edgeId1 = *outEdges.begin();
 
   Contractor c{};
 
-  SECTION("With config where the edges form shortest path") {
-    Config lengthOnlyConf{LengthConfig{1}, HeightConfig{0},
-                          UnsuitabilityConfig{0}};
+  SECTION("With config where the edges form shortest path")
+  {
+    Config lengthOnlyConf{ LengthConfig{ 1 }, HeightConfig{ 0 },
+      UnsuitabilityConfig{ 0 } };
     REQUIRE(c.isShortestPath(g, edgeId0, edgeId1, lengthOnlyConf) == true);
   }
 
-  SECTION("With config where the edges do not form shortest path") {
-    Config heightOnlyConf{LengthConfig{0}, HeightConfig{1},
-                          UnsuitabilityConfig{0}};
+  SECTION("With config where the edges do not form shortest path")
+  {
+    Config heightOnlyConf{ LengthConfig{ 0 }, HeightConfig{ 1 },
+      UnsuitabilityConfig{ 0 } };
     REQUIRE(c.isShortestPath(g, edgeId0, edgeId1, heightOnlyConf) == false);
   }
 }
 
-TEST_CASE("Contracting a Node") {
+TEST_CASE("Contracting a Node")
+{
 
   auto iss = std::istringstream(threeNodeGraph);
   auto g = Graph::createFromStream(iss);
 
   Contractor c{};
 
-  SECTION("Where no shortcuts need to be created") {
-    auto shortcuts = c.contract(g, NodeId{2});
+  SECTION("Where no shortcuts need to be created")
+  {
+    auto shortcuts = c.contract(g, NodeId{ 2 });
     REQUIRE(shortcuts.empty());
   }
-  SECTION("Where the right configuration needs to be found") {
-    NodeId nodeId1{1};
-    auto[inEdge, end] = g.getIngoingEdgesOf(nodeId1); // NOLINT
-    EdgeId edgeId0 = *inEdge;
+  SECTION("Where the right configuration needs to be found")
+  {
+    NodeId nodeId1{ 1 };
+    const auto& inEdges = g.getIngoingEdgesOf(nodeId1);
+    EdgeId edgeId0 = *inEdges.begin();
 
-    auto[outEdge, outEnd] = g.getOutgoingEdgesOf(nodeId1); // NOLINT
-    EdgeId edgeId1 = *outEdge;
+    const auto& outEdges = g.getOutgoingEdgesOf(nodeId1);
+    EdgeId edgeId1 = *outEdges.begin();
 
-    auto shortcuts = c.contract(g, NodeId{1});
+    auto shortcuts = c.contract(g, NodeId{ 1 });
     REQUIRE(shortcuts.size() == 1);
-    testEdgeInternals(shortcuts[0], NodeId{0}, NodeId{2}, Length{5.7},
-                      Height{16}, Unsuitability{6}, edgeId0, edgeId1);
+    testEdgeInternals(shortcuts[0], NodeId{ 0 }, NodeId{ 2 }, Length{ 5.7 },
+        Height{ 16 }, Unsuitability{ 6 }, edgeId0, edgeId1);
   }
 }

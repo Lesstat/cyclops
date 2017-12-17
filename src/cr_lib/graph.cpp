@@ -207,22 +207,22 @@ const Edge& Graph::getEdge(EdgeId e) const
   return edges.at(e);
 }
 
-Graph::EdgeRange Graph::getOutgoingEdgesOf(NodeId n) const
+EdgeRange Graph::getOutgoingEdgesOf(NodeId n) const
 {
   auto start = outEdges.begin();
   std::advance(start, offsets[n].out);
   auto end = outEdges.begin();
   std::advance(end, offsets[n + 1].out);
-  return std::make_pair(start, end);
+  return EdgeRange{ start, end };
 }
 
-Graph::EdgeRange Graph::getIngoingEdgesOf(NodeId n) const
+EdgeRange Graph::getIngoingEdgesOf(NodeId n) const
 {
   auto start = inEdges.begin();
   std::advance(start, offsets[n].in);
   auto end = inEdges.begin();
   std::advance(end, offsets[n + 1].in);
-  return std::make_pair(start, end);
+  return EdgeRange{ start, end };
 }
 
 size_t Graph::getLevelOf(NodeId n) const

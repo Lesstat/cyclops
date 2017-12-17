@@ -110,7 +110,6 @@ class Edge {
   void swap(Edge& other);
 
   EdgeId internalId;
-  // OsmId osmId;
   NodeId source;
   NodeId destination;
   Cost cost;
@@ -145,6 +144,7 @@ class Node {
   size_t level;
 };
 
+class EdgeRange;
 class Graph {
   public:
   Graph(std::vector<Node>&& nodes, std::vector<Edge>&& edges);
@@ -159,7 +159,6 @@ class Graph {
   std::vector<NodeOffset> const& getOffsets() const;
   Dijkstra createDijkstra();
 
-  using EdgeRange = std::pair<std::vector<EdgeId>::const_iterator, std::vector<EdgeId>::const_iterator>;
   EdgeRange getOutgoingEdgesOf(NodeId n) const;
   EdgeRange getIngoingEdgesOf(NodeId n) const;
 
@@ -180,6 +179,30 @@ class Graph {
   std::vector<size_t> level;
   std::unordered_map<EdgeId, Edge> edges;
   std::shared_ptr<Graph> self;
+};
+
+class EdgeRange {
+  public:
+  using iterator = std::vector<EdgeId>::const_iterator;
+
+  EdgeRange(iterator begin, iterator end)
+      : begin_(begin)
+      , end_(end)
+  {
+  }
+  EdgeRange(const EdgeRange& other) = default;
+  EdgeRange(EdgeRange&& other) noexcept = default;
+  virtual ~EdgeRange() noexcept = default;
+  EdgeRange& operator=(const EdgeRange& other) = default;
+  EdgeRange& operator=(EdgeRange&& other) noexcept = default;
+
+  iterator begin() const { return begin_; }
+  iterator end() const { return end_; }
+
+  protected:
+  private:
+  iterator begin_;
+  iterator end_;
 };
 
 #endif /* GRAPH_H */
