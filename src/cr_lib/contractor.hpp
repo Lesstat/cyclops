@@ -45,6 +45,8 @@ class Contractor {
 
   bool isShortestPath(const Graph& g, const EdgeId& startEdgeId, const EdgeId& destEdgeId, const Config& conf);
 
+  std::vector<Edge> contract(const Graph& g, const NodeId& node);
+
   protected:
   private:
 };

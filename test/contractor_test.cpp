@@ -40,10 +40,7 @@ TEST_CASE("Shortcut creation")
   }
 }
 
-TEST_CASE("Test if edges form shortest path")
-{
-
-  std::string file{ R"!!(# Build by: pbfextractor
+const std::string threeNodeGraph{ R"!!(# Build by: pbfextractor
 # Build on: SystemTime { tv_sec: 1512985452, tv_nsec: 881838750 }
 
 3
@@ -56,7 +53,11 @@ TEST_CASE("Test if edges form shortest path")
 0 2 8.276483027784113 0 2 -1 -1
 
 )!!" };
-  auto iss = std::istringstream(file);
+
+TEST_CASE("Test if edges form shortest path")
+{
+
+  auto iss = std::istringstream(threeNodeGraph);
   auto g = Graph::createFromStream(iss);
   NodeId nodeId1{ 1 };
   const auto& node1 = g.getNode(nodeId1);
@@ -78,5 +79,20 @@ TEST_CASE("Test if edges form shortest path")
   {
     Config heightOnlyConf{ LengthConfig{ 0 }, HeightConfig{ 1 }, UnsuitabilityConfig{ 0 } };
     REQUIRE(c.isShortestPath(g, edgeId0, edgeId1, heightOnlyConf) == false);
+  }
+}
+
+TEST_CASE("Contracting a Node")
+{
+
+  auto iss = std::istringstream(threeNodeGraph);
+  auto g = Graph::createFromStream(iss);
+
+  Contractor c{};
+
+  SECTION("Where no shortcuts need to be created")
+  {
+    auto shortcuts = c.contract(g, NodeId{ 2 });
+    REQUIRE(shortcuts.empty());
   }
 }

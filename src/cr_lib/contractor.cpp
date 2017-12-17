@@ -40,3 +40,9 @@ bool Contractor::isShortestPath(const Graph& g, const EdgeId& startEdgeId, const
   auto route = maybeRoute.value();
   return route.edges.size() == 2 && route.edges[0].getId() == startEdgeId && route.edges[1].getId() == destEdgeId;
 }
+
+std::vector<Edge> Contractor::contract(const Graph& g, const NodeId& node)
+{
+  std::vector<Edge> shortcuts;
+  return shortcuts;
+}
