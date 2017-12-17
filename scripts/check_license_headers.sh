@@ -1,11 +1,15 @@
 #!/bin/bash
-src_dirs=( src test )
-endings=( cpp hpp )
+
+# Ignore patterns not matching anything
+shopt -s nullglob 
+
+src_dirs=( "src" "test" )
+endings=( "cpp" "hpp" )
 error=false
 
-for dir in $src_dirs
+for dir in ${src_dirs[@]}
 do
-    for ending in $endings
+    for ending in ${endings[@]}
     do
 	for file in "$dir"/*."$ending" "$dir"/**/*."$ending"
 	do
