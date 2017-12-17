@@ -19,6 +19,7 @@
 #include "glpk.h"
 
 LinearProgram::LinearProgram(size_t cols)
+    : columnCount(cols)
 {
   glp_term_out(GLP_OFF);
   lp = glp_create_prob();
@@ -32,13 +33,13 @@ LinearProgram::~LinearProgram() noexcept
 {
   glp_delete_prob(lp);
 }
-void LinearProgram::addConstraint(const std::vector<double>& coeff, double max)
+void LinearProgram::addConstraint(const std::vector<double>& coeff, double max, size_t type)
 {
   int row = glp_add_rows(lp, 1);
-  glp_set_row_bnds(lp, row, GLP_UP, 0.0, max);
+  glp_set_row_bnds(lp, row, type, max, max);
 
-  auto* ind = new int[coeff.size() + 1];
-  auto* value = new double[coeff.size() + 1];
+  std::vector<int> ind(coeff.size() + 1);
+  std::vector<double> value(coeff.size() + 1);
 
   int i = 1;
   for (const auto& val : coeff) {
@@ -47,9 +48,7 @@ void LinearProgram::addConstraint(const std::vector<double>& coeff, double max)
     ++i;
   }
 
-  glp_set_mat_row(lp, row, coeff.size(), ind, value);
-  delete[] ind;
-  delete[] value;
+  glp_set_mat_row(lp, row, coeff.size(), ind.data(), value.data());
 }
 
 void LinearProgram::objective(const std::vector<double>& coeff)
@@ -60,12 +59,23 @@ void LinearProgram::objective(const std::vector<double>& coeff)
   }
 }
 
-void LinearProgram::solve()
+bool LinearProgram::solve()
 {
-  glp_simplex(lp, nullptr);
+  size_t simplex = glp_simplex(lp, nullptr);
+  size_t status = glp_get_status(lp);
+  return simplex == 0 && status == GLP_OPT;
 }
 
 double LinearProgram::objectiveFunctionValue()
 {
   return glp_get_obj_val(lp);
+}
+
+std::vector<double> LinearProgram::variableValues()
+{
+  std::vector<double> variables(columnCount);
+  for (size_t i = 0; i < columnCount; ++i) {
+    variables[i] = glp_get_col_prim(lp, i + 1);
+  }
+  return variables;
 }

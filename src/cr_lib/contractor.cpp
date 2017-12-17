@@ -16,6 +16,8 @@
  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "contractor.hpp"
+#include "dijkstra.hpp"
+#include "linearProgram.hpp"
 
 Edge Contractor::createShortcut(const Edge& e1, const Edge& e2)
 {
@@ -27,22 +29,64 @@ Edge Contractor::createShortcut(const Edge& e1, const Edge& e2)
   return shortcut;
 }
 
-bool Contractor::isShortestPath(const Graph& g, const EdgeId& startEdgeId, const EdgeId& destEdgeId, const Config& conf)
+bool Contractor::isShortestPath(Graph& g, const EdgeId& startEdgeId,
+    const EdgeId& destEdgeId, const Config& conf)
 {
-  Dijkstra d = g.createDijkstra();
+  if (!dijkstra) {
+    dijkstra = g.createDijkstra();
+  }
   const auto& startEdge = g.getEdge(startEdgeId);
   const auto& destEdge = g.getEdge(destEdgeId);
 
-  auto maybeRoute = d.findBestRoute(startEdge.getSourceId(), destEdge.getDestId(), conf);
-  if (!maybeRoute.has_value()) {
+  foundRoute = dijkstra->findBestRoute(startEdge.getSourceId(), destEdge.getDestId(), conf);
+  if (!foundRoute) {
     return false;
   }
-  auto route = maybeRoute.value();
+  auto route = foundRoute.value();
   return route.edges.size() == 2 && route.edges[0].getId() == startEdgeId && route.edges[1].getId() == destEdgeId;
 }
 
-std::vector<Edge> Contractor::contract(const Graph& g, const NodeId& node)
+std::vector<Edge> Contractor::contract(Graph& g, const NodeId& node)
 {
   std::vector<Edge> shortcuts;
+  Config config{ LengthConfig{ 0.33 }, HeightConfig{ 0.33 },
+    UnsuitabilityConfig{ 0.33 } };
+  auto d = g.createDijkstra();
+  auto[in, inEnd] = g.getIngoingEdgesOf(node); // NOLINT
+  auto[out, outEnd] = g.getOutgoingEdgesOf(node); // NOLINT
+  for (; in != inEnd; ++in) {
+    for (; out != outEnd; ++out) {
+      LinearProgram lp{ 3 };
+      lp.objective({ 1.0, 1.0, 1.0 });
+      lp.addConstraint({ 1.0, 1.0, 1.0 }, 1.0, GLP_FX);
+      while (true) {
+        const auto& inEdge = g.getEdge(*in);
+        const auto& outEdge = g.getEdge(*out);
+
+        if (isShortestPath(g, *in, *out, config)) {
+          shortcuts.push_back(createShortcut(inEdge, outEdge));
+          break;
+        }
+
+        if (!foundRoute) {
+          break;
+        }
+        Cost c1 = inEdge.getCost() + outEdge.getCost();
+        Cost c2{};
+        for (const auto& edge : foundRoute->edges) {
+          c2 = c2 + edge.getCost();
+        }
+        Cost newCost = c1 - c2;
+        lp.addConstraint({ newCost.length, static_cast<double>(newCost.height), static_cast<double>(newCost.unsuitability) }, 0.0);
+
+        if (!lp.solve()) {
+          break;
+        }
+        auto values = lp.variableValues();
+        config = Config{ LengthConfig{ values[0] }, HeightConfig{ values[1] }, UnsuitabilityConfig{ values[2] } };
+      }
+    }
+  }
+
   return shortcuts;
 }

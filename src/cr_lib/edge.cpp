@@ -17,7 +17,6 @@
 */
 #include "dijkstra.hpp"
 #include "graph.hpp"
-#include <iostream>
 #include <sstream>
 #include <vector>
 

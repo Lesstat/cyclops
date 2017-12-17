@@ -23,32 +23,23 @@
 class Contractor {
 
   public:
-  //! Default constructor
   Contractor() = default;
-
-  //! Copy constructor
   Contractor(const Contractor& other) = default;
-
-  //! Move constructor
-  Contractor(Contractor&& other) noexcept = default;
-
-  //! Destructor
+  Contractor(Contractor&& other) = default;
   virtual ~Contractor() noexcept = default;
-
-  //! Copy assignment operator
-  Contractor& operator=(const Contractor& other) = default;
-
-  //! Move assignment operator
-  Contractor& operator=(Contractor&& other) noexcept = default;
+  Contractor& operator=(const Contractor& other) = delete;
+  Contractor& operator=(Contractor&& other) = delete;
 
   Edge createShortcut(const Edge& e1, const Edge& e2);
 
-  bool isShortestPath(const Graph& g, const EdgeId& startEdgeId, const EdgeId& destEdgeId, const Config& conf);
+  bool isShortestPath(Graph& g, const EdgeId& startEdgeId, const EdgeId& destEdgeId, const Config& conf);
 
-  std::vector<Edge> contract(const Graph& g, const NodeId& node);
+  std::vector<Edge> contract(Graph& g, const NodeId& node);
 
   protected:
   private:
+  std::optional<Dijkstra> dijkstra;
+  std::optional<Route> foundRoute;
 };
 
 #endif /* CONTRACTOR_H */

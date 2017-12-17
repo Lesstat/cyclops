@@ -30,14 +30,16 @@ class LinearProgram {
   LinearProgram& operator=(const LinearProgram& other) = default;
   LinearProgram& operator=(LinearProgram&& other) noexcept = default;
 
-  void addConstraint(const std::vector<double>& coeff, double max);
+  void addConstraint(const std::vector<double>& coeff, double max, size_t type = GLP_UP);
   void objective(const std::vector<double>& coeff);
-  void solve();
+  bool solve();
   double objectiveFunctionValue();
+  std::vector<double> variableValues();
 
   protected:
   private:
   glp_prob* lp;
+  size_t columnCount;
 };
 
 #endif /* LINEARPROGRAM_H */

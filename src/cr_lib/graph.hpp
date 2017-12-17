@@ -58,6 +58,10 @@ struct Cost {
   {
     return Cost{ Length(length.get() + c.length.get()), Height(height.get() + c.height.get()), Unsuitability(unsuitability.get() + c.unsuitability.get()) };
   };
+  Cost operator-(const Cost& c) const
+  {
+    return Cost{ Length(length.get() - c.length.get()), Height(height.get() - c.height.get()), Unsuitability(unsuitability.get() - c.unsuitability.get()) };
+  };
 };
 
 struct NodeOffset {
@@ -153,7 +157,7 @@ class Graph {
   friend std::ostream& operator<<(std::ostream& /*s*/, const Graph& /*g*/);
 
   std::vector<NodeOffset> const& getOffsets() const;
-  Dijkstra createDijkstra() const;
+  Dijkstra createDijkstra();
 
   using EdgeRange = std::pair<std::vector<EdgeId>::const_iterator, std::vector<EdgeId>::const_iterator>;
   EdgeRange getOutgoingEdgesOf(NodeId n) const;
@@ -175,6 +179,7 @@ class Graph {
   std::vector<EdgeId> outEdges;
   std::vector<size_t> level;
   std::unordered_map<EdgeId, Edge> edges;
+  std::shared_ptr<Graph> self;
 };
 
 #endif /* GRAPH_H */

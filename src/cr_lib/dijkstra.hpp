@@ -46,13 +46,12 @@ struct Route {
 
 class Dijkstra {
   public:
-  Dijkstra(const Graph& g, size_t nodeCount);
-  Dijkstra(const Dijkstra& other);
+  Dijkstra(Graph* g, size_t nodeCount);
+  Dijkstra(const Dijkstra& other) = default;
   Dijkstra(Dijkstra&& other) noexcept;
-  virtual ~Dijkstra() noexcept;
-
-  Dijkstra& operator=(const Dijkstra& other);
-  Dijkstra& operator=(Dijkstra&& other) noexcept;
+  virtual ~Dijkstra() noexcept = default;
+  Dijkstra& operator=(const Dijkstra& other) = default;
+  Dijkstra& operator=(Dijkstra&& other) noexcept = default;
 
   std::optional<Route> findBestRoute(NodeId from, NodeId to, Config config);
 
@@ -65,7 +64,7 @@ class Dijkstra {
   std::vector<double> costT;
   std::vector<NodeId> touchedS;
   std::vector<NodeId> touchedT;
-  const Graph& graph;
+  Graph* graph;
 };
 
 #endif /* DIJKSTRA_H */

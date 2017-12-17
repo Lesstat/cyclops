@@ -27,7 +27,7 @@ TEST_CASE("Solving a simple LP")
   lp.addConstraint({ -5.0, -0.0, -0.0, -2.0 }, -5.0);
   lp.addConstraint({ -7.0, -3.0, -2.0, -4.0 }, 0.0);
 
-  lp.solve();
+  REQUIRE(lp.solve());
   double val = lp.objectiveFunctionValue();
   REQUIRE(val == Approx(12.5094));
 }

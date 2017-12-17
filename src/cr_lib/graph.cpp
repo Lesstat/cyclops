@@ -153,9 +153,9 @@ std::vector<NodeOffset> const& Graph::getOffsets() const
   return offsets;
 }
 
-Dijkstra Graph::createDijkstra() const
+Dijkstra Graph::createDijkstra()
 {
-  return Dijkstra{ *this, nodes.size() };
+  return Dijkstra{ this, nodes.size() };
 }
 
 size_t readCount(std::istream& file)
