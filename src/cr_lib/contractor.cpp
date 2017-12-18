@@ -90,3 +90,27 @@ std::vector<Edge> Contractor::contract(Graph& g, const NodeId& node)
 
   return shortcuts;
 }
+
+std::vector<NodeId> Contractor::independentSet(const Graph& g)
+{
+  std::vector<NodeId> set;
+  size_t nodeCount = g.getNodeCount();
+  std::vector<bool> selected(nodeCount, true);
+
+  for (size_t i = 0; i < nodeCount; ++i) {
+    NodeId id{ i };
+    if (selected[i]) {
+      for (const auto& inEdgeId : g.getIngoingEdgesOf(id)) {
+        const auto& inEdge = g.getEdge(inEdgeId);
+        selected[inEdge.getSourceId()] = false;
+      }
+      for (const auto& outEdgeId : g.getOutgoingEdgesOf(id)) {
+        const auto& outEdge = g.getEdge(outEdgeId);
+        selected[outEdge.getDestId()] = false;
+      }
+      set.push_back(id);
+    }
+  }
+
+  return set;
+}

@@ -169,6 +169,8 @@ class Graph {
 
   const Node& getNode(NodeId id) const;
 
+  size_t getNodeCount() const;
+
   private:
   void swap(Graph& other);
 

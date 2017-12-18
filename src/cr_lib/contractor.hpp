@@ -36,6 +36,8 @@ class Contractor {
 
   std::vector<Edge> contract(Graph& g, const NodeId& node);
 
+  std::vector<NodeId> independentSet(const Graph& g);
+
   protected:
   private:
   std::optional<Dijkstra> dijkstra;

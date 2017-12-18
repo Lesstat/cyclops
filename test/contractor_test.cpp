@@ -53,12 +53,12 @@ const std::string threeNodeGraph{ R"!!(# Build by: pbfextractor
 0 2 8.276483027784113 0 2 -1 -1
 
 )!!" };
+auto iss = std::istringstream(threeNodeGraph);
+auto g = Graph::createFromStream(iss);
 
 TEST_CASE("Test if edges form shortest path")
 {
 
-  auto iss = std::istringstream(threeNodeGraph);
-  auto g = Graph::createFromStream(iss);
   NodeId nodeId1{ 1 };
   const auto& inEdges = g.getIngoingEdgesOf(nodeId1);
   EdgeId edgeId0 = *inEdges.begin();
@@ -86,9 +86,6 @@ TEST_CASE("Test if edges form shortest path")
 TEST_CASE("Contracting a Node")
 {
 
-  auto iss = std::istringstream(threeNodeGraph);
-  auto g = Graph::createFromStream(iss);
-
   Contractor c{};
 
   SECTION("Where no shortcuts need to be created")
@@ -110,4 +107,13 @@ TEST_CASE("Contracting a Node")
     testEdgeInternals(shortcuts[0], NodeId{ 0 }, NodeId{ 2 }, Length{ 5.7 },
         Height{ 16 }, Unsuitability{ 6 }, edgeId0, edgeId1);
   }
+}
+
+TEST_CASE("Finding an independent set")
+{
+  Contractor c{};
+
+  auto nodes = c.independentSet(g);
+
+  REQUIRE(nodes.size() == 1);
 }

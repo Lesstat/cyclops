@@ -229,3 +229,8 @@ size_t Graph::getLevelOf(NodeId n) const
 {
   return level[n];
 }
+
+size_t Graph::getNodeCount() const
+{
+  return nodes.size();
+}
