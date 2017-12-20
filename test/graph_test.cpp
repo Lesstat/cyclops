@@ -23,10 +23,10 @@
 TEST_CASE("Offset array is correctly initialized")
 {
   std::vector<Node> nodes;
-  nodes.emplace_back(Node{ OsmId(1), Lat(3.4), Lng(4.6), Height(3.4) });
-  nodes.emplace_back(Node{ OsmId(2), Lat(3.4), Lng(4.6), Height(3.4) });
-  nodes.emplace_back(Node{ OsmId(3), Lat(3.4), Lng(4.6), Height(3.4) });
-  nodes.emplace_back(Node{ OsmId(4), Lat(3.4), Lng(4.6), Height(3.4) });
+  nodes.emplace_back(Node{ NodeId(0), Lat(3.4), Lng(4.6), Height(3) });
+  nodes.emplace_back(Node{ NodeId(1), Lat(3.4), Lng(4.6), Height(3) });
+  nodes.emplace_back(Node{ NodeId(2), Lat(3.4), Lng(4.6), Height(3) });
+  nodes.emplace_back(Node{ NodeId(3), Lat(3.4), Lng(4.6), Height(3) });
 
   std::vector<Edge> edges;
   edges.emplace_back(Edge{ NodeId(1), NodeId(0) });
@@ -76,7 +76,7 @@ TEST_CASE("Read small file into graph")
   Graph g = Graph::createFromStream(iss);
 
   auto dij = g.createDijkstra();
-  auto optionalRoute = dij.findBestRoute(NodeId(0), NodeId(2), Config{ LengthConfig{ 1.0 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } });
+  auto optionalRoute = dij.findBestRoute(NodePos{ 0 }, NodePos{ 2 }, Config{ LengthConfig{ 1.0 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } });
 
   REQUIRE(optionalRoute.has_value());
   auto route = optionalRoute.value();

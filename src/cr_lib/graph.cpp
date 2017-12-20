@@ -21,14 +21,30 @@
 #include <iterator>
 #include <unordered_map>
 
+void connectEdgesToNodes(const std::vector<Node>& nodes, std::vector<Edge>& edges)
+{
+  std::unordered_map<NodeId, NodePos> map;
+  map.reserve(nodes.size());
+  for (size_t i = 0; i < nodes.size(); i++) {
+    map.insert({ nodes[i].id(), NodePos{ i } });
+  }
+
+  std::for_each(begin(edges), end(edges), [&map](Edge& e) {
+    auto sourcePos = map[e.getSourceId()];
+    e.setSourcePos(sourcePos);
+    auto destPos = map[e.getDestId()];
+    e.setDestPos(destPos);
+  });
+}
+
 enum class Pos {
   source,
   dest
 };
 void sortEdgesByNodePos(std::vector<Edge>& edges, Pos p)
 {
-  auto sourceSort = [](const Edge& a, const Edge& b) { return a.getSourceId() < b.getSourceId(); };
-  auto destSort = [](const Edge& a, const Edge& b) { return a.getDestId() < b.getDestId(); };
+  auto sourceSort = [](const Edge& a, const Edge& b) { return a.getSourcePos() < b.getSourcePos(); };
+  auto destSort = [](const Edge& a, const Edge& b) { return a.getDestPos() < b.getDestPos(); };
 
   if (p == Pos::source) {
     std::sort(edges.begin(), edges.end(), sourceSort);
@@ -39,8 +55,8 @@ void sortEdgesByNodePos(std::vector<Edge>& edges, Pos p)
 
 void calculateOffsets(std::vector<Edge>& edges, std::vector<NodeOffset>& offsets, Pos p)
 {
-  auto sourcePos = [&edges](size_t j) { return edges[j].getSourceId(); };
-  auto destPos = [&edges](size_t j) { return edges[j].getDestId(); };
+  auto sourcePos = [&edges](size_t j) { return edges[j].getSourcePos(); };
+  auto destPos = [&edges](size_t j) { return edges[j].getDestPos(); };
   auto setOut = [&offsets](size_t i, size_t j) { offsets[i].out = j; };
   auto setIn = [&offsets](size_t i, size_t j) { offsets[i].in = j; };
 
@@ -71,6 +87,7 @@ void calculateOffsets(std::vector<Edge>& edges, std::vector<NodeOffset>& offsets
 
 Graph::Graph(std::vector<Node>&& nodes, std::vector<Edge>&& edges)
 {
+  connectEdgesToNodes(nodes, edges);
   for (const auto& node : nodes) {
     level.push_back(node.getLevel());
   }
@@ -177,9 +194,9 @@ void parseLines(std::vector<Obj>& v, std::istream& file, size_t count)
 
 Graph Graph::createFromStream(std::istream& file)
 {
-  std::string line{};
   std::vector<Node> nodes{};
   std::vector<Edge> edges{};
+  std::string line{};
 
   std::getline(file, line);
   while (line.front() == '#') {
@@ -197,9 +214,9 @@ Graph Graph::createFromStream(std::istream& file)
   return Graph{ std::move(nodes), std::move(edges) };
 }
 
-const Node& Graph::getNode(NodeId id) const
+const Node& Graph::getNode(NodePos pos) const
 {
-  return nodes[id];
+  return nodes[pos];
 }
 
 const Edge& Graph::getEdge(EdgeId e) const
@@ -207,27 +224,27 @@ const Edge& Graph::getEdge(EdgeId e) const
   return edges.at(e);
 }
 
-EdgeRange Graph::getOutgoingEdgesOf(NodeId n) const
+EdgeRange Graph::getOutgoingEdgesOf(NodePos pos) const
 {
   auto start = outEdges.begin();
-  std::advance(start, offsets[n].out);
+  std::advance(start, offsets[pos].out);
   auto end = outEdges.begin();
-  std::advance(end, offsets[n + 1].out);
+  std::advance(end, offsets[pos + 1].out);
   return EdgeRange{ start, end };
 }
 
-EdgeRange Graph::getIngoingEdgesOf(NodeId n) const
+EdgeRange Graph::getIngoingEdgesOf(NodePos pos) const
 {
   auto start = inEdges.begin();
-  std::advance(start, offsets[n].in);
+  std::advance(start, offsets[pos].in);
   auto end = inEdges.begin();
-  std::advance(end, offsets[n + 1].in);
+  std::advance(end, offsets[pos + 1].in);
   return EdgeRange{ start, end };
 }
 
-size_t Graph::getLevelOf(NodeId n) const
+size_t Graph::getLevelOf(NodePos pos) const
 {
-  return level[n];
+  return level[pos];
 }
 
 size_t Graph::getNodeCount() const

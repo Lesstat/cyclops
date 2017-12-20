@@ -52,7 +52,7 @@ void Dijkstra::clearState()
   touchedT.clear();
 }
 
-Route Dijkstra::buildRoute(NodeId node, NodeToEdgeMap previousEdgeS, NodeToEdgeMap previousEdgeT, NodeId from, NodeId to)
+Route Dijkstra::buildRoute(NodePos node, NodeToEdgeMap previousEdgeS, NodeToEdgeMap previousEdgeT, NodePos from, NodePos to)
 {
 
   Route route{};
@@ -62,7 +62,7 @@ Route Dijkstra::buildRoute(NodeId node, NodeToEdgeMap previousEdgeS, NodeToEdgeM
     const auto& edge = graph->getEdge(edgeId);
     route.costs = route.costs + edge.getCost();
     route.edges.push_front(edge);
-    curNode = edge.getSourceId();
+    curNode = edge.getSourcePos();
   }
 
   curNode = node;
@@ -71,15 +71,15 @@ Route Dijkstra::buildRoute(NodeId node, NodeToEdgeMap previousEdgeS, NodeToEdgeM
     const auto& edge = graph->getEdge(edgeId);
     route.costs = route.costs + edge.getCost();
     route.edges.push_back(edge);
-    curNode = edge.getDestId();
+    curNode = edge.getDestPos();
   }
 
   return route;
 }
 
-std::optional<Route> Dijkstra::findBestRoute(NodeId from, NodeId to, Config config)
+std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config config)
 {
-  using QueueElem = std::pair<NodeId, double>;
+  using QueueElem = std::pair<NodePos, double>;
   auto cmp = [](QueueElem left, QueueElem right) {
     auto leftCost = std::get<double>(left);
     auto rightCost = std::get<double>(right);
@@ -94,7 +94,7 @@ std::optional<Route> Dijkstra::findBestRoute(NodeId from, NodeId to, Config conf
   touchedS.push_back(from);
   costS[from] = 0;
 
-  std::unordered_map<NodeId, EdgeId> previousEdgeS{};
+  std::unordered_map<NodePos, EdgeId> previousEdgeS{};
 
   Queue heapT{ cmp };
 
@@ -102,12 +102,12 @@ std::optional<Route> Dijkstra::findBestRoute(NodeId from, NodeId to, Config conf
   touchedT.push_back(to);
   costT[to] = 0;
 
-  std::unordered_map<NodeId, EdgeId> previousEdgeT{};
+  std::unordered_map<NodePos, EdgeId> previousEdgeT{};
 
   bool sBigger = false;
   bool tBigger = false;
   double minCandidate = dmax;
-  std::optional<NodeId> minNode = {};
+  std::optional<NodePos> minNode = {};
 
   while (true) {
     if (heapS.empty() && heapT.empty()) {
@@ -140,7 +140,7 @@ std::optional<Route> Dijkstra::findBestRoute(NodeId from, NodeId to, Config conf
       const auto& outEdges = graph->getOutgoingEdgesOf(node);
       for (const auto& edge : outEdges) {
         const auto& e = graph->getEdge(edge);
-        NodeId nextNode = e.getDestId();
+        NodePos nextNode = e.getDestPos();
         if (graph->getLevelOf(nextNode) >= graph->getLevelOf(node)) {
           double nextCost = cost + e.costByConfiguration(config);
           QueueElem next = std::make_pair(nextNode, nextCost);
@@ -174,7 +174,7 @@ std::optional<Route> Dijkstra::findBestRoute(NodeId from, NodeId to, Config conf
       const auto& inEdges = graph->getIngoingEdgesOf(node);
       for (const auto& edge : inEdges) {
         const auto& e = graph->getEdge(edge);
-        NodeId nextNode = e.getSourceId();
+        NodePos nextNode = e.getSourcePos();
         if (graph->getLevelOf(nextNode) >= graph->getLevelOf(node)) {
           double nextCost = cost + e.costByConfiguration(config);
           QueueElem next = std::make_pair(nextNode, nextCost);

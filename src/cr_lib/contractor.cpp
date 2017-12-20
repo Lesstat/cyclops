@@ -25,6 +25,8 @@ Edge Contractor::createShortcut(const Edge& e1, const Edge& e2)
     throw std::invalid_argument("Edges are not connected");
   }
   Edge shortcut{ e1.getSourceId(), e2.getDestId(), e1.getId(), e2.getId() };
+  shortcut.setSourcePos(e1.getSourcePos());
+  shortcut.setDestPos(e1.getDestPos());
   shortcut.setCost(e1.getCost() + e2.getCost());
   return shortcut;
 }
@@ -38,7 +40,7 @@ bool Contractor::isShortestPath(Graph& g, const EdgeId& startEdgeId,
   const auto& startEdge = g.getEdge(startEdgeId);
   const auto& destEdge = g.getEdge(destEdgeId);
 
-  foundRoute = dijkstra->findBestRoute(startEdge.getSourceId(), destEdge.getDestId(), conf);
+  foundRoute = dijkstra->findBestRoute(startEdge.getSourcePos(), destEdge.getDestPos(), conf);
   if (!foundRoute) {
     return false;
   }
@@ -46,7 +48,7 @@ bool Contractor::isShortestPath(Graph& g, const EdgeId& startEdgeId,
   return route.edges.size() == 2 && route.edges[0].getId() == startEdgeId && route.edges[1].getId() == destEdgeId;
 }
 
-std::vector<Edge> Contractor::contract(Graph& g, const NodeId& node)
+std::vector<Edge> Contractor::contract(Graph& g, const NodePos& node)
 {
   std::vector<Edge> shortcuts;
   Config config{ LengthConfig{ 0.33 }, HeightConfig{ 0.33 },
@@ -98,17 +100,18 @@ std::vector<NodeId> Contractor::independentSet(const Graph& g)
   std::vector<bool> selected(nodeCount, true);
 
   for (size_t i = 0; i < nodeCount; ++i) {
-    NodeId id{ i };
+    NodePos pos{ i };
     if (selected[i]) {
-      for (const auto& inEdgeId : g.getIngoingEdgesOf(id)) {
+      for (const auto& inEdgeId : g.getIngoingEdgesOf(pos)) {
         const auto& inEdge = g.getEdge(inEdgeId);
-        selected[inEdge.getSourceId()] = false;
+        selected[inEdge.getSourcePos()] = false;
       }
-      for (const auto& outEdgeId : g.getOutgoingEdgesOf(id)) {
+      for (const auto& outEdgeId : g.getOutgoingEdgesOf(pos)) {
         const auto& outEdge = g.getEdge(outEdgeId);
-        selected[outEdge.getDestId()] = false;
+        selected[outEdge.getDestPos()] = false;
       }
-      set.push_back(id);
+      const auto& node = g.getNode(pos);
+      set.push_back(node.id());
     }
   }
 

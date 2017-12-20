@@ -34,7 +34,7 @@ class Contractor {
 
   bool isShortestPath(Graph& g, const EdgeId& startEdgeId, const EdgeId& destEdgeId, const Config& conf);
 
-  std::vector<Edge> contract(Graph& g, const NodeId& node);
+  std::vector<Edge> contract(Graph& g, const NodePos& node);
 
   std::vector<NodeId> independentSet(const Graph& g);
 

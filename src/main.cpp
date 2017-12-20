@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
     std::cin >> to;
 
     std::cout << "Starting dijkstra" << '\n';
-    auto maybeRoute = d.findBestRoute(NodeId{ from }, NodeId{ to }, Config{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } });
+    auto maybeRoute = d.findBestRoute(NodePos{ from }, NodePos{ to }, Config{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } });
 
     if (maybeRoute.has_value()) {
       auto route = maybeRoute.value();

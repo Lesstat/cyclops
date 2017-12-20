@@ -27,6 +27,7 @@
 
 using OsmId = NamedType<size_t, struct OsmIdParameter>;
 using NodeId = NamedType<size_t, struct NodeIdParameter>;
+using NodePos = NamedType<size_t, struct NodePosParameter>;
 using EdgeId = NamedType<size_t, struct EdgeParameter>;
 using Lat = NamedType<double, struct LatParameter>;
 using Lng = NamedType<double, struct LngParameter>;
@@ -89,6 +90,10 @@ class Edge {
 
   NodeId getSourceId() const;
   NodeId getDestId() const;
+  NodePos getSourcePos() const;
+  NodePos getDestPos() const;
+  void setSourcePos(NodePos p);
+  void setDestPos(NodePos p);
 
   EdgeId getId() const;
   const Cost& getCost() const;
@@ -115,11 +120,13 @@ class Edge {
   Cost cost;
   ReplacedEdge edgeA;
   ReplacedEdge edgeB;
+  NodePos sourcePos;
+  NodePos destinationPos;
 };
 
 class Node {
   public:
-  Node(OsmId osmId, Lat lat, Lng lng, Height height);
+  Node(NodeId id, Lat lat, Lng lng, Height height);
   Node(const Node& other);
   Node(Node&& other) noexcept;
   virtual ~Node() noexcept;
@@ -128,16 +135,16 @@ class Node {
 
   void assignLevel(size_t level);
   size_t getLevel() const;
-  OsmId getOsmId() const;
+  NodeId id() const;
   friend std::ostream& operator<<(std::ostream& os, const Node& n);
 
   static Node createFromText(const std::string& text);
-  friend void testNodeInternals(const Node& n, OsmId osmId, Lat lat, Lng lng, Height height, size_t level);
+  friend void testNodeInternals(const Node& n, NodeId id, Lat lat, Lng lng, Height height, size_t level);
 
   private:
   void swap(Node& other);
 
-  OsmId osmId;
+  NodeId id_;
   Lat lat;
   Lng lng;
   Height height;
@@ -159,15 +166,15 @@ class Graph {
   std::vector<NodeOffset> const& getOffsets() const;
   Dijkstra createDijkstra();
 
-  EdgeRange getOutgoingEdgesOf(NodeId n) const;
-  EdgeRange getIngoingEdgesOf(NodeId n) const;
+  EdgeRange getOutgoingEdgesOf(NodePos pos) const;
+  EdgeRange getIngoingEdgesOf(NodePos pos) const;
 
-  size_t getLevelOf(NodeId n) const;
+  size_t getLevelOf(NodePos pos) const;
   const Edge& getEdge(EdgeId e) const;
 
   static Graph createFromStream(std::istream& file);
 
-  const Node& getNode(NodeId id) const;
+  const Node& getNode(NodePos pos) const;
 
   size_t getNodeCount() const;
 

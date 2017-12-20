@@ -18,8 +18,8 @@
 #include "graph.hpp"
 #include <sstream>
 
-Node::Node(OsmId osmId, Lat lat, Lng lng, Height height)
-    : osmId(osmId)
+Node::Node(NodeId id, Lat lat, Lng lng, Height height)
+    : id_(id)
     , lat(lat)
     , lng(lng)
     , height(height)
@@ -28,7 +28,7 @@ Node::Node(OsmId osmId, Lat lat, Lng lng, Height height)
 }
 
 Node::Node(const Node& other)
-    : Node(other.osmId, other.lat, other.lng, other.height)
+    : Node(other.id_, other.lat, other.lng, other.height)
 {
 }
 
@@ -64,21 +64,21 @@ void Node::assignLevel(size_t level)
 
 void Node::swap(Node& other)
 {
-  std::swap(osmId, other.osmId);
+  std::swap(id_, other.id_);
   std::swap(lat, other.lat);
   std::swap(lng, other.lng);
   std::swap(height, other.height);
   std::swap(level, other.level);
 }
 
-OsmId Node::getOsmId() const
+NodeId Node::id() const
 {
-  return osmId;
+  return id_;
 }
 
 std::ostream& operator<<(std::ostream& os, const Node& n)
 {
-  os << std::to_string(n.osmId);
+  os << std::to_string(n.id_);
   return os;
 }
 
@@ -89,7 +89,7 @@ Node Node::createFromText(const std::string& text)
 
   std::sscanf(text.c_str(), "%lu%lu%lf%lf%lf%lu", &id, &osmId, &lat, &lng, &height, &level); //NOLINT
 
-  Node n{ OsmId(osmId), Lat(lat), Lng(lng), Height(height) };
+  Node n{ NodeId{ id }, Lat(lat), Lng(lng), Height(height) };
   n.level = level;
   return n;
 }

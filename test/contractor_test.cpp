@@ -59,11 +59,11 @@ auto g = Graph::createFromStream(iss);
 TEST_CASE("Test if edges form shortest path")
 {
 
-  NodeId nodeId1{ 1 };
-  const auto& inEdges = g.getIngoingEdgesOf(nodeId1);
+  NodePos nodePos1{ 1 };
+  const auto& inEdges = g.getIngoingEdgesOf(nodePos1);
   EdgeId edgeId0 = *inEdges.begin();
 
-  const auto& outEdges = g.getOutgoingEdgesOf(nodeId1);
+  const auto& outEdges = g.getOutgoingEdgesOf(nodePos1);
   EdgeId edgeId1 = *outEdges.begin();
 
   Contractor c{};
@@ -90,19 +90,19 @@ TEST_CASE("Contracting a Node")
 
   SECTION("Where no shortcuts need to be created")
   {
-    auto shortcuts = c.contract(g, NodeId{ 2 });
+    auto shortcuts = c.contract(g, NodePos{ 2 });
     REQUIRE(shortcuts.empty());
   }
   SECTION("Where the right configuration needs to be found")
   {
-    NodeId nodeId1{ 1 };
-    const auto& inEdges = g.getIngoingEdgesOf(nodeId1);
+    NodePos nodePos1{ 1 };
+    const auto& inEdges = g.getIngoingEdgesOf(nodePos1);
     EdgeId edgeId0 = *inEdges.begin();
 
-    const auto& outEdges = g.getOutgoingEdgesOf(nodeId1);
+    const auto& outEdges = g.getOutgoingEdgesOf(nodePos1);
     EdgeId edgeId1 = *outEdges.begin();
 
-    auto shortcuts = c.contract(g, NodeId{ 1 });
+    auto shortcuts = c.contract(g, nodePos1);
     REQUIRE(shortcuts.size() == 1);
     testEdgeInternals(shortcuts[0], NodeId{ 0 }, NodeId{ 2 }, Length{ 5.7 },
         Height{ 16 }, Unsuitability{ 6 }, edgeId0, edgeId1);

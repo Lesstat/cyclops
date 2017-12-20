@@ -45,18 +45,9 @@ Edge::Edge(Edge&& other) noexcept
   swap(other);
 }
 
-Edge& Edge::operator=(const Edge& other)
-{
-  Edge tmp{ other };
-  swap(tmp);
-  return *this;
-}
+Edge& Edge::operator=(const Edge& other) = default;
 
-Edge& Edge::operator=(Edge&& other) noexcept
-{
-  swap(other);
-  return *this;
-}
+Edge& Edge::operator=(Edge&& other) noexcept = default;
 
 Edge::Edge(const Edge& other) = default;
 
@@ -65,6 +56,8 @@ void Edge::swap(Edge& other)
   std::swap(internalId, other.internalId);
   std::swap(source, other.source);
   std::swap(destination, other.destination);
+  std::swap(sourcePos, other.sourcePos);
+  std::swap(destinationPos, other.destinationPos);
   std::swap(cost, other.cost);
   std::swap(edgeA, other.edgeA);
   std::swap(edgeB, other.edgeB);
@@ -77,6 +70,24 @@ NodeId Edge::getSourceId() const
 NodeId Edge::getDestId() const
 {
   return destination;
+}
+NodePos Edge::getSourcePos() const
+{
+  return sourcePos;
+}
+NodePos Edge::getDestPos() const
+{
+  return destinationPos;
+}
+
+void Edge::setDestPos(NodePos p)
+{
+  destinationPos = p;
+}
+
+void Edge::setSourcePos(NodePos p)
+{
+  sourcePos = p;
 }
 
 Edge Edge::createFromText(const std::string& text)

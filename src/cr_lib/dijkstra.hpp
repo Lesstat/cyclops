@@ -53,17 +53,17 @@ class Dijkstra {
   Dijkstra& operator=(const Dijkstra& other) = default;
   Dijkstra& operator=(Dijkstra&& other) noexcept = default;
 
-  std::optional<Route> findBestRoute(NodeId from, NodeId to, Config config);
+  std::optional<Route> findBestRoute(NodePos from, NodePos to, Config config);
 
   private:
   void clearState();
 
-  using NodeToEdgeMap = std::unordered_map<NodeId, EdgeId>;
-  Route buildRoute(NodeId node, NodeToEdgeMap previousEdgeS, NodeToEdgeMap previousEdgeT, NodeId from, NodeId to);
+  using NodeToEdgeMap = std::unordered_map<NodePos, EdgeId>;
+  Route buildRoute(NodePos node, NodeToEdgeMap previousEdgeS, NodeToEdgeMap previousEdgeT, NodePos from, NodePos to);
   std::vector<double> costS;
   std::vector<double> costT;
-  std::vector<NodeId> touchedS;
-  std::vector<NodeId> touchedT;
+  std::vector<NodePos> touchedS;
+  std::vector<NodePos> touchedT;
   Graph* graph;
 };
 
