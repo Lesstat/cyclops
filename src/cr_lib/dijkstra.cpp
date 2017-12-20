@@ -31,15 +31,6 @@ Dijkstra::Dijkstra(Graph* g, size_t nodeCount)
 {
 }
 
-Dijkstra::Dijkstra(Dijkstra&& other) noexcept
-    : costS(std::move(other.costS))
-    , costT(std::move(other.costT))
-    , touchedS(std::move(other.touchedS))
-    , touchedT(std::move(other.touchedT))
-    , graph(other.graph)
-{
-}
-
 void Dijkstra::clearState()
 {
   for (auto nodeId : touchedS) {

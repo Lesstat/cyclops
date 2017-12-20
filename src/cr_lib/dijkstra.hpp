@@ -48,7 +48,7 @@ class Dijkstra {
   public:
   Dijkstra(Graph* g, size_t nodeCount);
   Dijkstra(const Dijkstra& other) = default;
-  Dijkstra(Dijkstra&& other) noexcept;
+  Dijkstra(Dijkstra&& other) noexcept = default;
   virtual ~Dijkstra() noexcept = default;
   Dijkstra& operator=(const Dijkstra& other) = default;
   Dijkstra& operator=(Dijkstra&& other) noexcept = default;

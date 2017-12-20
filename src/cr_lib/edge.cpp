@@ -29,38 +29,11 @@ Edge::Edge(NodeId source, NodeId dest)
 
 Edge::Edge(NodeId source, NodeId dest, ReplacedEdge edgeA, ReplacedEdge edgeB)
     : internalId(lastId++)
-    // , osmId(osmId)
     , source(source)
     , destination(dest)
     , edgeA(std::move(edgeA))
     , edgeB(std::move(edgeB))
 {
-}
-
-Edge::~Edge() noexcept = default;
-
-Edge::Edge(Edge&& other) noexcept
-    : internalId(other.internalId)
-{
-  swap(other);
-}
-
-Edge& Edge::operator=(const Edge& other) = default;
-
-Edge& Edge::operator=(Edge&& other) noexcept = default;
-
-Edge::Edge(const Edge& other) = default;
-
-void Edge::swap(Edge& other)
-{
-  std::swap(internalId, other.internalId);
-  std::swap(source, other.source);
-  std::swap(destination, other.destination);
-  std::swap(sourcePos, other.sourcePos);
-  std::swap(destinationPos, other.destinationPos);
-  std::swap(cost, other.cost);
-  std::swap(edgeA, other.edgeA);
-  std::swap(edgeB, other.edgeB);
 }
 
 NodeId Edge::getSourceId() const

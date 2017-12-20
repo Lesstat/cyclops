@@ -27,31 +27,6 @@ Node::Node(NodeId id, Lat lat, Lng lng, Height height)
 {
 }
 
-Node::Node(const Node& other)
-    : Node(other.id_, other.lat, other.lng, other.height)
-{
-}
-
-Node::Node(Node&& other) noexcept
-    : level(other.level)
-{
-  swap(other);
-}
-
-Node::~Node() noexcept = default;
-
-Node& Node::operator=(const Node& other)
-{
-  Node tmp{ other };
-  swap(tmp);
-  return *this;
-}
-Node& Node::operator=(Node&& other) noexcept
-{
-  swap(other);
-  return *this;
-}
-
 size_t Node::getLevel() const
 {
   return level;
@@ -60,15 +35,6 @@ size_t Node::getLevel() const
 void Node::assignLevel(size_t level)
 {
   this->level = level;
-}
-
-void Node::swap(Node& other)
-{
-  std::swap(id_, other.id_);
-  std::swap(lat, other.lat);
-  std::swap(lng, other.lng);
-  std::swap(height, other.height);
-  std::swap(level, other.level);
 }
 
 NodeId Node::id() const

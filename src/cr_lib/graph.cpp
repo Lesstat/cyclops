@@ -107,44 +107,6 @@ Graph::Graph(std::vector<Node>&& nodes, std::vector<Edge>&& edges)
   std::transform(edges.begin(), edges.end(), std::back_inserter(inEdges), [](const Edge& e) { return e.getId(); });
 }
 
-Graph::Graph(const Graph& other)
-    : nodes(other.nodes)
-    , offsets(other.offsets)
-    , inEdges(other.inEdges)
-    , outEdges(other.outEdges)
-    , level(other.level)
-{
-  std::cout << "Graph is copied. Did you really want that?"
-            << '\n';
-}
-
-Graph::Graph(Graph&& other) noexcept
-{
-  swap(other);
-}
-
-Graph::~Graph() noexcept = default;
-Graph& Graph::operator=(const Graph& other)
-{
-  Graph tmp{ other };
-  swap(tmp);
-  return *this;
-}
-Graph& Graph::operator=(Graph&& other) noexcept
-{
-  swap(other);
-  return *this;
-}
-
-void Graph::swap(Graph& other)
-{
-  std::swap(nodes, other.nodes);
-  std::swap(offsets, other.offsets);
-  std::swap(inEdges, other.inEdges);
-  std::swap(outEdges, other.outEdges);
-  std::swap(level, other.level);
-}
-
 std::ostream& operator<<(std::ostream& s, const Graph& g)
 {
 

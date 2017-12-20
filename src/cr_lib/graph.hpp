@@ -82,11 +82,11 @@ class Edge {
   public:
   Edge(NodeId source, NodeId dest);
   Edge(NodeId source, NodeId dest, ReplacedEdge edgeA, ReplacedEdge edgeB);
-  Edge(const Edge& other);
-  Edge(Edge&& other) noexcept;
-  virtual ~Edge() noexcept;
-  Edge& operator=(const Edge& other);
-  Edge& operator=(Edge&& other) noexcept;
+  Edge(const Edge& other) = default;
+  Edge(Edge&& other) noexcept = default;
+  virtual ~Edge() noexcept = default;
+  Edge& operator=(const Edge& other) = default;
+  Edge& operator=(Edge&& other) noexcept = default;
 
   NodeId getSourceId() const;
   NodeId getDestId() const;
@@ -112,8 +112,6 @@ class Edge {
       const ReplacedEdge& edgeB);
 
   private:
-  void swap(Edge& other);
-
   EdgeId internalId;
   NodeId source;
   NodeId destination;
@@ -127,11 +125,11 @@ class Edge {
 class Node {
   public:
   Node(NodeId id, Lat lat, Lng lng, Height height);
-  Node(const Node& other);
-  Node(Node&& other) noexcept;
-  virtual ~Node() noexcept;
-  Node& operator=(const Node& other);
-  Node& operator=(Node&& other) noexcept;
+  Node(const Node& other) = default;
+  Node(Node&& other) noexcept = default;
+  virtual ~Node() noexcept = default;
+  Node& operator=(const Node& other) = default;
+  Node& operator=(Node&& other) noexcept = default;
 
   void assignLevel(size_t level);
   size_t getLevel() const;
@@ -142,8 +140,6 @@ class Node {
   friend void testNodeInternals(const Node& n, NodeId id, Lat lat, Lng lng, Height height, size_t level);
 
   private:
-  void swap(Node& other);
-
   NodeId id_;
   Lat lat;
   Lng lng;
@@ -155,11 +151,11 @@ class EdgeRange;
 class Graph {
   public:
   Graph(std::vector<Node>&& nodes, std::vector<Edge>&& edges);
-  Graph(const Graph& other);
-  Graph(Graph&& other) noexcept;
-  virtual ~Graph() noexcept;
-  Graph& operator=(const Graph& other);
-  Graph& operator=(Graph&& other) noexcept;
+  Graph(const Graph& other) = delete;
+  Graph(Graph&& other) noexcept = default;
+  virtual ~Graph() noexcept = default;
+  Graph& operator=(const Graph& other) = delete;
+  Graph& operator=(Graph&& other) noexcept = default;
 
   friend std::ostream& operator<<(std::ostream& /*s*/, const Graph& /*g*/);
 
@@ -179,8 +175,6 @@ class Graph {
   size_t getNodeCount() const;
 
   private:
-  void swap(Graph& other);
-
   std::vector<Node> nodes;
   std::vector<NodeOffset> offsets;
   std::vector<EdgeId> inEdges;
