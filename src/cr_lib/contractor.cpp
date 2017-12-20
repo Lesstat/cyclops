@@ -93,9 +93,9 @@ std::vector<Edge> Contractor::contract(Graph& g, const NodePos& node)
   return shortcuts;
 }
 
-std::vector<NodeId> Contractor::independentSet(const Graph& g)
+std::vector<NodePos> Contractor::independentSet(const Graph& g)
 {
-  std::vector<NodeId> set;
+  std::vector<NodePos> set;
   size_t nodeCount = g.getNodeCount();
   std::vector<bool> selected(nodeCount, true);
 
@@ -110,8 +110,7 @@ std::vector<NodeId> Contractor::independentSet(const Graph& g)
         const auto& outEdge = g.getEdge(outEdgeId);
         selected[outEdge.getDestPos()] = false;
       }
-      const auto& node = g.getNode(pos);
-      set.push_back(node.id());
+      set.push_back(pos);
     }
   }
 

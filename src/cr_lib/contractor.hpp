@@ -36,7 +36,7 @@ class Contractor {
 
   std::vector<Edge> contract(Graph& g, const NodePos& node);
 
-  std::vector<NodeId> independentSet(const Graph& g);
+  std::vector<NodePos> independentSet(const Graph& g);
 
   protected:
   private:
