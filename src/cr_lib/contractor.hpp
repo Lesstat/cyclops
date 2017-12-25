@@ -37,6 +37,7 @@ class Contractor {
 
   std::vector<Edge> contract(Graph& g, const NodePos& node);
   Graph contract(Graph& g);
+  Graph mergeWithContracted(Graph& g);
 
   std::set<NodePos> independentSet(const Graph& g);
 
@@ -45,6 +46,8 @@ class Contractor {
   std::optional<Dijkstra> dijkstra;
   std::optional<Route> foundRoute;
   size_t level = 0;
+  std::vector<Node> contractedNodes;
+  std::vector<Edge> contractedEdges;
 };
 
 #endif /* CONTRACTOR_H */

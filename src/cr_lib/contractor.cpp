@@ -127,6 +127,19 @@ Graph Contractor::contract(Graph& g)
     std::move(newShortcuts.begin(), newShortcuts.end(), std::back_inserter(shortcuts));
     Node node = g.getNode(pos);
     node.assignLevel(level);
+
+    contractedNodes.push_back(node);
+    auto outRange = g.getOutgoingEdgesOf(pos);
+    std::transform(outRange.begin(),
+        outRange.end(),
+        std::back_inserter(contractedEdges),
+        [&g](EdgeId id) { return g.getEdge(id); });
+
+    auto inRange = g.getIngoingEdgesOf(pos);
+    std::transform(inRange.begin(),
+        inRange.end(),
+        std::back_inserter(contractedEdges),
+        [&g](EdgeId id) { return g.getEdge(id); });
   }
   std::vector<Node> nodes{};
   std::vector<Edge> edges{};
@@ -136,18 +149,44 @@ Graph Contractor::contract(Graph& g)
     if (set.find(pos) == set.end()) {
       nodes.push_back(g.getNode(pos));
       auto outRange = g.getOutgoingEdgesOf(pos);
-
       std::transform(outRange.begin(),
           outRange.end(),
           std::back_inserter(edges),
           [&g](EdgeId id) { return g.getEdge(id); });
+
+      auto inRange = g.getIngoingEdgesOf(pos);
+      std::transform(inRange.begin(),
+          inRange.end(),
+          std::back_inserter(edges),
+          [&g](EdgeId id) { return g.getEdge(id); });
     }
+  }
+
+  return Graph{ std::move(nodes), std::move(edges) };
+}
+
+Graph Contractor::mergeWithContracted(Graph& g)
+{
+  std::vector<Node> nodes{};
+  std::vector<Edge> edges{};
+  std::copy(contractedNodes.begin(), contractedNodes.end(), std::back_inserter(nodes));
+
+  for (size_t i = 0; i < g.getNodeCount(); ++i) {
+    NodePos pos{ i };
+    nodes.push_back(g.getNode(pos));
+    auto outRange = g.getOutgoingEdgesOf(pos);
+    std::transform(outRange.begin(),
+        outRange.end(),
+        std::back_inserter(edges),
+        [&g](EdgeId id) { return g.getEdge(id); });
+
     auto inRange = g.getIngoingEdgesOf(pos);
     std::transform(inRange.begin(),
         inRange.end(),
         std::back_inserter(edges),
         [&g](EdgeId id) { return g.getEdge(id); });
   }
+  std::copy(contractedEdges.begin(), contractedEdges.end(), std::back_inserter(edges));
 
   return Graph{ std::move(nodes), std::move(edges) };
 }

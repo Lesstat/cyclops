@@ -139,8 +139,20 @@ TEST_CASE("Contracting one level of Graph")
   auto iss = std::istringstream(fourNodeGraph);
   auto g = Graph::createFromStream(iss);
 
-  Graph new_g = c.contract(g);
-  REQUIRE(new_g.getNodeCount() == 2);
-  REQUIRE(new_g.getNode(NodePos{ 0 }).id() == 1);
-  REQUIRE(new_g.getNode(NodePos{ 1 }).id() == 3);
+  Graph newG = c.contract(g);
+  SECTION("New Graph has correct set of nodes")
+  {
+    REQUIRE(newG.getNodeCount() == 2);
+    REQUIRE(newG.getNode(NodePos{ 0 }).id() == 1);
+    REQUIRE(newG.getNode(NodePos{ 1 }).id() == 3);
+  }
+  SECTION("Merging Graph with previously contracted nodes")
+  {
+    auto contractedG = c.mergeWithContracted(newG);
+    REQUIRE(contractedG.getNodeCount() == 4);
+    REQUIRE(contractedG.getNode(NodePos{ 0 }).id() == 0);
+    REQUIRE(contractedG.getNode(NodePos{ 0 }).getLevel() == 1);
+    REQUIRE(contractedG.getNode(NodePos{ 1 }).id() == 2);
+    REQUIRE(contractedG.getNode(NodePos{ 1 }).getLevel() == 1);
+  }
 }
