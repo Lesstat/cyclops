@@ -19,6 +19,7 @@
 #define CONTRACTOR_H
 #include "dijkstra.hpp"
 #include "graph.hpp"
+#include <set>
 
 class Contractor {
 
@@ -35,13 +36,15 @@ class Contractor {
   bool isShortestPath(Graph& g, const EdgeId& startEdgeId, const EdgeId& destEdgeId, const Config& conf);
 
   std::vector<Edge> contract(Graph& g, const NodePos& node);
+  Graph contract(Graph& g);
 
-  std::vector<NodePos> independentSet(const Graph& g);
+  std::set<NodePos> independentSet(const Graph& g);
 
   protected:
   private:
   std::optional<Dijkstra> dijkstra;
   std::optional<Route> foundRoute;
+  size_t level = 0;
 };
 
 #endif /* CONTRACTOR_H */

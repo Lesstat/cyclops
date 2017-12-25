@@ -117,3 +117,30 @@ TEST_CASE("Finding an independent set")
 
   REQUIRE(nodes.size() == 1);
 }
+
+TEST_CASE("Contracting one level of Graph")
+{
+  Contractor c{};
+
+  const std::string fourNodeGraph{ R"!!(# Build by: pbfextractor
+# Build on: SystemTime { tv_sec: 1512985452, tv_nsec: 881838750 }
+
+4
+3
+0 163354 48.6674338 9.2445911 380 0
+1 163355 48.6694744 9.2432625 380 0
+2 163358 48.6661932 9.2515536 386 0
+3 163359 48.6661232 9.2515436 384 0
+0 1 2.5 7 4 -1 -1
+1 2 3.2 9 2 -1 -1
+2 3 8.2 4 2 -1 -1
+
+)!!" };
+  auto iss = std::istringstream(fourNodeGraph);
+  auto g = Graph::createFromStream(iss);
+
+  Graph new_g = c.contract(g);
+  REQUIRE(new_g.getNodeCount() == 2);
+  REQUIRE(new_g.getNode(NodePos{ 0 }).id() == 1);
+  REQUIRE(new_g.getNode(NodePos{ 1 }).id() == 3);
+}

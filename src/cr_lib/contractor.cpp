@@ -93,9 +93,9 @@ std::vector<Edge> Contractor::contract(Graph& g, const NodePos& node)
   return shortcuts;
 }
 
-std::vector<NodePos> Contractor::independentSet(const Graph& g)
+std::set<NodePos> Contractor::independentSet(const Graph& g)
 {
-  std::vector<NodePos> set;
+  std::set<NodePos> set;
   size_t nodeCount = g.getNodeCount();
   std::vector<bool> selected(nodeCount, true);
 
@@ -110,9 +110,44 @@ std::vector<NodePos> Contractor::independentSet(const Graph& g)
         const auto& outEdge = g.getEdge(outEdgeId);
         selected[outEdge.getDestPos()] = false;
       }
-      set.push_back(pos);
+      set.insert(pos);
     }
   }
 
   return set;
+}
+
+Graph Contractor::contract(Graph& g)
+{
+  ++level;
+  std::vector<Edge> shortcuts{};
+  auto set = independentSet(g);
+  for (const auto& pos : set) {
+    auto newShortcuts = contract(g, pos);
+    std::move(newShortcuts.begin(), newShortcuts.end(), std::back_inserter(shortcuts));
+    Node node = g.getNode(pos);
+    node.assignLevel(level);
+  }
+  std::vector<Node> nodes{};
+  std::vector<Edge> edges{};
+
+  for (size_t i = 0; i < g.getNodeCount(); ++i) {
+    NodePos pos{ i };
+    if (set.find(pos) == set.end()) {
+      nodes.push_back(g.getNode(pos));
+      auto outRange = g.getOutgoingEdgesOf(pos);
+
+      std::transform(outRange.begin(),
+          outRange.end(),
+          std::back_inserter(edges),
+          [&g](EdgeId id) { return g.getEdge(id); });
+    }
+    auto inRange = g.getIngoingEdgesOf(pos);
+    std::transform(inRange.begin(),
+        inRange.end(),
+        std::back_inserter(edges),
+        [&g](EdgeId id) { return g.getEdge(id); });
+  }
+
+  return Graph{ std::move(nodes), std::move(edges) };
 }
