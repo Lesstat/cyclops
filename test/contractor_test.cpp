@@ -137,22 +137,41 @@ TEST_CASE("Contracting one level of Graph")
 
 )!!" };
   auto iss = std::istringstream(fourNodeGraph);
-  auto g = Graph::createFromStream(iss);
+  auto initalG = Graph::createFromStream(iss);
 
-  Graph newG = c.contract(g);
+  Graph intermedG = c.contract(initalG);
   SECTION("New Graph has correct set of nodes")
   {
-    REQUIRE(newG.getNodeCount() == 2);
-    REQUIRE(newG.getNode(NodePos{ 0 }).id() == 1);
-    REQUIRE(newG.getNode(NodePos{ 1 }).id() == 3);
+    REQUIRE(intermedG.getNodeCount() == 2);
+    REQUIRE(intermedG.getNode(NodePos{ 0 }).id() == 1);
+    REQUIRE(intermedG.getNode(NodePos{ 1 }).id() == 3);
   }
+
+  auto finalG = c.mergeWithContracted(intermedG);
+
   SECTION("Merging Graph with previously contracted nodes")
   {
-    auto contractedG = c.mergeWithContracted(newG);
-    REQUIRE(contractedG.getNodeCount() == 4);
-    REQUIRE(contractedG.getNode(NodePos{ 0 }).id() == 0);
-    REQUIRE(contractedG.getNode(NodePos{ 0 }).getLevel() == 1);
-    REQUIRE(contractedG.getNode(NodePos{ 1 }).id() == 2);
-    REQUIRE(contractedG.getNode(NodePos{ 1 }).getLevel() == 1);
+    REQUIRE(finalG.getNodeCount() == 4);
+    REQUIRE(finalG.getNode(NodePos{ 0 }).id() == 0);
+    REQUIRE(finalG.getNode(NodePos{ 0 }).getLevel() == 1);
+    REQUIRE(finalG.getNode(NodePos{ 1 }).id() == 2);
+    REQUIRE(finalG.getNode(NodePos{ 1 }).getLevel() == 1);
+  }
+
+  SECTION("Distances stay the same in all intermediate steps")
+  {
+    Config c{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } };
+    auto dijInitialGraph = initalG.createDijkstra();
+    auto routeInitialGraph = dijInitialGraph.findBestRoute(NodePos{ 1 }, NodePos{ 3 }, c);
+
+    auto dijIntermedGraph = intermedG.createDijkstra();
+    // Positions of Nodes in Graph changes due to the contractions
+    auto routeIntermedGraph = dijIntermedGraph.findBestRoute(NodePos{ 0 }, NodePos{ 1 }, c);
+
+    auto dijFinalGraph = finalG.createDijkstra();
+    auto routeFinalGraph = dijFinalGraph.findBestRoute(NodePos{ 2 }, NodePos{ 3 }, c);
+
+    REQUIRE(routeInitialGraph->costs.length == routeIntermedGraph->costs.length);
+    REQUIRE(routeFinalGraph->costs.length == routeIntermedGraph->costs.length);
   }
 }

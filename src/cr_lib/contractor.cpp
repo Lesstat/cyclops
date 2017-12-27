@@ -144,7 +144,18 @@ Graph Contractor::contract(Graph& g)
     NodePos pos{ i };
     if (set.find(pos) == set.end()) {
       nodes.push_back(g.getNode(pos));
-      copyEdgesOfNode(g, pos, edges);
+      for (const auto& edgeId : g.getOutgoingEdgesOf(pos)) {
+        const auto& edge = g.getEdge(edgeId);
+        if (set.find(edge.getDestPos()) == set.end()) {
+          edges.push_back(edge);
+        }
+      }
+      for (const auto& edgeId : g.getIngoingEdgesOf(pos)) {
+        const auto& edge = g.getEdge(edgeId);
+        if (set.find(edge.getSourcePos()) == set.end()) {
+          edges.push_back(edge);
+        }
+      }
     } else {
       auto newShortcuts = contract(g, pos);
       std::move(newShortcuts.begin(), newShortcuts.end(), std::back_inserter(shortcuts));
@@ -156,6 +167,7 @@ Graph Contractor::contract(Graph& g)
       copyEdgesOfNode(g, pos, contractedEdges);
     }
   }
+  std::move(shortcuts.begin(), shortcuts.end(), std::back_inserter(edges));
 
   return Graph{ std::move(nodes), std::move(edges) };
 }
