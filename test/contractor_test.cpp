@@ -173,5 +173,11 @@ TEST_CASE("Contracting one level of Graph")
 
     REQUIRE(routeInitialGraph->costs.length == routeIntermedGraph->costs.length);
     REQUIRE(routeFinalGraph->costs.length == routeIntermedGraph->costs.length);
+
+    REQUIRE(routeInitialGraph->costs.height == routeIntermedGraph->costs.height);
+    REQUIRE(routeFinalGraph->costs.height == routeIntermedGraph->costs.height);
+
+    REQUIRE(routeInitialGraph->costs.unsuitability == routeIntermedGraph->costs.unsuitability);
+    REQUIRE(routeFinalGraph->costs.unsuitability == routeIntermedGraph->costs.unsuitability);
   }
 }
