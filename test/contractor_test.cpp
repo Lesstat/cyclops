@@ -118,6 +118,23 @@ TEST_CASE("Finding an independent set")
   REQUIRE(nodes.size() == 1);
 }
 
+Route findRouteBetweenIds(Graph& g, NodeId from, NodeId to)
+{
+  Config c{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } };
+  NodePos id1Pos = g.nodePosById(from).value();
+  NodePos id3Pos = g.nodePosById(to).value();
+
+  auto dijkstra = g.createDijkstra();
+  return dijkstra.findBestRoute(id1Pos, id3Pos, c).value();
+}
+
+void compareRoutes(Route& routeA, Route& routeB)
+{
+  REQUIRE(routeA.costs.length == routeB.costs.length);
+  REQUIRE(routeA.costs.height == routeB.costs.height);
+  REQUIRE(routeA.costs.unsuitability == routeB.costs.unsuitability);
+}
+
 TEST_CASE("Contracting one level of Graph")
 {
   Contractor c{};
@@ -137,9 +154,10 @@ TEST_CASE("Contracting one level of Graph")
 
 )!!" };
   auto iss = std::istringstream(fourNodeGraph);
-  auto initalG = Graph::createFromStream(iss);
+  Graph initialG = Graph::createFromStream(iss);
 
-  Graph intermedG = c.contract(initalG);
+  Graph intermedG = c.contract(initialG);
+
   SECTION("New Graph has correct set of nodes")
   {
     REQUIRE(intermedG.getNodeCount() == 2);
@@ -160,33 +178,12 @@ TEST_CASE("Contracting one level of Graph")
 
   SECTION("Distances stay the same in all intermediate steps")
   {
-    Config c{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } };
 
-    NodePos id1Pos = initalG.nodePosById(NodeId{ 1 }).value();
-    NodePos id3Pos = initalG.nodePosById(NodeId{ 3 }).value();
+    auto routeInitialGraph = findRouteBetweenIds(initialG, NodeId{ 1 }, NodeId{ 3 });
+    auto routeIntermedGraph = findRouteBetweenIds(intermedG, NodeId{ 1 }, NodeId{ 3 });
+    auto routeFinalGraph = findRouteBetweenIds(finalG, NodeId{ 1 }, NodeId{ 3 });
 
-    auto dijInitialGraph = initalG.createDijkstra();
-    auto routeInitialGraph = dijInitialGraph.findBestRoute(id1Pos, id3Pos, c);
-
-    id1Pos = intermedG.nodePosById(NodeId{ 1 }).value();
-    id3Pos = intermedG.nodePosById(NodeId{ 3 }).value();
-
-    auto dijIntermedGraph = intermedG.createDijkstra();
-    auto routeIntermedGraph = dijIntermedGraph.findBestRoute(id1Pos, id3Pos, c);
-
-    id1Pos = finalG.nodePosById(NodeId{ 1 }).value();
-    id3Pos = finalG.nodePosById(NodeId{ 3 }).value();
-
-    auto dijFinalGraph = finalG.createDijkstra();
-    auto routeFinalGraph = dijFinalGraph.findBestRoute(id1Pos, id3Pos, c);
-
-    REQUIRE(routeInitialGraph->costs.length == routeIntermedGraph->costs.length);
-    REQUIRE(routeFinalGraph->costs.length == routeIntermedGraph->costs.length);
-
-    REQUIRE(routeInitialGraph->costs.height == routeIntermedGraph->costs.height);
-    REQUIRE(routeFinalGraph->costs.height == routeIntermedGraph->costs.height);
-
-    REQUIRE(routeInitialGraph->costs.unsuitability == routeIntermedGraph->costs.unsuitability);
-    REQUIRE(routeFinalGraph->costs.unsuitability == routeIntermedGraph->costs.unsuitability);
+    compareRoutes(routeInitialGraph, routeIntermedGraph);
+    compareRoutes(routeIntermedGraph, routeFinalGraph);
   }
 }
