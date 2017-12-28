@@ -152,24 +152,33 @@ TEST_CASE("Contracting one level of Graph")
   SECTION("Merging Graph with previously contracted nodes")
   {
     REQUIRE(finalG.getNodeCount() == 4);
-    REQUIRE(finalG.getNode(NodePos{ 0 }).id() == 0);
-    REQUIRE(finalG.getNode(NodePos{ 0 }).getLevel() == 1);
-    REQUIRE(finalG.getNode(NodePos{ 1 }).id() == 2);
-    REQUIRE(finalG.getNode(NodePos{ 1 }).getLevel() == 1);
+    REQUIRE(finalG.getNode(NodePos{ 2 }).id() == 0);
+    REQUIRE(finalG.getNode(NodePos{ 2 }).getLevel() == 1);
+    REQUIRE(finalG.getNode(NodePos{ 3 }).id() == 2);
+    REQUIRE(finalG.getNode(NodePos{ 3 }).getLevel() == 1);
   }
 
   SECTION("Distances stay the same in all intermediate steps")
   {
     Config c{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } };
+
+    NodePos id1Pos = initalG.nodePosById(NodeId{ 1 }).value();
+    NodePos id3Pos = initalG.nodePosById(NodeId{ 3 }).value();
+
     auto dijInitialGraph = initalG.createDijkstra();
-    auto routeInitialGraph = dijInitialGraph.findBestRoute(NodePos{ 1 }, NodePos{ 3 }, c);
+    auto routeInitialGraph = dijInitialGraph.findBestRoute(id1Pos, id3Pos, c);
+
+    id1Pos = intermedG.nodePosById(NodeId{ 1 }).value();
+    id3Pos = intermedG.nodePosById(NodeId{ 3 }).value();
 
     auto dijIntermedGraph = intermedG.createDijkstra();
-    // Positions of Nodes in Graph changes due to the contractions
-    auto routeIntermedGraph = dijIntermedGraph.findBestRoute(NodePos{ 0 }, NodePos{ 1 }, c);
+    auto routeIntermedGraph = dijIntermedGraph.findBestRoute(id1Pos, id3Pos, c);
+
+    id1Pos = finalG.nodePosById(NodeId{ 1 }).value();
+    id3Pos = finalG.nodePosById(NodeId{ 3 }).value();
 
     auto dijFinalGraph = finalG.createDijkstra();
-    auto routeFinalGraph = dijFinalGraph.findBestRoute(NodePos{ 2 }, NodePos{ 3 }, c);
+    auto routeFinalGraph = dijFinalGraph.findBestRoute(id1Pos, id3Pos, c);
 
     REQUIRE(routeInitialGraph->costs.length == routeIntermedGraph->costs.length);
     REQUIRE(routeFinalGraph->costs.length == routeIntermedGraph->costs.length);

@@ -87,6 +87,10 @@ void calculateOffsets(std::vector<Edge>& edges, std::vector<NodeOffset>& offsets
 
 Graph::Graph(std::vector<Node>&& nodes, std::vector<Edge>&& edges)
 {
+  std::stable_sort(nodes.begin(),
+      nodes.end(),
+      [](const Node& a, const Node& b) { return a.getLevel() < b.getLevel(); });
+
   connectEdgesToNodes(nodes, edges);
   for (const auto& node : nodes) {
     level.push_back(node.getLevel());
@@ -207,6 +211,16 @@ EdgeRange Graph::getIngoingEdgesOf(NodePos pos) const
 size_t Graph::getLevelOf(NodePos pos) const
 {
   return level[pos];
+}
+
+std::optional<NodePos> Graph::nodePosById(NodeId id) const
+{
+  for (size_t i = 0; i < nodes.size(); ++i) {
+    if (nodes[i].id() == id) {
+      return NodePos{ i };
+    }
+  }
+  return {};
 }
 
 size_t Graph::getNodeCount() const

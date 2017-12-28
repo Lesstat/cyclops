@@ -171,6 +171,7 @@ class Graph {
   static Graph createFromStream(std::istream& file);
 
   const Node& getNode(NodePos pos) const;
+  std::optional<NodePos> nodePosById(NodeId id) const;
 
   size_t getNodeCount() const;
 
