@@ -135,6 +135,21 @@ void compareRoutes(Route& routeA, Route& routeB)
   REQUIRE(routeA.costs.unsuitability == routeB.costs.unsuitability);
 }
 
+const std::string fourNodeGraph{ R"!!(# Build by: pbfextractor
+# Build on: SystemTime { tv_sec: 1512985452, tv_nsec: 881838750 }
+
+4
+3
+0 163354 48.6674338 9.2445911 380 0
+1 163355 48.6694744 9.2432625 380 0
+2 163358 48.6661932 9.2515536 386 0
+3 163359 48.6661232 9.2515436 384 0
+0 1 2.5 7 4 -1 -1
+1 2 3.2 9 2 -1 -1
+2 3 8.2 4 2 -1 -1
+
+)!!" };
+
 TEST_CASE("Contracting one level of Graph")
 {
   Contractor c{};
@@ -186,4 +201,18 @@ TEST_CASE("Contracting one level of Graph")
     compareRoutes(routeInitialGraph, routeIntermedGraph);
     compareRoutes(routeIntermedGraph, routeFinalGraph);
   }
+}
+
+TEST_CASE("Fully contract graph")
+{
+  auto iss = std::istringstream(fourNodeGraph);
+  Graph initialG = Graph::createFromStream(iss);
+  Contractor c{};
+
+  Graph ch = c.contractCompletely(initialG);
+
+  REQUIRE(ch.getLevelOf(NodePos{ 0 }) == 1);
+  REQUIRE(ch.getLevelOf(NodePos{ 1 }) == 1);
+  REQUIRE(ch.getLevelOf(NodePos{ 2 }) == 2);
+  REQUIRE(ch.getLevelOf(NodePos{ 3 }) == 3);
 }

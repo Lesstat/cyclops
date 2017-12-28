@@ -18,6 +18,7 @@
 #include "contractor.hpp"
 #include "dijkstra.hpp"
 #include "linearProgram.hpp"
+#include <iostream>
 
 Edge Contractor::createShortcut(const Edge& e1, const Edge& e2)
 {
@@ -186,4 +187,16 @@ Graph Contractor::mergeWithContracted(Graph& g)
   std::copy(contractedEdges.begin(), contractedEdges.end(), std::back_inserter(edges));
 
   return Graph{ std::move(nodes), std::move(edges) };
+}
+
+Graph Contractor::contractCompletely(Graph& g)
+{
+
+  Graph intermedG = contract(g);
+  int uncontractedNodesPercent = intermedG.getNodeCount() * 100 / g.getNodeCount();
+  while (uncontractedNodesPercent > 10) {
+    intermedG = contract(intermedG);
+    uncontractedNodesPercent = intermedG.getNodeCount() * 100 / g.getNodeCount();
+  }
+  return mergeWithContracted(intermedG);
 }

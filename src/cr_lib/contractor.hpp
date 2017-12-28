@@ -38,6 +38,7 @@ class Contractor {
   std::vector<Edge> contract(Graph& g, const NodePos& node);
   Graph contract(Graph& g);
   Graph mergeWithContracted(Graph& g);
+  Graph contractCompletely(Graph& g);
 
   std::set<NodePos> independentSet(const Graph& g);
 
