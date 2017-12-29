@@ -156,12 +156,6 @@ Graph Contractor::contract(Graph& g)
           edges.push_back(edge);
         }
       }
-      for (const auto& edgeId : g.getIngoingEdgesOf(pos)) {
-        const auto& edge = g.getEdge(edgeId);
-        if (set.find(edge.getSourcePos()) == set.end()) {
-          edges.push_back(edge);
-        }
-      }
     } else {
       auto newShortcuts = contract(g, pos);
       std::move(newShortcuts.begin(), newShortcuts.end(), std::back_inserter(shortcuts));
@@ -187,7 +181,11 @@ Graph Contractor::mergeWithContracted(Graph& g)
   for (size_t i = 0; i < g.getNodeCount(); ++i) {
     NodePos pos{ i };
     nodes.push_back(g.getNode(pos));
-    copyEdgesOfNode(g, pos, edges);
+    auto outEdges = g.getOutgoingEdgesOf(pos);
+    std::transform(outEdges.begin(),
+        outEdges.end(),
+        std::back_inserter(edges),
+        [&g](auto& id) { return g.getEdge(id); });
   }
   std::copy(contractedEdges.begin(), contractedEdges.end(), std::back_inserter(edges));
 

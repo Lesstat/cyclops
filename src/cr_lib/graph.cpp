@@ -227,3 +227,8 @@ size_t Graph::getNodeCount() const
 {
   return nodes.size();
 }
+
+size_t Graph::getEdgeCount() const
+{
+  return edges.size();
+}

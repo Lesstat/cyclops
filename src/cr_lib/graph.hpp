@@ -174,6 +174,7 @@ class Graph {
   std::optional<NodePos> nodePosById(NodeId id) const;
 
   size_t getNodeCount() const;
+  size_t getEdgeCount() const;
 
   private:
   std::vector<Node> nodes;

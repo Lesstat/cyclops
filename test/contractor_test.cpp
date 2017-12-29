@@ -180,7 +180,7 @@ TEST_CASE("Contracting one level of Graph")
 # Build on: SystemTime { tv_sec: 1512985452, tv_nsec: 881838750 }
 
 4
-3
+4
 0 163354 48.6674338 9.2445911 380 0
 1 163355 48.6694744 9.2432625 380 0
 2 163358 48.6661932 9.2515536 386 0
@@ -188,6 +188,7 @@ TEST_CASE("Contracting one level of Graph")
 0 1 2.5 7 4 -1 -1
 1 2 3.2 9 2 -1 -1
 2 3 8.2 4 2 -1 -1
+1 3 99.9 99 99 -1 -1
 
 )!!" };
   auto iss = std::istringstream(fourNodeGraph);
@@ -200,6 +201,7 @@ TEST_CASE("Contracting one level of Graph")
     REQUIRE(intermedG.getNodeCount() == 2);
     REQUIRE(intermedG.getNode(NodePos{ 0 }).id() == 1);
     REQUIRE(intermedG.getNode(NodePos{ 1 }).id() == 3);
+    REQUIRE(intermedG.getEdgeCount() == 2);
   }
 
   auto finalG = c.mergeWithContracted(intermedG);
@@ -211,6 +213,7 @@ TEST_CASE("Contracting one level of Graph")
     REQUIRE(finalG.getNode(NodePos{ 2 }).getLevel() == 1);
     REQUIRE(finalG.getNode(NodePos{ 3 }).id() == 2);
     REQUIRE(finalG.getNode(NodePos{ 3 }).getLevel() == 1);
+    REQUIRE(finalG.getEdgeCount() == 5);
   }
 
   SECTION("Distances stay the same in all intermediate steps")
