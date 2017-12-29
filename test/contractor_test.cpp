@@ -108,6 +108,28 @@ TEST_CASE("Contracting a Node")
         Height{ 16 }, Unsuitability{ 6 }, edgeId0, edgeId1);
   }
 }
+TEST_CASE("Detect cycles when contracting a Node")
+{
+
+  const std::string cycleGraph{ R"!!(# Build by: pbfextractor
+# Build on: SystemTime { tv_sec: 1512985452, tv_nsec: 881838750 }
+
+2
+2
+0 163354 48.6674338 9.2445911 380 0
+1 163355 48.6694744 9.2432625 380 0
+0 1 2.5 0 4 -1 -1
+1 0 2.5 0 4 -1 -1
+)!!" };
+  auto iss = std::istringstream(cycleGraph);
+  auto g = Graph::createFromStream(iss);
+
+  Contractor c{};
+
+  auto shortcuts = c.contract(g, NodePos{ 0 });
+
+  REQUIRE(shortcuts.size() == 0);
+}
 
 TEST_CASE("Finding an independent set")
 {

@@ -54,7 +54,6 @@ std::vector<Edge> Contractor::contract(Graph& g, const NodePos& node)
   std::vector<Edge> shortcuts;
   Config config{ LengthConfig{ 0.33 }, HeightConfig{ 0.33 },
     UnsuitabilityConfig{ 0.33 } };
-  auto d = g.createDijkstra();
   const auto& inEdges = g.getIngoingEdgesOf(node);
   const auto& outEdges = g.getOutgoingEdgesOf(node);
   for (const auto& in : inEdges) {
@@ -62,19 +61,21 @@ std::vector<Edge> Contractor::contract(Graph& g, const NodePos& node)
       LinearProgram lp{ 3 };
       lp.objective({ 1.0, 1.0, 1.0 });
       lp.addConstraint({ 1.0, 1.0, 1.0 }, 1.0, GLP_FX);
+
+      const auto& inEdge = g.getEdge(in);
+      const auto& outEdge = g.getEdge(out);
+      Cost c1 = inEdge.getCost() + outEdge.getCost();
+
       while (true) {
-        const auto& inEdge = g.getEdge(in);
-        const auto& outEdge = g.getEdge(out);
 
         if (isShortestPath(g, in, out, config)) {
           shortcuts.push_back(createShortcut(inEdge, outEdge));
           break;
         }
 
-        if (!foundRoute) {
+        if (!foundRoute || foundRoute->edges.empty()) {
           break;
         }
-        Cost c1 = inEdge.getCost() + outEdge.getCost();
         Cost c2{};
         for (const auto& edge : foundRoute->edges) {
           c2 = c2 + edge.getCost();
@@ -86,7 +87,11 @@ std::vector<Edge> Contractor::contract(Graph& g, const NodePos& node)
           break;
         }
         auto values = lp.variableValues();
-        config = Config{ LengthConfig{ values[0] }, HeightConfig{ values[1] }, UnsuitabilityConfig{ values[2] } };
+        Config newConfig{ LengthConfig{ values[0] }, HeightConfig{ values[1] }, UnsuitabilityConfig{ values[2] } };
+        if (config == newConfig) {
+          break;
+        }
+        config = newConfig;
       }
     }
   }

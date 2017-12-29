@@ -37,6 +37,10 @@ struct Config {
       , unsuitability(u)
   {
   }
+  bool operator==(Config& other)
+  {
+    return length == other.length && height == other.height && unsuitability == other.unsuitability;
+  }
 };
 
 struct Route {
