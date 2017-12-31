@@ -56,6 +56,21 @@ const std::string threeNodeGraph{ R"!!(# Build by: pbfextractor
 auto iss = std::istringstream(threeNodeGraph);
 auto g = Graph::createFromStream(iss);
 
+const std::string fourNodeGraph{ R"!!(# Build by: pbfextractor
+# Build on: SystemTime { tv_sec: 1512985452, tv_nsec: 881838750 }
+
+4
+3
+0 163354 48.6674338 9.2445911 380 0
+1 163355 48.6694744 9.2432625 380 0
+2 163358 48.6661932 9.2515536 386 0
+3 163359 48.6661232 9.2515436 384 0
+0 1 2.5 7 4 -1 -1
+1 2 3.2 9 2 -1 -1
+2 3 8.2 4 2 -1 -1
+
+)!!" };
+
 TEST_CASE("Test if edges form shortest path")
 {
 
@@ -131,13 +146,30 @@ TEST_CASE("Detect cycles when contracting a Node")
   REQUIRE(shortcuts.size() == 0);
 }
 
-TEST_CASE("Finding an independent set")
+TEST_CASE("Finding and reducing independent sets")
 {
   Contractor c{};
 
-  auto nodes = c.independentSet(g);
+  SECTION("In a three Node Graph")
+  {
+    auto nodeSetWithOneNode = c.independentSet(g);
+    REQUIRE(nodeSetWithOneNode.size() == 1);
 
-  REQUIRE(nodes.size() == 1);
+    auto stillOneNode = c.reduce(nodeSetWithOneNode, g);
+    REQUIRE(stillOneNode.size() == 1);
+  }
+
+  SECTION("In a four node graph")
+  {
+    auto iss = std::istringstream(fourNodeGraph);
+    auto fourNodeG = Graph::createFromStream(iss);
+
+    auto nodeSetWithTwoNodes = c.independentSet(fourNodeG);
+    REQUIRE(nodeSetWithTwoNodes.size() == 2);
+
+    auto onlyOneNode = c.reduce(nodeSetWithTwoNodes, fourNodeG);
+    REQUIRE(onlyOneNode.size() == 1);
+  }
 }
 
 Route findRouteBetweenIds(Graph& g, NodeId from, NodeId to)
@@ -156,21 +188,6 @@ void compareRoutes(Route& routeA, Route& routeB)
   REQUIRE(routeA.costs.height == routeB.costs.height);
   REQUIRE(routeA.costs.unsuitability == routeB.costs.unsuitability);
 }
-
-const std::string fourNodeGraph{ R"!!(# Build by: pbfextractor
-# Build on: SystemTime { tv_sec: 1512985452, tv_nsec: 881838750 }
-
-4
-3
-0 163354 48.6674338 9.2445911 380 0
-1 163355 48.6694744 9.2432625 380 0
-2 163358 48.6661932 9.2515536 386 0
-3 163359 48.6661232 9.2515436 384 0
-0 1 2.5 7 4 -1 -1
-1 2 3.2 9 2 -1 -1
-2 3 8.2 4 2 -1 -1
-
-)!!" };
 
 TEST_CASE("Contracting one level of Graph")
 {

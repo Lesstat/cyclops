@@ -123,6 +123,36 @@ std::set<NodePos> Contractor::independentSet(const Graph& g)
   return set;
 }
 
+std::set<NodePos> Contractor::reduce(std::set<NodePos>& set, const Graph& g)
+{
+  std::vector<std::pair<NodePos, size_t>> metric{};
+  metric.reserve(set.size());
+
+  std::transform(
+      set.begin(),
+      set.end(),
+      std::back_inserter(metric),
+      [&g](NodePos p) {
+        auto inEdges = g.getIngoingEdgesOf(p);
+        auto outEdges = g.getOutgoingEdgesOf(p);
+        size_t count = (inEdges.end() - inEdges.begin()) * (outEdges.end() - outEdges.begin());
+        return std::make_pair(p, count);
+      });
+
+  auto median = metric.begin() + (metric.size() == 1 ? 1 : metric.size() / 2);
+
+  std::nth_element(metric.begin(), median, metric.end());
+
+  std::set<NodePos> result{};
+  std::transform(
+      metric.begin(),
+      median,
+      std::inserter(result, result.begin()),
+      [](auto pair) { return std::get<NodePos>(pair); });
+
+  return result;
+}
+
 void copyEdgesOfNode(Graph& g, NodePos pos, std::vector<Edge>& edges)
 {
   auto outRange = g.getOutgoingEdgesOf(pos);
