@@ -42,6 +42,10 @@ class Contractor {
 
   std::set<NodePos> independentSet(const Graph& g);
   std::set<NodePos> reduce(std::set<NodePos>& set, const Graph& g);
+  std::set<NodePos> reduce(std::set<NodePos>&& set, const Graph& g)
+  {
+    return reduce(set, g);
+  };
 
   protected:
   private:

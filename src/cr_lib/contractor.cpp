@@ -172,7 +172,7 @@ Graph Contractor::contract(Graph& g)
 {
   ++level;
   std::vector<Edge> shortcuts{};
-  auto set = independentSet(g);
+  auto set = reduce(independentSet(g), g);
   std::vector<Node> nodes{};
   std::vector<Edge> edges{};
 

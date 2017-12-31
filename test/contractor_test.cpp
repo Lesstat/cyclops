@@ -215,10 +215,11 @@ TEST_CASE("Contracting one level of Graph")
 
   SECTION("New Graph has correct set of nodes")
   {
-    REQUIRE(intermedG.getNodeCount() == 2);
+    REQUIRE(intermedG.getNodeCount() == 3);
     REQUIRE(intermedG.getNode(NodePos{ 0 }).id() == 1);
-    REQUIRE(intermedG.getNode(NodePos{ 1 }).id() == 3);
-    REQUIRE(intermedG.getEdgeCount() == 2);
+    REQUIRE(intermedG.getNode(NodePos{ 1 }).id() == 2);
+    REQUIRE(intermedG.getNode(NodePos{ 2 }).id() == 3);
+    REQUIRE(intermedG.getEdgeCount() == 3);
   }
 
   auto finalG = c.mergeWithContracted(intermedG);
@@ -226,11 +227,9 @@ TEST_CASE("Contracting one level of Graph")
   SECTION("Merging Graph with previously contracted nodes")
   {
     REQUIRE(finalG.getNodeCount() == 4);
-    REQUIRE(finalG.getNode(NodePos{ 2 }).id() == 0);
-    REQUIRE(finalG.getNode(NodePos{ 2 }).getLevel() == 1);
-    REQUIRE(finalG.getNode(NodePos{ 3 }).id() == 2);
+    REQUIRE(finalG.getNode(NodePos{ 3 }).id() == 0);
     REQUIRE(finalG.getNode(NodePos{ 3 }).getLevel() == 1);
-    REQUIRE(finalG.getEdgeCount() == 5);
+    REQUIRE(finalG.getEdgeCount() == 4);
   }
 
   SECTION("Distances stay the same in all intermediate steps")
@@ -254,7 +253,7 @@ TEST_CASE("Fully contract graph")
   Graph ch = c.contractCompletely(initialG);
 
   REQUIRE(ch.getLevelOf(NodePos{ 0 }) == 1);
-  REQUIRE(ch.getLevelOf(NodePos{ 1 }) == 1);
-  REQUIRE(ch.getLevelOf(NodePos{ 2 }) == 2);
-  REQUIRE(ch.getLevelOf(NodePos{ 3 }) == 3);
+  REQUIRE(ch.getLevelOf(NodePos{ 1 }) == 2);
+  REQUIRE(ch.getLevelOf(NodePos{ 2 }) == 3);
+  REQUIRE(ch.getLevelOf(NodePos{ 3 }) == 4);
 }
