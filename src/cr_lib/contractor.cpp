@@ -145,6 +145,7 @@ Graph Contractor::contract(Graph& g)
   auto set = independentSet(g);
   std::vector<Node> nodes{};
   std::vector<Edge> edges{};
+  size_t contracted = 0;
 
   for (size_t i = 0; i < g.getNodeCount(); ++i) {
     NodePos pos{ i };
@@ -157,6 +158,10 @@ Graph Contractor::contract(Graph& g)
         }
       }
     } else {
+      if (level > 1) {
+        std::cout << "contracting " << contracted << " node" << '\n';
+      }
+      contracted++;
       auto newShortcuts = contract(g, pos);
       std::move(newShortcuts.begin(), newShortcuts.end(), std::back_inserter(shortcuts));
 
@@ -197,9 +202,11 @@ Graph Contractor::contractCompletely(Graph& g)
 
   Graph intermedG = contract(g);
   int uncontractedNodesPercent = intermedG.getNodeCount() * 100 / g.getNodeCount();
+  std::cout << 100 - uncontractedNodesPercent << "% of the graph is contracted" << '\n';
   while (uncontractedNodesPercent > 10) {
     intermedG = contract(intermedG);
     uncontractedNodesPercent = intermedG.getNodeCount() * 100 / g.getNodeCount();
+    std::cout << 100 - uncontractedNodesPercent << "% of the graph is contracted" << '\n';
   }
   return mergeWithContracted(intermedG);
 }

@@ -15,6 +15,7 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+#include "contractor.hpp"
 #include "dijkstra.hpp"
 #include "graph.hpp"
 #include <chrono>
@@ -44,7 +45,14 @@ int main(int argc, char* argv[])
 
   using ms = std::chrono::milliseconds;
   std::cout << "creating the graph took " << std::chrono::duration_cast<ms>(end - start).count() << "ms" << '\n';
-  Dijkstra d = g.createDijkstra();
+
+  Contractor c{};
+  start = std::chrono::high_resolution_clock::now();
+  Graph ch = c.contractCompletely(g);
+  end = std::chrono::high_resolution_clock::now();
+  std::cout << "contracting the graph took " << std::chrono::duration_cast<ms>(end - start).count() << "ms" << '\n';
+
+  Dijkstra d = ch.createDijkstra();
 
   while (true) {
     size_t from, to;
