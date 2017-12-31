@@ -87,6 +87,7 @@ void calculateOffsets(std::vector<Edge>& edges, std::vector<NodeOffset>& offsets
 
 Graph::Graph(std::vector<Node>&& nodes, std::vector<Edge>&& edges)
 {
+  std::cout << "Creating graph with " << nodes.size() << " nodes and " << edges.size() << " edges." << '\n';
   std::stable_sort(nodes.begin(),
       nodes.end(),
       [](const Node& a, const Node& b) { return a.getLevel() < b.getLevel(); });

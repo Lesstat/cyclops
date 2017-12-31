@@ -57,12 +57,12 @@ std::vector<Edge> Contractor::contract(Graph& g, const NodePos& node)
   const auto& inEdges = g.getIngoingEdgesOf(node);
   const auto& outEdges = g.getOutgoingEdgesOf(node);
   for (const auto& in : inEdges) {
+    const auto& inEdge = g.getEdge(in);
     for (const auto& out : outEdges) {
       LinearProgram lp{ 3 };
       lp.objective({ 1.0, 1.0, 1.0 });
       lp.addConstraint({ 1.0, 1.0, 1.0 }, 1.0, GLP_FX);
 
-      const auto& inEdge = g.getEdge(in);
       const auto& outEdge = g.getEdge(out);
       Cost c1 = inEdge.getCost() + outEdge.getCost();
 
@@ -170,6 +170,7 @@ void copyEdgesOfNode(Graph& g, NodePos pos, std::vector<Edge>& edges)
 
 Graph Contractor::contract(Graph& g)
 {
+  dijkstra = g.createDijkstra();
   ++level;
   std::vector<Edge> shortcuts{};
   auto set = reduce(independentSet(g), g);
@@ -188,7 +189,7 @@ Graph Contractor::contract(Graph& g)
         }
       }
     } else {
-      if (level > 1) {
+      if (contracted % 1000 == 0) {
         std::cout << "contracting " << contracted << " node" << '\n';
       }
       contracted++;
