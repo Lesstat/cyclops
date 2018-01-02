@@ -17,6 +17,7 @@
 */
 #include "dijkstra.hpp"
 #include "graph.hpp"
+#include <cassert>
 #include <sstream>
 #include <vector>
 
@@ -34,6 +35,7 @@ Edge::Edge(NodeId source, NodeId dest, ReplacedEdge edgeA, ReplacedEdge edgeB)
     , edgeA(std::move(edgeA))
     , edgeB(std::move(edgeB))
 {
+  assert(source != dest);
 }
 
 NodeId Edge::getSourceId() const
@@ -81,14 +83,20 @@ Edge Edge::createFromText(const std::string& text)
   e.cost.length = Length(length);
   e.cost.height = Height(height);
   e.cost.unsuitability = Unsuitability(unsuitability);
+  assert(e.cost.length >= 0);
+  assert(e.cost.height >= 0);
+  assert(e.cost.unsuitability >= 0);
   return e;
 }
 
 double Edge::costByConfiguration(const Config& conf) const
 {
-  return cost.length * conf.length
+  double combinedCost = cost.length * conf.length
       + cost.height * conf.height
       + cost.unsuitability * conf.unsuitability;
+
+  assert(combinedCost >= 0);
+  return combinedCost;
 }
 
 EdgeId Edge::getId() const

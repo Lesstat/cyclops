@@ -31,11 +31,22 @@ struct Config {
   HeightConfig height;
   UnsuitabilityConfig unsuitability;
 
+  template <class configType>
+  void asureNonNegativity(configType& c)
+  {
+    if (c < 0) {
+      c = configType{ 0 };
+    }
+  }
+
   Config(LengthConfig l, HeightConfig h, UnsuitabilityConfig u)
       : length(l)
       , height(h)
       , unsuitability(u)
   {
+    asureNonNegativity(length);
+    asureNonNegativity(height);
+    asureNonNegativity(unsuitability);
   }
   bool operator==(Config& other)
   {
