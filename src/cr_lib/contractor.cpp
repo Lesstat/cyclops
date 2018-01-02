@@ -57,19 +57,17 @@ std::vector<Edge> Contractor::contract(Graph& g, const NodePos& node)
   const auto& inEdges = g.getIngoingEdgesOf(node);
   const auto& outEdges = g.getOutgoingEdgesOf(node);
   for (const auto& in : inEdges) {
-    const auto& inEdge = g.getEdge(in);
     for (const auto& out : outEdges) {
       LinearProgram lp{ 3 };
       lp.objective({ 1.0, 1.0, 1.0 });
       lp.addConstraint({ 1.0, 1.0, 1.0 }, 1.0, GLP_FX);
 
-      const auto& outEdge = g.getEdge(out);
-      Cost c1 = inEdge.getCost() + outEdge.getCost();
+      Cost c1 = in.cost + out.cost;
 
       while (true) {
 
-        if (isShortestPath(g, in, out, config)) {
-          shortcuts.push_back(createShortcut(inEdge, outEdge));
+        if (isShortestPath(g, in.id, out.id, config)) {
+          shortcuts.push_back(createShortcut(g.getEdge(in.id), g.getEdge(out.id)));
           break;
         }
 
@@ -108,13 +106,11 @@ std::set<NodePos> Contractor::independentSet(const Graph& g)
   for (size_t i = 0; i < nodeCount; ++i) {
     NodePos pos{ i };
     if (selected[i]) {
-      for (const auto& inEdgeId : g.getIngoingEdgesOf(pos)) {
-        const auto& inEdge = g.getEdge(inEdgeId);
-        selected[inEdge.getSourcePos()] = false;
+      for (const auto& inEdge : g.getIngoingEdgesOf(pos)) {
+        selected[inEdge.end] = false;
       }
-      for (const auto& outEdgeId : g.getOutgoingEdgesOf(pos)) {
-        const auto& outEdge = g.getEdge(outEdgeId);
-        selected[outEdge.getDestPos()] = false;
+      for (const auto& outEdge : g.getOutgoingEdgesOf(pos)) {
+        selected[outEdge.end] = false;
       }
       set.insert(pos);
     }
@@ -159,13 +155,13 @@ void copyEdgesOfNode(Graph& g, NodePos pos, std::vector<Edge>& edges)
   std::transform(outRange.begin(),
       outRange.end(),
       std::back_inserter(edges),
-      [&g](EdgeId id) { return g.getEdge(id); });
+      [&g](const HalfEdge& e) -> Edge { return g.getEdge(e.id); });
 
   auto inRange = g.getIngoingEdgesOf(pos);
   std::transform(inRange.begin(),
       inRange.end(),
       std::back_inserter(edges),
-      [&g](EdgeId id) { return g.getEdge(id); });
+      [&g](const HalfEdge& e) -> Edge { return g.getEdge(e.id); });
 }
 
 Graph Contractor::contract(Graph& g)
@@ -177,20 +173,20 @@ Graph Contractor::contract(Graph& g)
   std::vector<Node> nodes{};
   std::vector<Edge> edges{};
   size_t contracted = 0;
+  const size_t tenPercent = (set.size() > 10 ? set.size() : 10) / 10;
 
   for (size_t i = 0; i < g.getNodeCount(); ++i) {
     NodePos pos{ i };
     if (set.find(pos) == set.end()) {
       nodes.push_back(g.getNode(pos));
-      for (const auto& edgeId : g.getOutgoingEdgesOf(pos)) {
-        const auto& edge = g.getEdge(edgeId);
-        if (set.find(edge.getDestPos()) == set.end()) {
-          edges.push_back(edge);
+      for (const auto& edge : g.getOutgoingEdgesOf(pos)) {
+        if (set.find(edge.end) == set.end()) {
+          edges.push_back(g.getEdge(edge.id));
         }
       }
     } else {
-      if (contracted % 1000 == 0) {
-        std::cout << "contracting " << contracted << " node" << '\n';
+      if (contracted % tenPercent == 0) {
+        std::cout << "contracting " << contracted << "th node" << '\r';
       }
       contracted++;
       auto newShortcuts = contract(g, pos);
@@ -221,7 +217,7 @@ Graph Contractor::mergeWithContracted(Graph& g)
     std::transform(outEdges.begin(),
         outEdges.end(),
         std::back_inserter(edges),
-        [&g](auto& id) { return g.getEdge(id); });
+        [&g](const auto& e) { return g.getEdge(e.id); });
   }
   std::copy(contractedEdges.begin(), contractedEdges.end(), std::back_inserter(edges));
 

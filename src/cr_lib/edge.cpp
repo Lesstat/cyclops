@@ -113,3 +113,31 @@ void Edge::setCost(Cost c)
 {
   this->cost = c;
 }
+
+HalfEdge Edge::makeOutEdge() const
+{
+  HalfEdge e;
+  e.id = internalId;
+  e.end = destinationPos;
+  e.cost = cost;
+  return e;
+}
+
+HalfEdge Edge::makeInEdge() const
+{
+  HalfEdge e;
+  e.id = internalId;
+  e.end = sourcePos;
+  e.cost = cost;
+  return e;
+}
+
+double HalfEdge::costByConfiguration(const Config& conf) const
+{
+  double combinedCost = cost.length * conf.length
+      + cost.height * conf.height
+      + cost.unsuitability * conf.unsuitability;
+
+  assert(combinedCost >= 0);
+  return combinedCost;
+}

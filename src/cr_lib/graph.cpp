@@ -106,10 +106,10 @@ Graph::Graph(std::vector<Node>&& nodes, std::vector<Edge>&& edges)
   }
 
   calculateOffsets(edges, offsets, Pos::source);
-  std::transform(edges.begin(), edges.end(), std::back_inserter(outEdges), [](const Edge& e) { return e.getId(); });
+  std::transform(edges.begin(), edges.end(), std::back_inserter(outEdges), [](const Edge& e) { return e.makeOutEdge(); });
 
   calculateOffsets(edges, offsets, Pos::dest);
-  std::transform(edges.begin(), edges.end(), std::back_inserter(inEdges), [](const Edge& e) { return e.getId(); });
+  std::transform(edges.begin(), edges.end(), std::back_inserter(inEdges), [](const Edge& e) { return e.makeInEdge(); });
 }
 
 std::ostream& operator<<(std::ostream& s, const Graph& g)

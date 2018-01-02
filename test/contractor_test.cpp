@@ -76,10 +76,10 @@ TEST_CASE("Test if edges form shortest path")
 
   NodePos nodePos1{ 1 };
   const auto& inEdges = g.getIngoingEdgesOf(nodePos1);
-  EdgeId edgeId0 = *inEdges.begin();
+  auto& edge0 = *inEdges.begin();
 
   const auto& outEdges = g.getOutgoingEdgesOf(nodePos1);
-  EdgeId edgeId1 = *outEdges.begin();
+  auto& edge1 = *outEdges.begin();
 
   Contractor c{};
 
@@ -87,14 +87,14 @@ TEST_CASE("Test if edges form shortest path")
   {
     Config lengthOnlyConf{ LengthConfig{ 1 }, HeightConfig{ 0 },
       UnsuitabilityConfig{ 0 } };
-    REQUIRE(c.isShortestPath(g, edgeId0, edgeId1, lengthOnlyConf) == true);
+    REQUIRE(c.isShortestPath(g, edge0.id, edge1.id, lengthOnlyConf) == true);
   }
 
   SECTION("With config where the edges do not form shortest path")
   {
     Config heightOnlyConf{ LengthConfig{ 0 }, HeightConfig{ 1 },
       UnsuitabilityConfig{ 0 } };
-    REQUIRE(c.isShortestPath(g, edgeId0, edgeId1, heightOnlyConf) == false);
+    REQUIRE(c.isShortestPath(g, edge0.id, edge1.id, heightOnlyConf) == false);
   }
 }
 
@@ -112,15 +112,15 @@ TEST_CASE("Contracting a Node")
   {
     NodePos nodePos1{ 1 };
     const auto& inEdges = g.getIngoingEdgesOf(nodePos1);
-    EdgeId edgeId0 = *inEdges.begin();
+    auto& edge0 = *inEdges.begin();
 
     const auto& outEdges = g.getOutgoingEdgesOf(nodePos1);
-    EdgeId edgeId1 = *outEdges.begin();
+    auto& edge1 = *outEdges.begin();
 
     auto shortcuts = c.contract(g, nodePos1);
     REQUIRE(shortcuts.size() == 1);
     testEdgeInternals(shortcuts[0], NodeId{ 0 }, NodeId{ 2 }, Length{ 5.7 },
-        Height{ 16 }, Unsuitability{ 6 }, edgeId0, edgeId1);
+        Height{ 16 }, Unsuitability{ 6 }, edge0.id, edge1.id);
   }
 }
 TEST_CASE("Detect cycles when contracting a Node")
@@ -143,7 +143,7 @@ TEST_CASE("Detect cycles when contracting a Node")
 
   auto shortcuts = c.contract(g, NodePos{ 0 });
 
-  REQUIRE(shortcuts.size() == 0);
+  REQUIRE(shortcuts.empty());
 }
 
 TEST_CASE("Finding and reducing independent sets")

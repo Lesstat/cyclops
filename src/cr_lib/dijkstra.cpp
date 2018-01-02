@@ -130,15 +130,14 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
 
       const auto& outEdges = graph->getOutgoingEdgesOf(node);
       for (const auto& edge : outEdges) {
-        const auto& e = graph->getEdge(edge);
-        NodePos nextNode = e.getDestPos();
+        NodePos nextNode = edge.end;
         if (graph->getLevelOf(nextNode) >= graph->getLevelOf(node)) {
-          double nextCost = cost + e.costByConfiguration(config);
+          double nextCost = cost + edge.costByConfiguration(config);
           QueueElem next = std::make_pair(nextNode, nextCost);
           if (nextCost < costS[nextNode]) {
             costS[nextNode] = nextCost;
             touchedS.push_back(nextNode);
-            previousEdgeS[nextNode] = e.getId();
+            previousEdgeS[nextNode] = edge.id;
             heapS.push(next);
           }
         }
@@ -164,15 +163,14 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
 
       const auto& inEdges = graph->getIngoingEdgesOf(node);
       for (const auto& edge : inEdges) {
-        const auto& e = graph->getEdge(edge);
-        NodePos nextNode = e.getSourcePos();
+        NodePos nextNode = edge.end;
         if (graph->getLevelOf(nextNode) >= graph->getLevelOf(node)) {
-          double nextCost = cost + e.costByConfiguration(config);
+          double nextCost = cost + edge.costByConfiguration(config);
           QueueElem next = std::make_pair(nextNode, nextCost);
           if (nextCost < costT[nextNode]) {
             costT[nextNode] = nextCost;
             touchedT.push_back(nextNode);
-            previousEdgeT[nextNode] = e.getId();
+            previousEdgeT[nextNode] = edge.id;
             heapT.push(next);
           }
         }

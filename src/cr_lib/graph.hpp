@@ -65,6 +65,13 @@ struct Cost {
   };
 };
 
+struct HalfEdge {
+  EdgeId id;
+  NodePos end;
+  Cost cost;
+
+  double costByConfiguration(const Config& conf) const;
+};
 struct NodeOffset {
   size_t in{ 0 };
   size_t out{ 0 };
@@ -99,6 +106,9 @@ class Edge {
   const Cost& getCost() const;
   double costByConfiguration(const Config& conf) const;
   void setCost(Cost c);
+
+  HalfEdge makeOutEdge() const;
+  HalfEdge makeInEdge() const;
 
   static Edge createFromText(const std::string& text);
 
@@ -182,8 +192,8 @@ class Graph {
   private:
   std::vector<Node> nodes;
   std::vector<NodeOffset> offsets;
-  std::vector<EdgeId> inEdges;
-  std::vector<EdgeId> outEdges;
+  std::vector<HalfEdge> inEdges;
+  std::vector<HalfEdge> outEdges;
   std::vector<size_t> level;
   std::unordered_map<EdgeId, Edge> edges;
   std::shared_ptr<Graph> self;
@@ -191,7 +201,7 @@ class Graph {
 
 class EdgeRange {
   public:
-  using iterator = std::vector<EdgeId>::const_iterator;
+  using iterator = std::vector<HalfEdge>::const_iterator;
 
   EdgeRange(iterator begin, iterator end)
       : begin_(begin)
