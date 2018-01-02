@@ -139,10 +139,13 @@ class Node {
   static Node createFromText(const std::string& text);
   friend void testNodeInternals(const Node& n, NodeId id, Lat lat, Lng lng, Height height, size_t level);
 
+  Lat lat() const;
+  Lng lng() const;
+
   private:
   NodeId id_;
-  Lat lat;
-  Lng lng;
+  Lat lat_;
+  Lng lng_;
   Height height;
   size_t level;
 };

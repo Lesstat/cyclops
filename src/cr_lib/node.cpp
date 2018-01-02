@@ -20,8 +20,8 @@
 
 Node::Node(NodeId id, Lat lat, Lng lng, Height height)
     : id_(id)
-    , lat(lat)
-    , lng(lng)
+    , lat_(lat)
+    , lng_(lng)
     , height(height)
     , level(0)
 {
@@ -40,6 +40,15 @@ void Node::assignLevel(size_t level)
 NodeId Node::id() const
 {
   return id_;
+}
+
+Lat Node::lat() const
+{
+  return lat_;
+}
+Lng Node::lng() const
+{
+  return lng_;
 }
 
 std::ostream& operator<<(std::ostream& os, const Node& n)

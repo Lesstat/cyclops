@@ -21,8 +21,8 @@
 void testNodeInternals(const Node& n, NodeId id, Lat lat, Lng lng, Height height, size_t level)
 {
   REQUIRE(n.id_ == id);
-  REQUIRE(n.lat == lat);
-  REQUIRE(n.lng == lng);
+  REQUIRE(n.lat_ == lat);
+  REQUIRE(n.lng_ == lng);
   REQUIRE(n.height == height);
   REQUIRE(n.level == level);
 }
