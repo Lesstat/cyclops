@@ -210,9 +210,13 @@ Graph Contractor::mergeWithContracted(Graph& g)
   std::vector<Edge> edges{};
   std::copy(contractedNodes.begin(), contractedNodes.end(), std::back_inserter(nodes));
 
+  ++level;
+
   for (size_t i = 0; i < g.getNodeCount(); ++i) {
     NodePos pos{ i };
-    nodes.push_back(g.getNode(pos));
+    auto node = g.getNode(pos);
+    node.assignLevel(level);
+    nodes.push_back(node);
     auto outEdges = g.getOutgoingEdgesOf(pos);
     std::transform(outEdges.begin(),
         outEdges.end(),

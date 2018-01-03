@@ -227,9 +227,8 @@ TEST_CASE("Contracting one level of Graph")
   SECTION("Merging Graph with previously contracted nodes")
   {
     REQUIRE(finalG.getNodeCount() == 4);
-    REQUIRE(finalG.getNode(NodePos{ 3 }).id() == 0);
-    REQUIRE(finalG.getNode(NodePos{ 3 }).getLevel() == 1);
-    REQUIRE(finalG.getEdgeCount() == 4);
+    REQUIRE(finalG.getNode(NodePos{ 0 }).id() == 0);
+    REQUIRE(finalG.getNode(NodePos{ 0 }).getLevel() == 1);
   }
 
   SECTION("Distances stay the same in all intermediate steps")
@@ -256,4 +255,52 @@ TEST_CASE("Fully contract graph")
   REQUIRE(ch.getLevelOf(NodePos{ 1 }) == 2);
   REQUIRE(ch.getLevelOf(NodePos{ 2 }) == 3);
   REQUIRE(ch.getLevelOf(NodePos{ 3 }) == 4);
+}
+
+TEST_CASE("Give max level to not contracted nodes")
+{
+
+  const std::string tenNodeGraph{ R"!!(# Build by: pbfextractor
+# Build on: SystemTime { tv_sec: 1512985452, tv_nsec: 881838750 }
+
+10
+9
+0 163354 48.6674338 9.2445911 380 0
+1 163355 48.6694744 9.2432625 380 0
+2 163358 48.6661932 9.2515536 386 0
+3 163354 48.6674338 9.2445911 380 0
+4 163355 48.6694744 9.2432625 380 0
+5 163358 48.6661932 9.2515536 386 0
+6 163354 48.6674338 9.2445911 380 0
+7 163355 48.6694744 9.2432625 380 0
+8 163358 48.6661932 9.2515536 386 0
+9 163358 48.6661932 9.2515536 386 0
+0 1 2.5 7 4 -1 -1
+1 2 3.2 9 2 -1 -1
+2 3 8.2 0 2 -1 -1
+3 4 2.5 7 4 -1 -1
+4 5 3.2 9 2 -1 -1
+5 6 8.2 0 2 -1 -1
+6 7 2.5 7 4 -1 -1
+7 8 3.2 9 2 -1 -1
+8 9 8.2 0 2 -1 -1
+
+)!!" };
+  auto iss = std::istringstream(tenNodeGraph);
+  auto g = Graph::createFromStream(iss);
+
+  Contractor c{};
+
+  auto ch = c.contractCompletely(g);
+
+  REQUIRE(ch.getLevelOf(NodePos{ 0 }) == 1);
+  REQUIRE(ch.getLevelOf(NodePos{ 1 }) == 1);
+  REQUIRE(ch.getLevelOf(NodePos{ 2 }) == 2);
+  REQUIRE(ch.getLevelOf(NodePos{ 3 }) == 2);
+  REQUIRE(ch.getLevelOf(NodePos{ 4 }) == 3);
+  REQUIRE(ch.getLevelOf(NodePos{ 5 }) == 4);
+  REQUIRE(ch.getLevelOf(NodePos{ 6 }) == 5);
+  REQUIRE(ch.getLevelOf(NodePos{ 7 }) == 6);
+  REQUIRE(ch.getLevelOf(NodePos{ 8 }) == 7);
+  REQUIRE(ch.getLevelOf(NodePos{ 9 }) == 8);
 }
