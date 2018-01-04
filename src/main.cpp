@@ -23,18 +23,11 @@
 #include <fstream>
 #include <iostream>
 
-int main(int argc, char* argv[])
+Graph loadGraphFromTextFile(const char* filename)
 {
-
-  if (argc != 2) {
-    std::cout << "Not right amount of arguments!" << '\n';
-    std::cout << "expected: \"cr PATH\"" << '\n';
-    std::cout << "where path points to a graph file" << '\n';
-    return 1;
-  }
   const size_t N = 256 * 1024;
   char buffer[N];
-  std::string graphPath{ argv[1] }; //NOLINT
+  std::string graphPath{ filename };
   std::ifstream graphFile{};
   graphFile.rdbuf()->pubsetbuf((char*)buffer, N);
   graphFile.open(graphPath);
@@ -46,19 +39,31 @@ int main(int argc, char* argv[])
 
   using ms = std::chrono::milliseconds;
   std::cout << "creating the graph took " << std::chrono::duration_cast<ms>(end - start).count() << "ms" << '\n';
+  return g;
+}
 
+Graph contractGraph(Graph& g)
+{
   Contractor c{};
-  start = std::chrono::high_resolution_clock::now();
+  auto start = std::chrono::high_resolution_clock::now();
   Graph ch = c.contractCompletely(g);
-  end = std::chrono::high_resolution_clock::now();
-  std::cout << "contracting the graph took " << std::chrono::duration_cast<ms>(end - start).count() << "ms" << '\n';
+  auto end = std::chrono::high_resolution_clock::now();
+  using m = std::chrono::minutes;
+  std::cout << "contracting the graph took " << std::chrono::duration_cast<m>(end - start).count() << " minutes" << '\n';
+  return ch;
+}
 
+void saveToBinaryFile(Graph& ch, std::string filename)
+{
   {
-    std::ofstream ofs("mygraph.ch", std::ios::binary);
+    std::ofstream ofs(filename, std::ios::binary);
     boost::archive::binary_oarchive oa{ ofs };
     oa << ch;
   }
+}
 
+void cliDijkstra(Graph& ch)
+{
   Dijkstra d = ch.createDijkstra();
 
   while (true) {
@@ -82,6 +87,22 @@ int main(int argc, char* argv[])
       std::cout << "No route from " << from << "to " << to << "found" << '\n';
     }
   }
+}
 
+int main(int argc, char* argv[])
+{
+
+  if (argc != 2) {
+    std::cout << "Not right amount of arguments!" << '\n';
+    std::cout << "expected: \"cr PATH\"" << '\n';
+    std::cout << "where path points to a graph file" << '\n';
+    return 1;
+  }
+  auto g = loadGraphFromTextFile(argv[1]); //NOLINT
+  auto ch = contractGraph(g);
+
+  saveToBinaryFile(ch, "mygraph.ch");
+
+  cliDijkstra(ch);
   return 0;
 }
