@@ -19,15 +19,15 @@
 #include "dijkstra.hpp"
 #include "graph.hpp"
 #include <boost/archive/binary_oarchive.hpp>
+#include <boost/program_options.hpp>
 #include <chrono>
 #include <fstream>
 #include <iostream>
 
-Graph loadGraphFromTextFile(const char* filename)
+Graph loadGraphFromTextFile(std::string& graphPath)
 {
   const size_t N = 256 * 1024;
   char buffer[N];
-  std::string graphPath{ filename };
   std::ifstream graphFile{};
   graphFile.rdbuf()->pubsetbuf((char*)buffer, N);
   graphFile.open(graphPath);
@@ -38,7 +38,24 @@ Graph loadGraphFromTextFile(const char* filename)
   auto end = std::chrono::high_resolution_clock::now();
 
   using ms = std::chrono::milliseconds;
-  std::cout << "creating the graph took " << std::chrono::duration_cast<ms>(end - start).count() << "ms" << '\n';
+  std::cout << "creating the graph took " << std::chrono::duration_cast<ms>(end - start).count()
+            << "ms" << '\n';
+  return g;
+}
+
+Graph loadGraphFromBinaryFile(std::string& graphPath)
+{
+  std::ifstream binFile{ graphPath };
+  boost::archive::binary_iarchive bin{ binFile };
+
+  std::cout << "Reading Graphdata" << '\n';
+  auto start = std::chrono::high_resolution_clock::now();
+  Graph g = Graph::createFromBinaryFile(bin);
+  auto end = std::chrono::high_resolution_clock::now();
+
+  using ms = std::chrono::milliseconds;
+  std::cout << "creating the graph took " << std::chrono::duration_cast<ms>(end - start).count()
+            << "ms" << '\n';
   return g;
 }
 
@@ -49,11 +66,12 @@ Graph contractGraph(Graph& g)
   Graph ch = c.contractCompletely(g);
   auto end = std::chrono::high_resolution_clock::now();
   using m = std::chrono::minutes;
-  std::cout << "contracting the graph took " << std::chrono::duration_cast<m>(end - start).count() << " minutes" << '\n';
+  std::cout << "contracting the graph took " << std::chrono::duration_cast<m>(end - start).count()
+            << " minutes" << '\n';
   return ch;
 }
 
-void saveToBinaryFile(Graph& ch, std::string filename)
+void saveToBinaryFile(Graph& ch, std::string& filename)
 {
   {
     std::ofstream ofs(filename, std::ios::binary);
@@ -74,7 +92,8 @@ void cliDijkstra(Graph& ch)
     std::cin >> to;
 
     std::cout << "Starting dijkstra" << '\n';
-    auto maybeRoute = d.findBestRoute(NodePos{ from }, NodePos{ to }, Config{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } });
+    auto maybeRoute = d.findBestRoute(NodePos{ from }, NodePos{ to },
+        Config{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } });
 
     if (maybeRoute.has_value()) {
       auto route = maybeRoute.value();
@@ -89,20 +108,57 @@ void cliDijkstra(Graph& ch)
   }
 }
 
+namespace po = boost::program_options;
 int main(int argc, char* argv[])
 {
 
-  if (argc != 2) {
-    std::cout << "Not right amount of arguments!" << '\n';
-    std::cout << "expected: \"cr PATH\"" << '\n';
-    std::cout << "where path points to a graph file" << '\n';
-    return 1;
+  std::string textFileName{};
+  std::string binFileName{};
+  std::string saveFileName{};
+
+  po::options_description loading{ "loading options" };
+  loading.add_options()(
+      "text,t", po::value<std::string>(&textFileName), "load graph from text file")(
+      "bin,b", po::value<std::string>(&binFileName), "load graph form binary file");
+
+  po::options_description action{ "actions" };
+  action.add_options()("contract,c", "contract graph")(
+      "dijkstra,d", "start interactive dijkstra in cli")(
+      "save", po::value<std::string>(&saveFileName), "save graph to binary file");
+
+  po::options_description all;
+  all.add_options()("help,h", "prints help message");
+  all.add(loading).add(action);
+
+  po::variables_map vm{};
+  po::store(po::parse_command_line(argc, argv, all), vm);
+  po::notify(vm);
+
+  if (vm.count("help") > 0) {
+    std::cout << all << '\n';
+    return 0;
   }
-  auto g = loadGraphFromTextFile(argv[1]); //NOLINT
-  auto ch = contractGraph(g);
+  Graph g{ std::vector<Node>(), std::vector<Edge>() };
+  if (!textFileName.empty()) {
+    g = loadGraphFromTextFile(textFileName);
+  } else if (!binFileName.empty()) {
+    g = loadGraphFromBinaryFile(binFileName);
+  } else {
+    std::cout << "No input file given" << '\n';
+    std::cout << all << '\n';
+    return 0;
+  }
 
-  saveToBinaryFile(ch, "mygraph.ch");
+  if (vm.count("contract") > 0) {
+    g = contractGraph(g);
+  }
 
-  cliDijkstra(ch);
+  if (!saveFileName.empty()) {
+    saveToBinaryFile(g, saveFileName);
+  }
+
+  if (vm.count("dijkstra") > 0) {
+    cliDijkstra(g);
+  }
   return 0;
 }

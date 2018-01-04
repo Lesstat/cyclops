@@ -208,7 +208,7 @@ size_t Graph::getNodeCount() const { return nodes.size(); }
 
 size_t Graph::getEdgeCount() const { return edges.size(); }
 
-Graph Graph::createFromBinaryFile(boost::archive::binary_iarchive bin)
+Graph Graph::createFromBinaryFile(boost::archive::binary_iarchive& bin)
 {
   Graph g{ std::vector<Node>(), std::vector<Edge>() };
   bin >> g;

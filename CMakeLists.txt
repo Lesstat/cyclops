@@ -6,7 +6,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 find_package(glpk REQUIRED)
 
-find_package(Boost 1.65 REQUIRED COMPONENTS serialization)
+find_package(Boost 1.65 REQUIRED COMPONENTS serialization program_options)
 
 # Actual Implementation of project in static library
 file(GLOB lib_src src/cr_lib/*.cpp )

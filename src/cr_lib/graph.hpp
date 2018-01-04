@@ -216,7 +216,7 @@ class Node {
   Lat lat_;
   Lng lng_;
   Height height;
-  size_t level;
+  size_t level = 0;
   template <class Archive> void serialize(Archive& ar, const unsigned int version)
   {
     if (version > 0) {
@@ -252,7 +252,7 @@ class Graph {
   const Edge& getEdge(EdgeId e) const;
 
   static Graph createFromStream(std::istream& file);
-  static Graph createFromBinaryFile(boost::archive::binary_iarchive bin);
+  static Graph createFromBinaryFile(boost::archive::binary_iarchive& bin);
 
   const Node& getNode(NodePos pos) const;
   std::optional<NodePos> nodePosById(NodeId id) const;
