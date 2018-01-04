@@ -29,10 +29,7 @@ LinearProgram::LinearProgram(size_t cols)
   }
 }
 
-LinearProgram::~LinearProgram() noexcept
-{
-  glp_delete_prob(lp);
-}
+LinearProgram::~LinearProgram() noexcept { glp_delete_prob(lp); }
 void LinearProgram::addConstraint(const std::vector<double>& coeff, double max, size_t type)
 {
   int row = glp_add_rows(lp, 1);
@@ -66,10 +63,7 @@ bool LinearProgram::solve()
   return simplex == 0 && status == GLP_OPT;
 }
 
-double LinearProgram::objectiveFunctionValue()
-{
-  return glp_get_obj_val(lp);
-}
+double LinearProgram::objectiveFunctionValue() { return glp_get_obj_val(lp); }
 
 std::vector<double> LinearProgram::variableValues()
 {

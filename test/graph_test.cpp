@@ -76,7 +76,8 @@ TEST_CASE("Read small file into graph")
   Graph g = Graph::createFromStream(iss);
 
   auto dij = g.createDijkstra();
-  auto optionalRoute = dij.findBestRoute(NodePos{ 0 }, NodePos{ 2 }, Config{ LengthConfig{ 1.0 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } });
+  auto optionalRoute = dij.findBestRoute(NodePos{ 0 }, NodePos{ 2 },
+      Config{ LengthConfig{ 1.0 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } });
 
   REQUIRE(optionalRoute.has_value());
   auto route = optionalRoute.value();

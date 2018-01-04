@@ -32,8 +32,8 @@ Edge Contractor::createShortcut(const Edge& e1, const Edge& e2)
   return shortcut;
 }
 
-bool Contractor::isShortestPath(Graph& g, const EdgeId& startEdgeId,
-    const EdgeId& destEdgeId, const Config& conf)
+bool Contractor::isShortestPath(
+    Graph& g, const EdgeId& startEdgeId, const EdgeId& destEdgeId, const Config& conf)
 {
   if (!dijkstra) {
     dijkstra = g.createDijkstra();
@@ -46,14 +46,14 @@ bool Contractor::isShortestPath(Graph& g, const EdgeId& startEdgeId,
     return false;
   }
   auto route = foundRoute.value();
-  return route.edges.size() == 2 && route.edges[0].getId() == startEdgeId && route.edges[1].getId() == destEdgeId;
+  return route.edges.size() == 2 && route.edges[0].getId() == startEdgeId
+      && route.edges[1].getId() == destEdgeId;
 }
 
 std::vector<Edge> Contractor::contract(Graph& g, const NodePos& node)
 {
   std::vector<Edge> shortcuts;
-  Config config{ LengthConfig{ 0.33 }, HeightConfig{ 0.33 },
-    UnsuitabilityConfig{ 0.33 } };
+  Config config{ LengthConfig{ 0.33 }, HeightConfig{ 0.33 }, UnsuitabilityConfig{ 0.33 } };
   const auto& inEdges = g.getIngoingEdgesOf(node);
   const auto& outEdges = g.getOutgoingEdgesOf(node);
   for (const auto& in : inEdges) {
@@ -79,13 +79,16 @@ std::vector<Edge> Contractor::contract(Graph& g, const NodePos& node)
           c2 = c2 + edge.getCost();
         }
         Cost newCost = c1 - c2;
-        lp.addConstraint({ newCost.length, static_cast<double>(newCost.height), static_cast<double>(newCost.unsuitability) }, 0.0);
+        lp.addConstraint({ newCost.length, static_cast<double>(newCost.height),
+                             static_cast<double>(newCost.unsuitability) },
+            0.0);
 
         if (!lp.solve()) {
           break;
         }
         auto values = lp.variableValues();
-        Config newConfig{ LengthConfig{ values[0] }, HeightConfig{ values[1] }, UnsuitabilityConfig{ values[2] } };
+        Config newConfig{ LengthConfig{ values[0] }, HeightConfig{ values[1] },
+          UnsuitabilityConfig{ values[2] } };
         if (config == newConfig) {
           break;
         }
@@ -124,26 +127,19 @@ std::set<NodePos> Contractor::reduce(std::set<NodePos>& set, const Graph& g)
   std::vector<std::pair<NodePos, size_t>> metric{};
   metric.reserve(set.size());
 
-  std::transform(
-      set.begin(),
-      set.end(),
-      std::back_inserter(metric),
-      [&g](NodePos p) {
-        auto inEdges = g.getIngoingEdgesOf(p);
-        auto outEdges = g.getOutgoingEdgesOf(p);
-        size_t count = (inEdges.end() - inEdges.begin()) * (outEdges.end() - outEdges.begin());
-        return std::make_pair(p, count);
-      });
+  std::transform(set.begin(), set.end(), std::back_inserter(metric), [&g](NodePos p) {
+    auto inEdges = g.getIngoingEdgesOf(p);
+    auto outEdges = g.getOutgoingEdgesOf(p);
+    size_t count = (inEdges.end() - inEdges.begin()) * (outEdges.end() - outEdges.begin());
+    return std::make_pair(p, count);
+  });
 
   auto median = metric.begin() + (metric.size() == 1 ? 1 : metric.size() / 2);
 
   std::nth_element(metric.begin(), median, metric.end());
 
   std::set<NodePos> result{};
-  std::transform(
-      metric.begin(),
-      median,
-      std::inserter(result, result.begin()),
+  std::transform(metric.begin(), median, std::inserter(result, result.begin()),
       [](auto pair) { return std::get<NodePos>(pair); });
 
   return result;
@@ -152,15 +148,11 @@ std::set<NodePos> Contractor::reduce(std::set<NodePos>& set, const Graph& g)
 void copyEdgesOfNode(Graph& g, NodePos pos, std::vector<Edge>& edges)
 {
   auto outRange = g.getOutgoingEdgesOf(pos);
-  std::transform(outRange.begin(),
-      outRange.end(),
-      std::back_inserter(edges),
+  std::transform(outRange.begin(), outRange.end(), std::back_inserter(edges),
       [&g](const HalfEdge& e) -> Edge { return g.getEdge(e.id); });
 
   auto inRange = g.getIngoingEdgesOf(pos);
-  std::transform(inRange.begin(),
-      inRange.end(),
-      std::back_inserter(edges),
+  std::transform(inRange.begin(), inRange.end(), std::back_inserter(edges),
       [&g](const HalfEdge& e) -> Edge { return g.getEdge(e.id); });
 }
 
@@ -218,9 +210,7 @@ Graph Contractor::mergeWithContracted(Graph& g)
     node.assignLevel(level);
     nodes.push_back(node);
     auto outEdges = g.getOutgoingEdgesOf(pos);
-    std::transform(outEdges.begin(),
-        outEdges.end(),
-        std::back_inserter(edges),
+    std::transform(outEdges.begin(), outEdges.end(), std::back_inserter(edges),
         [&g](const auto& e) { return g.getEdge(e.id); });
   }
   std::copy(contractedEdges.begin(), contractedEdges.end(), std::back_inserter(edges));

@@ -85,15 +85,13 @@ TEST_CASE("Test if edges form shortest path")
 
   SECTION("With config where the edges form shortest path")
   {
-    Config lengthOnlyConf{ LengthConfig{ 1 }, HeightConfig{ 0 },
-      UnsuitabilityConfig{ 0 } };
+    Config lengthOnlyConf{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } };
     REQUIRE(c.isShortestPath(g, edge0.id, edge1.id, lengthOnlyConf) == true);
   }
 
   SECTION("With config where the edges do not form shortest path")
   {
-    Config heightOnlyConf{ LengthConfig{ 0 }, HeightConfig{ 1 },
-      UnsuitabilityConfig{ 0 } };
+    Config heightOnlyConf{ LengthConfig{ 0 }, HeightConfig{ 1 }, UnsuitabilityConfig{ 0 } };
     REQUIRE(c.isShortestPath(g, edge0.id, edge1.id, heightOnlyConf) == false);
   }
 }
@@ -119,8 +117,8 @@ TEST_CASE("Contracting a Node")
 
     auto shortcuts = c.contract(g, nodePos1);
     REQUIRE(shortcuts.size() == 1);
-    testEdgeInternals(shortcuts[0], NodeId{ 0 }, NodeId{ 2 }, Length{ 5.7 },
-        Height{ 16 }, Unsuitability{ 6 }, edge0.id, edge1.id);
+    testEdgeInternals(shortcuts[0], NodeId{ 0 }, NodeId{ 2 }, Length{ 5.7 }, Height{ 16 },
+        Unsuitability{ 6 }, edge0.id, edge1.id);
   }
 }
 TEST_CASE("Detect cycles when contracting a Node")

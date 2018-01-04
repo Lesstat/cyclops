@@ -22,10 +22,7 @@
 #include <boost/serialization/split_free.hpp>
 
 template <class Archive, class T>
-void save(
-    Archive& ar,
-    const std::optional<T>& t,
-    const unsigned int /*version*/
+void save(Archive& ar, const std::optional<T>& t, const unsigned int /*version*/
 )
 {
   const bool tflag = t.has_value();
@@ -36,10 +33,7 @@ void save(
 }
 
 template <class Archive, class T>
-void load(
-    Archive& ar,
-    std::optional<T>& t,
-    const unsigned int /*version*/
+void load(Archive& ar, std::optional<T>& t, const unsigned int /*version*/
 )
 {
   bool tflag;
@@ -49,16 +43,14 @@ void load(
     return;
   }
 
-  if (!t.has_value())
+  if (!t.has_value()) {
     t = T();
+  }
   ar >> boost::serialization::make_nvp("value", *t);
 }
 
 template <class Archive, class T>
-void serialize(
-    Archive& ar,
-    std::optional<T>& t,
-    const unsigned int version)
+void serialize(Archive& ar, std::optional<T>& t, const unsigned int version)
 {
   boost::serialization::split_free(ar, t, version);
 }

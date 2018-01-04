@@ -61,17 +61,18 @@ struct Cost {
 
   Cost operator+(const Cost& c) const
   {
-    return Cost{ Length(length.get() + c.length.get()), Height(height.get() + c.height.get()), Unsuitability(unsuitability.get() + c.unsuitability.get()) };
+    return Cost{ Length(length.get() + c.length.get()), Height(height.get() + c.height.get()),
+      Unsuitability(unsuitability.get() + c.unsuitability.get()) };
   };
   Cost operator-(const Cost& c) const
   {
-    return Cost{ Length(length.get() - c.length.get()), Height(height.get() - c.height.get()), Unsuitability(unsuitability.get() - c.unsuitability.get()) };
+    return Cost{ Length(length.get() - c.length.get()), Height(height.get() - c.height.get()),
+      Unsuitability(unsuitability.get() - c.unsuitability.get()) };
   };
 
   private:
   friend class boost::serialization::access;
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
+  template <class Archive> void serialize(Archive& ar, const unsigned int version)
   {
     if (version > 0) {
       throw std::invalid_argument{ "Version > 0 not implemented yet" };
@@ -91,8 +92,7 @@ struct HalfEdge {
 
   private:
   friend class boost::serialization::access;
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
+  template <class Archive> void serialize(Archive& ar, const unsigned int version)
   {
     if (version > 0) {
       throw std::invalid_argument{ "Version > 0 not implemented yet" };
@@ -115,8 +115,7 @@ struct NodeOffset {
 
   private:
   friend class boost::serialization::access;
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
+  template <class Archive> void serialize(Archive& ar, const unsigned int version)
   {
     if (version > 0) {
       throw std::invalid_argument{ "Version > 0 not implemented yet" };
@@ -156,13 +155,8 @@ class Edge {
 
   static Edge createFromText(const std::string& text);
 
-  friend void testEdgeInternals(const Edge& e,
-      NodeId source,
-      NodeId destination,
-      Length length,
-      Height height,
-      Unsuitability unsuitability,
-      const ReplacedEdge& edgeA,
+  friend void testEdgeInternals(const Edge& e, NodeId source, NodeId destination, Length length,
+      Height height, Unsuitability unsuitability, const ReplacedEdge& edgeA,
       const ReplacedEdge& edgeB);
 
   private:
@@ -177,8 +171,7 @@ class Edge {
   NodePos sourcePos;
   NodePos destinationPos;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
+  template <class Archive> void serialize(Archive& ar, const unsigned int version)
   {
     if (version > 0) {
       throw std::invalid_argument{ "Version > 0 not implemented yet" };
@@ -210,7 +203,8 @@ class Node {
   friend std::ostream& operator<<(std::ostream& os, const Node& n);
 
   static Node createFromText(const std::string& text);
-  friend void testNodeInternals(const Node& n, NodeId id, Lat lat, Lng lng, Height height, size_t level);
+  friend void testNodeInternals(
+      const Node& n, NodeId id, Lat lat, Lng lng, Height height, size_t level);
 
   Lat lat() const;
   Lng lng() const;
@@ -223,8 +217,7 @@ class Node {
   Lng lng_;
   Height height;
   size_t level;
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
+  template <class Archive> void serialize(Archive& ar, const unsigned int version)
   {
     if (version > 0) {
       throw std::invalid_argument{ "Version > 0 not implemented yet" };
@@ -277,8 +270,7 @@ class Graph {
   std::vector<size_t> level;
   std::unordered_map<EdgeId, Edge> edges;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
+  template <class Archive> void serialize(Archive& ar, const unsigned int version)
   {
     if (version > 0) {
       throw std::invalid_argument{ "Version > 0 not implemented yet" };

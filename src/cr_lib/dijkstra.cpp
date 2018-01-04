@@ -43,7 +43,8 @@ void Dijkstra::clearState()
   touchedT.clear();
 }
 
-Route Dijkstra::buildRoute(NodePos node, NodeToEdgeMap previousEdgeS, NodeToEdgeMap previousEdgeT, NodePos from, NodePos to)
+Route Dijkstra::buildRoute(NodePos node, NodeToEdgeMap previousEdgeS, NodeToEdgeMap previousEdgeT,
+    NodePos from, NodePos to)
 {
 
   Route route{};

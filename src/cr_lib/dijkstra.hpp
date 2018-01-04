@@ -31,8 +31,7 @@ struct Config {
   HeightConfig height;
   UnsuitabilityConfig unsuitability;
 
-  template <class configType>
-  void asureNonNegativity(configType& c)
+  template <class configType> void asureNonNegativity(configType& c)
   {
     if (c < 0) {
       c = configType{ 0 };
@@ -74,7 +73,8 @@ class Dijkstra {
   void clearState();
 
   using NodeToEdgeMap = std::unordered_map<NodePos, EdgeId>;
-  Route buildRoute(NodePos node, NodeToEdgeMap previousEdgeS, NodeToEdgeMap previousEdgeT, NodePos from, NodePos to);
+  Route buildRoute(NodePos node, NodeToEdgeMap previousEdgeS, NodeToEdgeMap previousEdgeT,
+      NodePos from, NodePos to);
   std::vector<double> costS;
   std::vector<double> costT;
   std::vector<NodePos> touchedS;

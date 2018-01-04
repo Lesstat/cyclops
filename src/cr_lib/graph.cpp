@@ -37,13 +37,11 @@ void connectEdgesToNodes(const std::vector<Node>& nodes, std::vector<Edge>& edge
   });
 }
 
-enum class Pos {
-  source,
-  dest
-};
+enum class Pos { source, dest };
 void sortEdgesByNodePos(std::vector<Edge>& edges, Pos p)
 {
-  auto sourceSort = [](const Edge& a, const Edge& b) { return a.getSourcePos() < b.getSourcePos(); };
+  auto sourceSort
+      = [](const Edge& a, const Edge& b) { return a.getSourcePos() < b.getSourcePos(); };
   auto destSort = [](const Edge& a, const Edge& b) { return a.getDestPos() < b.getDestPos(); };
 
   if (p == Pos::source) {
@@ -60,13 +58,11 @@ void calculateOffsets(std::vector<Edge>& edges, std::vector<NodeOffset>& offsets
   auto setOut = [&offsets](size_t i, size_t j) { offsets[i].out = j; };
   auto setIn = [&offsets](size_t i, size_t j) { offsets[i].in = j; };
 
-  auto getPos = [p, sourcePos, destPos](size_t j) {
-    return p == Pos::source ? sourcePos(j) : destPos(j);
-  };
+  auto getPos
+      = [p, sourcePos, destPos](size_t j) { return p == Pos::source ? sourcePos(j) : destPos(j); };
 
-  auto setOffset = [p, setOut, setIn](size_t i, size_t j) {
-    p == Pos::source ? setOut(i, j) : setIn(i, j);
-  };
+  auto setOffset
+      = [p, setOut, setIn](size_t i, size_t j) { p == Pos::source ? setOut(i, j) : setIn(i, j); };
 
   sortEdgesByNodePos(edges, p);
 
@@ -87,8 +83,7 @@ void calculateOffsets(std::vector<Edge>& edges, std::vector<NodeOffset>& offsets
 
 Graph::Graph(std::vector<Node>&& nodes, std::vector<Edge>&& edges)
 {
-  std::stable_sort(nodes.begin(),
-      nodes.end(),
+  std::stable_sort(nodes.begin(), nodes.end(),
       [](const Node& a, const Node& b) { return a.getLevel() < b.getLevel(); });
 
   connectEdgesToNodes(nodes, edges);
@@ -105,10 +100,12 @@ Graph::Graph(std::vector<Node>&& nodes, std::vector<Edge>&& edges)
   }
 
   calculateOffsets(edges, offsets, Pos::source);
-  std::transform(edges.begin(), edges.end(), std::back_inserter(outEdges), [](const Edge& e) { return e.makeOutEdge(); });
+  std::transform(edges.begin(), edges.end(), std::back_inserter(outEdges),
+      [](const Edge& e) { return e.makeOutEdge(); });
 
   calculateOffsets(edges, offsets, Pos::dest);
-  std::transform(edges.begin(), edges.end(), std::back_inserter(inEdges), [](const Edge& e) { return e.makeInEdge(); });
+  std::transform(edges.begin(), edges.end(), std::back_inserter(inEdges),
+      [](const Edge& e) { return e.makeInEdge(); });
 }
 
 std::ostream& operator<<(std::ostream& s, const Graph& g)
@@ -131,15 +128,9 @@ std::ostream& operator<<(std::ostream& s, const Graph& g)
   return s;
 }
 
-std::vector<NodeOffset> const& Graph::getOffsets() const
-{
-  return offsets;
-}
+std::vector<NodeOffset> const& Graph::getOffsets() const { return offsets; }
 
-Dijkstra Graph::createDijkstra()
-{
-  return Dijkstra{ this, nodes.size() };
-}
+Dijkstra Graph::createDijkstra() { return Dijkstra{ this, nodes.size() }; }
 
 size_t readCount(std::istream& file)
 {
@@ -148,8 +139,7 @@ size_t readCount(std::istream& file)
   return std::stoi(line);
 }
 
-template <class Obj>
-void parseLines(std::vector<Obj>& v, std::istream& file, size_t count)
+template <class Obj> void parseLines(std::vector<Obj>& v, std::istream& file, size_t count)
 {
   std::string line{};
   for (size_t i = 0; i < count; ++i) {
@@ -180,15 +170,9 @@ Graph Graph::createFromStream(std::istream& file)
   return Graph{ std::move(nodes), std::move(edges) };
 }
 
-const Node& Graph::getNode(NodePos pos) const
-{
-  return nodes[pos];
-}
+const Node& Graph::getNode(NodePos pos) const { return nodes[pos]; }
 
-const Edge& Graph::getEdge(EdgeId e) const
-{
-  return edges.at(e);
-}
+const Edge& Graph::getEdge(EdgeId e) const { return edges.at(e); }
 
 EdgeRange Graph::getOutgoingEdgesOf(NodePos pos) const
 {
@@ -208,10 +192,7 @@ EdgeRange Graph::getIngoingEdgesOf(NodePos pos) const
   return EdgeRange{ start, end };
 }
 
-size_t Graph::getLevelOf(NodePos pos) const
-{
-  return level[pos];
-}
+size_t Graph::getLevelOf(NodePos pos) const { return level[pos]; }
 
 std::optional<NodePos> Graph::nodePosById(NodeId id) const
 {
@@ -223,15 +204,9 @@ std::optional<NodePos> Graph::nodePosById(NodeId id) const
   return {};
 }
 
-size_t Graph::getNodeCount() const
-{
-  return nodes.size();
-}
+size_t Graph::getNodeCount() const { return nodes.size(); }
 
-size_t Graph::getEdgeCount() const
-{
-  return edges.size();
-}
+size_t Graph::getEdgeCount() const { return edges.size(); }
 
 Graph Graph::createFromBinaryFile(boost::archive::binary_iarchive bin)
 {

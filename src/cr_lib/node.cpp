@@ -27,29 +27,14 @@ Node::Node(NodeId id, Lat lat, Lng lng, Height height)
 {
 }
 
-size_t Node::getLevel() const
-{
-  return level;
-}
+size_t Node::getLevel() const { return level; }
 
-void Node::assignLevel(size_t level)
-{
-  this->level = level;
-}
+void Node::assignLevel(size_t level) { this->level = level; }
 
-NodeId Node::id() const
-{
-  return id_;
-}
+NodeId Node::id() const { return id_; }
 
-Lat Node::lat() const
-{
-  return lat_;
-}
-Lng Node::lng() const
-{
-  return lng_;
-}
+Lat Node::lat() const { return lat_; }
+Lng Node::lng() const { return lng_; }
 
 std::ostream& operator<<(std::ostream& os, const Node& n)
 {
@@ -62,7 +47,8 @@ Node Node::createFromText(const std::string& text)
   size_t id, osmId, level;
   double lat, lng, height;
 
-  std::sscanf(text.c_str(), "%lu%lu%lf%lf%lf%lu", &id, &osmId, &lat, &lng, &height, &level); //NOLINT
+  std::sscanf(
+      text.c_str(), "%lu%lu%lf%lf%lf%lu", &id, &osmId, &lat, &lng, &height, &level); // NOLINT
 
   Node n{ NodeId{ id }, Lat(lat), Lng(lng), Height(height) };
   n.level = level;

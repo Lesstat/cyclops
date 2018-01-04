@@ -33,7 +33,8 @@ class Contractor {
 
   Edge createShortcut(const Edge& e1, const Edge& e2);
 
-  bool isShortestPath(Graph& g, const EdgeId& startEdgeId, const EdgeId& destEdgeId, const Config& conf);
+  bool isShortestPath(
+      Graph& g, const EdgeId& startEdgeId, const EdgeId& destEdgeId, const Config& conf);
 
   std::vector<Edge> contract(Graph& g, const NodePos& node);
   Graph contract(Graph& g);
@@ -42,10 +43,7 @@ class Contractor {
 
   std::set<NodePos> independentSet(const Graph& g);
   std::set<NodePos> reduce(std::set<NodePos>& set, const Graph& g);
-  std::set<NodePos> reduce(std::set<NodePos>&& set, const Graph& g)
-  {
-    return reduce(set, g);
-  };
+  std::set<NodePos> reduce(std::set<NodePos>&& set, const Graph& g) { return reduce(set, g); };
 
   protected:
   private:

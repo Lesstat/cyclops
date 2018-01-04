@@ -38,32 +38,14 @@ Edge::Edge(NodeId source, NodeId dest, ReplacedEdge edgeA, ReplacedEdge edgeB)
   assert(source != dest);
 }
 
-NodeId Edge::getSourceId() const
-{
-  return source;
-}
-NodeId Edge::getDestId() const
-{
-  return destination;
-}
-NodePos Edge::getSourcePos() const
-{
-  return sourcePos;
-}
-NodePos Edge::getDestPos() const
-{
-  return destinationPos;
-}
+NodeId Edge::getSourceId() const { return source; }
+NodeId Edge::getDestId() const { return destination; }
+NodePos Edge::getSourcePos() const { return sourcePos; }
+NodePos Edge::getDestPos() const { return destinationPos; }
 
-void Edge::setDestPos(NodePos p)
-{
-  destinationPos = p;
-}
+void Edge::setDestPos(NodePos p) { destinationPos = p; }
 
-void Edge::setSourcePos(NodePos p)
-{
-  sourcePos = p;
-}
+void Edge::setSourcePos(NodePos p) { sourcePos = p; }
 
 Edge Edge::createFromText(const std::string& text)
 {
@@ -73,7 +55,8 @@ Edge Edge::createFromText(const std::string& text)
   short height, unsuitability;
   long edgeA, edgeB;
 
-  std::sscanf(text.c_str(), "%lu%lu%lf%hd%hd%li%li", &source, &dest, &length, &height, &unsuitability, &edgeA, &edgeB); //NOLINT
+  std::sscanf(text.c_str(), "%lu%lu%lf%hd%hd%li%li", &source, &dest, &length, &height,
+      &unsuitability, &edgeA, &edgeB); // NOLINT
 
   Edge e{ NodeId(source), NodeId(dest) };
   if (edgeA > 0) {
@@ -91,28 +74,18 @@ Edge Edge::createFromText(const std::string& text)
 
 double Edge::costByConfiguration(const Config& conf) const
 {
-  double combinedCost = cost.length * conf.length
-      + cost.height * conf.height
+  double combinedCost = cost.length * conf.length + cost.height * conf.height
       + cost.unsuitability * conf.unsuitability;
 
   assert(combinedCost >= 0);
   return combinedCost;
 }
 
-EdgeId Edge::getId() const
-{
-  return internalId;
-}
+EdgeId Edge::getId() const { return internalId; }
 
-const Cost& Edge::getCost() const
-{
-  return cost;
-}
+const Cost& Edge::getCost() const { return cost; }
 
-void Edge::setCost(Cost c)
-{
-  this->cost = c;
-}
+void Edge::setCost(Cost c) { this->cost = c; }
 
 HalfEdge Edge::makeOutEdge() const
 {
@@ -134,8 +107,7 @@ HalfEdge Edge::makeInEdge() const
 
 double HalfEdge::costByConfiguration(const Config& conf) const
 {
-  double combinedCost = cost.length * conf.length
-      + cost.height * conf.height
+  double combinedCost = cost.length * conf.length + cost.height * conf.height
       + cost.unsuitability * conf.unsuitability;
 
   assert(combinedCost >= 0);

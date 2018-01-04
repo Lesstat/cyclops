@@ -9,8 +9,7 @@
 
 // Named Type idiom taken from
 // https://www.fluentcpp.com/2017/03/06/passing-strong-types-reference-revisited/
-template <typename T, typename Parameter>
-class NamedType {
+template <typename T, typename Parameter> class NamedType {
   public:
   NamedType()
       : value_(T{})
@@ -24,8 +23,7 @@ class NamedType {
 
   template <typename T_ = T>
   explicit NamedType(T&& value,
-      typename std::enable_if<!std::is_reference<T_>{},
-          std::nullptr_t>::type
+      typename std::enable_if<!std::is_reference<T_>{}, std::nullptr_t>::type
       /*unused*/
       = nullptr)
       : value_(std::move(value))
@@ -41,8 +39,7 @@ class NamedType {
 
   T value_;
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
+  template <class Archive> void serialize(Archive& ar, const unsigned int version)
   {
     if (version > 0) {
       throw std::invalid_argument{ "Version > 0 not implemented yet" };
@@ -54,15 +51,11 @@ class NamedType {
 
 namespace std {
 
-template <typename T, typename Parameter>
-struct hash<NamedType<T, Parameter>> {
+template <typename T, typename Parameter> struct hash<NamedType<T, Parameter>> {
 
-  //using checkIfHashable = typename std::enable_if<StrongType::is_hashable, void>::type;
+  // using checkIfHashable = typename std::enable_if<StrongType::is_hashable, void>::type;
 
-  size_t operator()(const NamedType<T, Parameter>& x) const
-  {
-    return std::hash<T>()(x.get());
-  }
+  size_t operator()(const NamedType<T, Parameter>& x) const { return std::hash<T>()(x.get()); }
 };
 }
 #endif /* NAMEDTYPE_H */
