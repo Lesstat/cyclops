@@ -20,6 +20,7 @@
 
 #include "namedType.hpp"
 #include "serialize_optional.hpp"
+#include <boost/archive/binary_iarchive.hpp>
 #include <boost/serialization/unordered_map.hpp>
 #include <boost/serialization/vector.hpp>
 #include <cstdlib>
@@ -129,6 +130,7 @@ using ReplacedEdge = std::optional<EdgeId>;
 
 class Edge {
   public:
+  Edge() = default;
   Edge(NodeId source, NodeId dest);
   Edge(NodeId source, NodeId dest, ReplacedEdge edgeA, ReplacedEdge edgeB);
   Edge(const Edge& other) = default;
@@ -194,6 +196,7 @@ class Edge {
 
 class Node {
   public:
+  Node() = default;
   Node(NodeId id, Lat lat, Lng lng, Height height);
   Node(const Node& other) = default;
   Node(Node&& other) noexcept = default;
@@ -256,6 +259,7 @@ class Graph {
   const Edge& getEdge(EdgeId e) const;
 
   static Graph createFromStream(std::istream& file);
+  static Graph createFromBinaryFile(boost::archive::binary_iarchive bin);
 
   const Node& getNode(NodePos pos) const;
   std::optional<NodePos> nodePosById(NodeId id) const;

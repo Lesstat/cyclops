@@ -232,3 +232,10 @@ size_t Graph::getEdgeCount() const
 {
   return edges.size();
 }
+
+Graph Graph::createFromBinaryFile(boost::archive::binary_iarchive bin)
+{
+  Graph g{ std::vector<Node>(), std::vector<Edge>() };
+  bin >> g;
+  return g;
+}
