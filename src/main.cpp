@@ -18,6 +18,7 @@
 #include "contractor.hpp"
 #include "dijkstra.hpp"
 #include "graph.hpp"
+#include <boost/archive/binary_oarchive.hpp>
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -51,6 +52,12 @@ int main(int argc, char* argv[])
   Graph ch = c.contractCompletely(g);
   end = std::chrono::high_resolution_clock::now();
   std::cout << "contracting the graph took " << std::chrono::duration_cast<ms>(end - start).count() << "ms" << '\n';
+
+  {
+    std::ofstream ofs("mygraph.ch", std::ios::binary);
+    boost::archive::binary_oarchive oa{ ofs };
+    oa << ch;
+  }
 
   Dijkstra d = ch.createDijkstra();
 

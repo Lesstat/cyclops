@@ -3,6 +3,7 @@
 #define NAMEDTYPE_H
 
 #include <algorithm>
+#include <boost/serialization/access.hpp>
 #include <functional>
 #include <type_traits>
 
@@ -36,10 +37,20 @@ class NamedType {
   operator T() const { return value_; }
 
   private:
-  T value_;
-};
+  friend class boost::serialization::access;
 
-#endif /* NAMEDTYPE_H */
+  T value_;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    if (version > 0) {
+      throw std::invalid_argument{ "Version > 0 not implemented yet" };
+    }
+
+    ar& value_;
+  }
+};
 
 namespace std {
 
@@ -54,3 +65,4 @@ struct hash<NamedType<T, Parameter>> {
   }
 };
 }
+#endif /* NAMEDTYPE_H */

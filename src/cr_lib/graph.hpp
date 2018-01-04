@@ -19,6 +19,9 @@
 #define GRAPH_H
 
 #include "namedType.hpp"
+#include "serialize_optional.hpp"
+#include <boost/serialization/unordered_map.hpp>
+#include <boost/serialization/vector.hpp>
 #include <cstdlib>
 #include <memory>
 #include <optional>
@@ -63,6 +66,19 @@ struct Cost {
   {
     return Cost{ Length(length.get() - c.length.get()), Height(height.get() - c.height.get()), Unsuitability(unsuitability.get() - c.unsuitability.get()) };
   };
+
+  private:
+  friend class boost::serialization::access;
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    if (version > 0) {
+      throw std::invalid_argument{ "Version > 0 not implemented yet" };
+    }
+    ar& length;
+    ar& height;
+    ar& unsuitability;
+  }
 };
 
 struct HalfEdge {
@@ -71,7 +87,21 @@ struct HalfEdge {
   Cost cost;
 
   double costByConfiguration(const Config& conf) const;
+
+  private:
+  friend class boost::serialization::access;
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    if (version > 0) {
+      throw std::invalid_argument{ "Version > 0 not implemented yet" };
+    }
+    ar& id;
+    ar& end;
+    ar& cost;
+  }
 };
+
 struct NodeOffset {
   size_t in{ 0 };
   size_t out{ 0 };
@@ -80,6 +110,18 @@ struct NodeOffset {
       : in(in)
       , out(out)
   {
+  }
+
+  private:
+  friend class boost::serialization::access;
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    if (version > 0) {
+      throw std::invalid_argument{ "Version > 0 not implemented yet" };
+    }
+    ar& in;
+    ar& out;
   }
 };
 
@@ -122,6 +164,8 @@ class Edge {
       const ReplacedEdge& edgeB);
 
   private:
+  friend class boost::serialization::access;
+
   EdgeId internalId;
   NodeId source;
   NodeId destination;
@@ -130,6 +174,22 @@ class Edge {
   ReplacedEdge edgeB;
   NodePos sourcePos;
   NodePos destinationPos;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    if (version > 0) {
+      throw std::invalid_argument{ "Version > 0 not implemented yet" };
+    }
+    ar& internalId;
+    ar& source;
+    ar& destination;
+    ar& cost;
+    ar& edgeA;
+    ar& edgeB;
+    ar& sourcePos;
+    ar& destinationPos;
+  }
 };
 
 class Node {
@@ -153,11 +213,25 @@ class Node {
   Lng lng() const;
 
   private:
+  friend class boost::serialization::access;
+
   NodeId id_;
   Lat lat_;
   Lng lng_;
   Height height;
   size_t level;
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    if (version > 0) {
+      throw std::invalid_argument{ "Version > 0 not implemented yet" };
+    }
+    ar& id_;
+    ar& lat_;
+    ar& lng_;
+    ar& height;
+    ar& level;
+  }
 };
 
 class EdgeRange;
@@ -190,13 +264,28 @@ class Graph {
   size_t getEdgeCount() const;
 
   private:
+  friend class boost::serialization::access;
+
   std::vector<Node> nodes;
   std::vector<NodeOffset> offsets;
   std::vector<HalfEdge> inEdges;
   std::vector<HalfEdge> outEdges;
   std::vector<size_t> level;
   std::unordered_map<EdgeId, Edge> edges;
-  std::shared_ptr<Graph> self;
+
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    if (version > 0) {
+      throw std::invalid_argument{ "Version > 0 not implemented yet" };
+    }
+    ar& nodes;
+    ar& offsets;
+    ar& inEdges;
+    ar& outEdges;
+    ar& level;
+    ar& edges;
+  }
 };
 
 class EdgeRange {
