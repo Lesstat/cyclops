@@ -18,6 +18,7 @@
 #include "contractor.hpp"
 #include "dijkstra.hpp"
 #include "graph.hpp"
+#include "server_http.hpp"
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/program_options.hpp>
 #include <chrono>
@@ -108,6 +109,23 @@ void cliDijkstra(Graph& ch)
   }
 }
 
+void runWebServer()
+{
+  using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
+  using Response = std::shared_ptr<HttpServer::Response>;
+  using Request = std::shared_ptr<HttpServer::Request>;
+
+  HttpServer server;
+  server.config.port = 8080;
+
+  server.default_resource["GET"] = [](Response response, Request /*request*/) {
+    response->write(SimpleWeb::StatusCode::client_error_not_found, "No matching handler found");
+  };
+
+  std::cout << "Starting web server at http://localhost:" << server.config.port << '\n';
+  server.start();
+}
+
 namespace po = boost::program_options;
 int main(int argc, char* argv[])
 {
@@ -122,8 +140,8 @@ int main(int argc, char* argv[])
       "bin,b", po::value<std::string>(&binFileName), "load graph form binary file");
 
   po::options_description action{ "actions" };
-  action.add_options()("contract,c", "contract graph")(
-      "dijkstra,d", "start interactive dijkstra in cli")(
+  action.add_options()("contract,c", "contract graph")("dijkstra,d",
+      "start interactive dijkstra in cli")("web,w", "start webserver for interaction via browser")(
       "save", po::value<std::string>(&saveFileName), "save graph to binary file");
 
   po::options_description all;
@@ -160,5 +178,10 @@ int main(int argc, char* argv[])
   if (vm.count("dijkstra") > 0) {
     cliDijkstra(g);
   }
+
+  if (vm.count("web") > 0) {
+    runWebServer();
+  }
+
   return 0;
 }

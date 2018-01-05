@@ -16,9 +16,12 @@ target_compile_features(cr_lib PUBLIC cxx_std_17)
 target_link_libraries(cr_lib ${GLPK_LIBRARIES})
 target_link_libraries(cr_lib ${Boost_LIBRARIES})
 
+add_subdirectory(vendor/Simple-Web-Server)
+
 # Executable of project links against lib
 add_executable(cr src/main.cpp)
 target_link_libraries(cr cr_lib)
+target_link_libraries(cr simple-web-server)
 
 # Definition of Testing library catch
 add_library(catch INTERFACE)
