@@ -20,6 +20,7 @@
 #include "graph.hpp"
 #include "server_http.hpp"
 #include <boost/archive/binary_oarchive.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <chrono>
 #include <fstream>
@@ -120,6 +121,40 @@ void runWebServer()
 
   server.default_resource["GET"] = [](Response response, Request /*request*/) {
     response->write(SimpleWeb::StatusCode::client_error_not_found, "No matching handler found");
+  };
+
+  server.resource["^/web/?.*"]["GET"] = [](Response response, Request request) {
+    auto web_root_path = boost::filesystem::canonical("web");
+
+    std::string pathWithoutWeb{};
+    if (request->path.length() > 4) {
+      pathWithoutWeb = request->path.substr(4);
+    }
+
+    auto path = boost::filesystem::canonical(web_root_path / pathWithoutWeb);
+    // Check if path is within web_root_path
+    if (std::distance(web_root_path.begin(), web_root_path.end())
+            > std::distance(path.begin(), path.end())
+        || !std::equal(web_root_path.begin(), web_root_path.end(), path.begin())) {
+      throw std::invalid_argument("path must be within root path");
+    }
+    if (boost::filesystem::is_directory(path)) {
+      path /= "index.html";
+    }
+
+    std::ifstream ifs{};
+    ifs.open(path.string(), std::ifstream::in | std::ios::binary | std::ios::ate);
+
+    if (!ifs) {
+      response->write(SimpleWeb::StatusCode::client_error_not_found, "No such file");
+    }
+    auto length = ifs.tellg();
+    ifs.seekg(0, std::ios::beg);
+
+    std::string buffer(length, '\0');
+    ifs.read(&buffer[0], length);
+    response->write(buffer);
+
   };
 
   std::cout << "Starting web server at http://localhost:" << server.config.port << '\n';
