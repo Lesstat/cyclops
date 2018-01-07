@@ -18,8 +18,6 @@
 #include "dijkstra.hpp"
 #include "graph.hpp"
 #include <cassert>
-#include <sstream>
-#include <vector>
 
 size_t lastId = 0;
 

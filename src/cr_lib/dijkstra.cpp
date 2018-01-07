@@ -17,8 +17,6 @@
 */
 #include "dijkstra.hpp"
 #include <queue>
-#include <thread>
-#include <unordered_map>
 
 const double dmax = std::numeric_limits<double>::max();
 const short smax = std::numeric_limits<short>::max();

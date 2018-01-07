@@ -16,7 +16,6 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "graph.hpp"
-#include <sstream>
 
 Node::Node(NodeId id, Lat lat, Lng lng, Height height)
     : id_(id)

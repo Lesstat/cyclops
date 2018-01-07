@@ -18,8 +18,6 @@
 #include "catch.hpp"
 #include "contractor.hpp"
 #include "dijkstra.hpp"
-#include "graph.hpp"
-#include <sstream>
 
 TEST_CASE("Shortcut creation")
 {

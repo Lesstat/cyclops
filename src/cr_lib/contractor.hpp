@@ -18,7 +18,6 @@
 #ifndef CONTRACTOR_H
 #define CONTRACTOR_H
 #include "dijkstra.hpp"
-#include "graph.hpp"
 #include <set>
 
 class Contractor {

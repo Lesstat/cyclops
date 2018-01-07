@@ -17,8 +17,6 @@
 */
 #include "catch.hpp"
 #include "dijkstra.hpp"
-#include "graph.hpp"
-#include <sstream>
 
 TEST_CASE("Offset array is correctly initialized")
 {

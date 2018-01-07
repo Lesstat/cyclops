@@ -17,14 +17,11 @@
 */
 #include "contractor.hpp"
 #include "dijkstra.hpp"
-#include "graph.hpp"
 #include "server_http.hpp"
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <chrono>
-#include <fstream>
-#include <iostream>
 
 Graph loadGraphFromTextFile(std::string& graphPath)
 {

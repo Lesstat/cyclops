@@ -15,11 +15,7 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include "graph.hpp"
 #include "dijkstra.hpp"
-#include <iostream>
-#include <iterator>
-#include <unordered_map>
 
 void connectEdgesToNodes(const std::vector<Node>& nodes, std::vector<Edge>& edges)
 {

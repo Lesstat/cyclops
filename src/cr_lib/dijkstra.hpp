@@ -20,7 +20,6 @@
 
 #include "graph.hpp"
 #include <deque>
-#include <vector>
 
 using LengthConfig = NamedType<double, struct LengthConfigParameter>;
 using HeightConfig = NamedType<double, struct HeightConfigParameter>;
