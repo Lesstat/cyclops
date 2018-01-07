@@ -32,7 +32,7 @@ TEST_CASE("Offset array is correctly initialized")
   edges.emplace_back(Edge{ NodeId(1), NodeId(0) });
   edges.emplace_back(Edge{ NodeId(0), NodeId(2) });
   edges.emplace_back(Edge{ NodeId(0), NodeId(2) });
-  edges.emplace_back(Edge{ NodeId(1), NodeId(1) });
+  edges.emplace_back(Edge{ NodeId(1), NodeId(2) });
 
   Graph g{ std::move(nodes), std::move(edges) };
 
@@ -46,7 +46,7 @@ TEST_CASE("Offset array is correctly initialized")
 
   REQUIRE(offsets[0].in == 0);
   REQUIRE(offsets[1].in == 1);
-  REQUIRE(offsets[2].in == 2);
+  REQUIRE(offsets[2].in == 1);
   REQUIRE(offsets[3].in == 4);
   REQUIRE(offsets[4].in == 4);
 }
