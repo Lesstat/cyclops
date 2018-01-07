@@ -3,6 +3,7 @@ project(cycle-routing)
 add_compile_options(-Wall -Wextra -Wpedantic -g)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+include(cotire)
 
 find_package(glpk REQUIRED)
 
@@ -35,3 +36,5 @@ target_link_libraries(cr_test cr_lib catch)
 # Enable testing through ctest
 add_test(NAME cr_test COMMAND cr_test)
 enable_testing()
+
+cotire(cr_lib cr)
