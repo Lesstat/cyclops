@@ -1,0 +1,86 @@
+/*
+  Cycle-routing does multi-criteria route planning for bicycles.
+  Copyright (C) 2018  Florian Barth
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+#ifndef GRID_H
+#define GRID_H
+
+#include "graph.hpp"
+
+struct PositionalNode {
+  Lat lat;
+  Lng lng;
+  NodePos pos;
+
+  PositionalNode(Lat lat, Lng lng, NodePos pos)
+      : lat(lat)
+      , lng(lng)
+      , pos(pos)
+  {
+  }
+};
+
+struct BoundingBox {
+  Lat lat_min;
+  Lat lat_max;
+  Lng lng_min;
+  Lng lng_max;
+
+  void addNode(PositionalNode& n)
+  {
+    if (n.lat < lat_min) {
+      lat_min = n.lat;
+    }
+    if (n.lat > lat_max) {
+      lat_max = n.lat;
+    }
+    if (n.lng < lng_min) {
+      lng_min = n.lng;
+    }
+    if (n.lng > lng_max) {
+      lng_max = n.lng;
+    }
+  }
+
+  bool contains_point(Lat lat, Lng lng)
+  {
+    return lat_min <= lat && lat <= lat_max && lng_min <= lng && lng <= lng_max;
+  }
+};
+
+class Grid {
+  public:
+  Grid() = delete;
+  Grid(const std::vector<Node>& nodes);
+  Grid(const Grid& other) = default;
+  Grid(Grid&& other) noexcept = default;
+  virtual ~Grid() noexcept = default;
+  Grid& operator=(const Grid& other) = default;
+  Grid& operator=(Grid&& other) noexcept = default;
+
+  std::optional<NodePos> findNextNode(Lat lat, Lng lng);
+
+  protected:
+  private:
+  size_t coordsToIndex(Lat lat, Lng lng);
+
+  BoundingBox bBox;
+  std::vector<PositionalNode> nodes;
+  std::vector<size_t> offset;
+  size_t sideLength = 100;
+};
+
+#endif /* GRID_H */
