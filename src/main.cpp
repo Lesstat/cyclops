@@ -201,33 +201,38 @@ void runWebServer(Graph& g)
           "Request needs to contain the parameters: s, t, length, height, unsuitability");
     }
 
+    auto start = std::chrono::high_resolution_clock::now();
     auto route = dijkstra.findBestRoute(NodePos{ *s }, NodePos{ *t },
         Config{ LengthConfig{ *length / 100.0 }, HeightConfig{ *height / 100.0 },
             UnsuitabilityConfig{ *unsuitability / 100.0 } });
+    auto end = std::chrono::high_resolution_clock::now();
+
+    using ms = std::chrono::milliseconds;
+    std::cout << "Finding the route took " << std::chrono::duration_cast<ms>(end - start).count()
+              << "ms" << '\n';
     if (route) {
 
       std::stringstream resultJson;
       resultJson
           << "{ \"length\": " << route->costs.length << ", \"height\": " << route->costs.height
           << ", \"unsuitability\": " << route->costs.unsuitability
-          << ", \"route\": { \"type\": \"feature\", \"geometry\": { \"type\": \"LineString\", "
+          << ", \"route\": { \"type\": \"Feature\", \"geometry\": { \"type\": \"LineString\", "
           << "\"coordinates\":[";
       for (const auto& edge : route->edges) {
         const auto& node = g.getNode(edge.getSourcePos());
-        resultJson << '[' << node.lat() << ", " << node.lng() << "],";
+        resultJson << '[' << node.lng() << ", " << node.lat() << "],";
       }
       if (route->edges.size() > 0) {
         const auto& lastEdge = route->edges[route->edges.size() - 1];
         const auto& node = g.getNode(lastEdge.getSourcePos());
-        resultJson << '[' << node.lat() << ", " << node.lng() << "]] } } }";
+        resultJson << '[' << node.lng() << ", " << node.lat() << "]] } } }";
       }
-      std::cout << resultJson.str() << '\n';
+      // std::cout << resultJson.str() << '\n';
+      auto json = resultJson.str();
 
       SimpleWeb::CaseInsensitiveMultimap header;
-      header.emplace("Content-Type", "applicaton/json");
-      header.emplace("Content-Length", std::to_string(resultJson.str().size()));
-      response->write(header);
-      response->write(SimpleWeb::StatusCode::success_ok, resultJson.str());
+      header.emplace("Content-Type", "application/json");
+      response->write(SimpleWeb::StatusCode::success_ok, json, header);
     }
     response->write(SimpleWeb::StatusCode::client_error_not_found, "Did not find route");
 
