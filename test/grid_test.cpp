@@ -24,7 +24,7 @@ TEST_CASE("Find next Node, with only one node")
   nodes.emplace_back(NodeId{ 0 }, Lat{ 48.5 }, Lng{ 8.3 }, Height{ 3 });
 
   Grid grid{ nodes };
-  REQUIRE_FALSE(grid.findNextNode(Lat{ 47.123 }, Lng{ 9.2 }));
+  REQUIRE(grid.findNextNode(Lat{ 47.123 }, Lng{ 9.2 }) == NodePos{ 0 });
 }
 
 TEST_CASE("Find next Node, with two nodes")
@@ -35,4 +35,15 @@ TEST_CASE("Find next Node, with two nodes")
 
   Grid grid{ nodes };
   REQUIRE(grid.findNextNode(Lat{ 47.123 }, Lng{ 9.2 }) == NodePos{ 1 });
+}
+
+TEST_CASE("Find next Node, with great distance")
+{
+  std::vector<Node> nodes{};
+  nodes.emplace_back(NodeId{ 0 }, Lat{ 45 }, Lng{ 9 }, Height{ 3 });
+  nodes.emplace_back(NodeId{ 1 }, Lat{ 52 }, Lng{ 14.5 }, Height{ 3 });
+  nodes.emplace_back(NodeId{ 2 }, Lat{ 60 }, Lng{ 20 }, Height{ 3 });
+
+  Grid grid{ nodes };
+  REQUIRE(grid.findNextNode(Lat{ 55 }, Lng{ 16 }).value() == NodePos{ 1 });
 }

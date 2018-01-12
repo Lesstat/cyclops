@@ -64,7 +64,7 @@ struct BoundingBox {
 class Grid {
   public:
   Grid() = delete;
-  Grid(const std::vector<Node>& nodes);
+  Grid(const std::vector<Node>& nodes, long sideLength = 100);
   Grid(const Grid& other) = default;
   Grid(Grid&& other) noexcept = default;
   virtual ~Grid() noexcept = default;
@@ -80,7 +80,7 @@ class Grid {
   BoundingBox bBox;
   std::vector<PositionalNode> nodes;
   std::vector<size_t> offset;
-  size_t sideLength = 100;
+  long sideLength;
 };
 
 #endif /* GRID_H */

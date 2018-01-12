@@ -34,8 +34,13 @@ double haversine_distance(const PositionalNode& a, const PositionalNode& b)
   return EARTH_RADIUS * c;
 }
 
-Grid::Grid(const std::vector<Node>& nodes)
+Grid::Grid(const std::vector<Node>& nodes, long sideLength)
+    : sideLength(sideLength)
 {
+  if (sideLength < 0) {
+    throw new std::invalid_argument("Side length has to be positive");
+  }
+
   for (size_t i = 0; i < nodes.size(); ++i) {
     const auto& node = nodes[i];
     this->nodes.emplace_back(node.lat(), node.lng(), NodePos{ i });
@@ -68,24 +73,68 @@ Grid::Grid(const std::vector<Node>& nodes)
 
 std::optional<NodePos> Grid::findNextNode(Lat lat, Lng lng)
 {
+  auto xyToIndex = [this](size_t x, size_t y) {
+    size_t index = y * sideLength + x;
+    return index;
+  };
+  auto indexToXy = [this](size_t index) {
+    size_t y = index / sideLength;
+    size_t x = index - y * sideLength;
+    return std::make_pair(x, y);
+  };
+  NodePos dummy{ 0 };
+
+  const double cell_width = haversine_distance(PositionalNode{ bBox.lat_max, bBox.lng_max, dummy },
+                                PositionalNode{ bBox.lat_min, bBox.lng_max, dummy })
+      / sideLength;
+  const double cell_height = haversine_distance(PositionalNode{ bBox.lat_max, bBox.lng_max, dummy },
+                                 PositionalNode{ bBox.lat_max, bBox.lng_min, dummy })
+      / sideLength;
+
+  const auto cell_measure = std::min(cell_width, cell_height);
+
   PositionalNode target{ lat, lng, NodePos{ 0 } };
-  size_t center = coordsToIndex(lat, lng);
-  // size_t radius = 0;
+  const size_t center = coordsToIndex(lat, lng);
+  const auto coord = indexToXy(center);
+  const long& x = coord.first;
+  const long& y = coord.second;
+  long radius = 0;
 
-  std::optional<double> minDist = {};
-  std::optional<size_t> minIndex = {};
+  std::optional<double> foundDist = {};
+  std::optional<NodePos> foundIndex = {};
 
-  for (size_t i = offset[center]; i < offset[center + 1]; ++i) {
-    const auto& node = nodes[i];
-    double dist = haversine_distance(target, node);
-    if (!minDist || dist < minDist) {
-      minDist = dist;
-      minIndex = i;
+  size_t minDist = 0;
+
+  while (radius < sideLength) {
+    if (foundDist && foundDist < minDist) {
+      break;
     }
+    minDist = radius * cell_measure;
+    for (long yi = y - radius; yi <= y + radius; ++yi) {
+      for (long xi = x - radius; xi <= x + radius; ++xi) {
+        if (!(std::abs(static_cast<long>(xi - x)) == radius
+                || std::abs(static_cast<long>(yi - y)) == radius)
+            || xi >= sideLength || yi >= sideLength) {
+
+          continue;
+        }
+        auto index = xyToIndex(xi, yi);
+        for (size_t i = offset[index]; i < offset[index + 1]; ++i) {
+          const auto& node = nodes[i];
+          double dist = haversine_distance(target, node);
+          if (!foundDist || dist < foundDist) {
+            foundDist = dist;
+            foundIndex = node.pos;
+          }
+        }
+      }
+    }
+
+    ++radius;
   }
 
-  if (minIndex) {
-    return NodePos{ minIndex.value() };
+  if (foundIndex) {
+    return foundIndex;
   }
   return {};
 }
@@ -96,8 +145,8 @@ size_t Grid::coordsToIndex(Lat lat, Lng lng)
   double cell_height = (bBox.lng_max - bBox.lng_min) / sideLength;
   double lat_dif = lat - bBox.lat_min;
   double lng_dif = lng - bBox.lng_min;
-  size_t x = (lat_dif / cell_width);
-  size_t y = (lng_dif / cell_height);
+  long x = (lat_dif / cell_width);
+  long y = (lng_dif / cell_height);
   if (x == sideLength) {
     x -= 1;
   }
