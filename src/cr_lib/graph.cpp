@@ -16,6 +16,7 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "dijkstra.hpp"
+#include "grid.hpp"
 
 void connectEdgesToNodes(const std::vector<Node>& nodes, std::vector<Edge>& edges)
 {
@@ -127,6 +128,13 @@ std::ostream& operator<<(std::ostream& s, const Graph& g)
 std::vector<NodeOffset> const& Graph::getOffsets() const { return offsets; }
 
 Dijkstra Graph::createDijkstra() { return Dijkstra{ this, nodes.size() }; }
+
+Grid Graph::createGrid(long sideLength) const
+{
+  Grid b{ nodes, sideLength };
+
+  return b;
+}
 
 size_t readCount(std::istream& file)
 {

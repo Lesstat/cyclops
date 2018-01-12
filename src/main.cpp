@@ -17,6 +17,7 @@
 */
 #include "contractor.hpp"
 #include "dijkstra.hpp"
+#include "grid.hpp"
 #include "server_http.hpp"
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/filesystem.hpp>
@@ -107,11 +108,14 @@ void cliDijkstra(Graph& ch)
   }
 }
 
-void runWebServer()
+void runWebServer(Graph& g)
 {
   using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
   using Response = std::shared_ptr<HttpServer::Response>;
   using Request = std::shared_ptr<HttpServer::Request>;
+
+  Grid grid = g.createGrid();
+  Dijkstra dijkstra = g.createDijkstra();
 
   HttpServer server;
   server.config.port = 8080;
@@ -151,6 +155,81 @@ void runWebServer()
     std::string buffer(length, '\0');
     ifs.read(&buffer[0], length);
     response->write(buffer);
+
+  };
+  server.resource["^/node_at"]["GET"] = [&grid](Response response, Request request) {
+    const double IMPOSSIBLE_VALUE = -1000;
+    double lat = IMPOSSIBLE_VALUE;
+    double lng = IMPOSSIBLE_VALUE;
+
+    auto query_fields = request->parse_query_string();
+    for (const auto& field : query_fields) {
+      if (field.first == "lat") {
+        lat = stod(field.second);
+      } else if (field.first == "lng") {
+        lng = stod(field.second);
+      }
+    }
+    if (lat == IMPOSSIBLE_VALUE || lng == IMPOSSIBLE_VALUE) {
+      response->write(SimpleWeb::StatusCode::client_error_bad_request,
+          "Request needs to contain lat and lng parameters for query");
+    }
+    auto pos = grid.findNextNode(Lat{ lat }, Lng{ lng });
+    response->write(SimpleWeb::StatusCode::success_ok, std::to_string(pos->get()));
+
+  };
+
+  server.resource["^/route"]["GET"] = [&g, &dijkstra](Response response, Request request) {
+    std::optional<size_t> s{}, t{}, length{}, height{}, unsuitability{};
+    auto query_fields = request->parse_query_string();
+    for (const auto& field : query_fields) {
+      if (field.first == "s") {
+        s = static_cast<size_t>(stoull(field.second));
+      } else if (field.first == "t") {
+        t = static_cast<size_t>(stoull(field.second));
+      } else if (field.first == "length") {
+        length = static_cast<size_t>(stoull(field.second));
+      } else if (field.first == "height") {
+        height = static_cast<size_t>(stoull(field.second));
+      } else if (field.first == "unsuitability") {
+        unsuitability = static_cast<size_t>(stoull(field.second));
+      }
+    }
+
+    if (!(s && t && length && height && unsuitability)) {
+      response->write(SimpleWeb::StatusCode::client_error_bad_request,
+          "Request needs to contain the parameters: s, t, length, height, unsuitability");
+    }
+
+    auto route = dijkstra.findBestRoute(NodePos{ *s }, NodePos{ *t },
+        Config{ LengthConfig{ *length / 100.0 }, HeightConfig{ *height / 100.0 },
+            UnsuitabilityConfig{ *unsuitability / 100.0 } });
+    if (route) {
+
+      std::stringstream resultJson;
+      resultJson
+          << "{ \"length\": " << route->costs.length << ", \"height\": " << route->costs.height
+          << ", \"unsuitability\": " << route->costs.unsuitability
+          << ", \"route\": { \"type\": \"feature\", \"geometry\": { \"type\": \"LineString\", "
+          << "\"coordinates\":[";
+      for (const auto& edge : route->edges) {
+        const auto& node = g.getNode(edge.getSourcePos());
+        resultJson << '[' << node.lat() << ", " << node.lng() << "],";
+      }
+      if (route->edges.size() > 0) {
+        const auto& lastEdge = route->edges[route->edges.size() - 1];
+        const auto& node = g.getNode(lastEdge.getSourcePos());
+        resultJson << '[' << node.lat() << ", " << node.lng() << "]] } } }";
+      }
+      std::cout << resultJson.str() << '\n';
+
+      SimpleWeb::CaseInsensitiveMultimap header;
+      header.emplace("Content-Type", "applicaton/json");
+      header.emplace("Content-Length", std::to_string(resultJson.str().size()));
+      response->write(header);
+      response->write(SimpleWeb::StatusCode::success_ok, resultJson.str());
+    }
+    response->write(SimpleWeb::StatusCode::client_error_not_found, "Did not find route");
 
   };
 
@@ -212,7 +291,7 @@ int main(int argc, char* argv[])
   }
 
   if (vm.count("web") > 0) {
-    runWebServer();
+    runWebServer(g);
   }
 
   return 0;

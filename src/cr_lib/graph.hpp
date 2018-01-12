@@ -228,6 +228,7 @@ class Node {
   }
 };
 
+class Grid;
 class EdgeRange;
 class Graph {
   public:
@@ -242,6 +243,7 @@ class Graph {
 
   std::vector<NodeOffset> const& getOffsets() const;
   Dijkstra createDijkstra();
+  Grid createGrid(long sideLength = 100) const;
 
   EdgeRange getOutgoingEdgesOf(NodePos pos) const;
   EdgeRange getIngoingEdgesOf(NodePos pos) const;

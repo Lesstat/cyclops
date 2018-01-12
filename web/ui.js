@@ -54,7 +54,7 @@ function getNode(id, latlng){
 	    calcDistWithCurrentSelection();
 	}
     };
-    xmlhttp.open("GET", "/node_at?lat="+ latlng.lat  + "&long=" + latlng.lng, true);
+    xmlhttp.open("GET", "/node_at?lat="+ latlng.lat  + "&lng=" + latlng.lng, true);
     xmlhttp.send();
 }
 
