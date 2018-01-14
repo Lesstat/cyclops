@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(cycle-routing)
-add_compile_options(-Wall -Wextra -Wpedantic -std=c++17)
+add_compile_options(-Wall -Wextra -Wpedantic -std=c++17 -g)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(cotire)
@@ -8,6 +8,8 @@ include(cotire)
 find_package(glpk REQUIRED)
 
 find_package(Boost 1.58 REQUIRED COMPONENTS serialization program_options filesystem)
+find_package (Threads)
+
 
 # Actual Implementation of project in static library
 file(GLOB lib_src src/cr_lib/*.cpp )
@@ -16,6 +18,7 @@ target_include_directories(cr_lib PUBLIC src/cr_lib)
 target_link_libraries(cr_lib ${GLPK_LIBRARIES})
 target_link_libraries(cr_lib ${Boost_LIBRARIES})
 target_link_libraries(cr_lib -lm)
+target_link_libraries(cr_lib ${CMAKE_THREAD_LIBS_INIT})
 
 add_subdirectory(vendor/Simple-Web-Server)
 

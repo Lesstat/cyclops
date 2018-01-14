@@ -17,9 +17,10 @@
 */
 #include "dijkstra.hpp"
 #include "graph.hpp"
+#include <atomic>
 #include <cassert>
 
-size_t lastId = 0;
+std::atomic<size_t> lastId = 0;
 
 Edge::Edge(NodeId source, NodeId dest)
     : Edge(source, dest, {}, {})

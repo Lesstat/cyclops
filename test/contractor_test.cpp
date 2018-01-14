@@ -18,6 +18,7 @@
 #include "catch.hpp"
 #include "contractor.hpp"
 #include "dijkstra.hpp"
+#include "multiqueue.hpp"
 
 TEST_CASE("Shortcut creation")
 {
@@ -80,18 +81,32 @@ TEST_CASE("Test if edges form shortest path")
   auto& edge1 = *outEdges.begin();
 
   Contractor c{};
+  Dijkstra d = g.createDijkstra();
 
   SECTION("With config where the edges form shortest path")
   {
     Config lengthOnlyConf{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } };
-    REQUIRE(c.isShortestPath(g, edge0.id, edge1.id, lengthOnlyConf) == true);
+    REQUIRE(c.isShortestPath(g, d, edge0.id, edge1.id, lengthOnlyConf).first == true);
   }
 
   SECTION("With config where the edges do not form shortest path")
   {
     Config heightOnlyConf{ LengthConfig{ 0 }, HeightConfig{ 1 }, UnsuitabilityConfig{ 0 } };
-    REQUIRE(c.isShortestPath(g, edge0.id, edge1.id, heightOnlyConf) == false);
+    REQUIRE(c.isShortestPath(g, d, edge0.id, edge1.id, heightOnlyConf).first == false);
   }
+}
+
+std::vector<Edge> contractNode(NodePos pos, Contractor c)
+{
+  MultiQueue to{};
+  auto back = std::make_shared<MultiQueue>();
+  to.send(pos);
+  to.send(back);
+  c.contract(to, g);
+  std::any msg;
+  back->receive(msg);
+
+  return std::any_cast<std::vector<Edge>>(msg);
 }
 
 TEST_CASE("Contracting a Node")
@@ -101,7 +116,7 @@ TEST_CASE("Contracting a Node")
 
   SECTION("Where no shortcuts need to be created")
   {
-    auto shortcuts = c.contract(g, NodePos{ 2 });
+    auto shortcuts = contractNode(NodePos{ 2 }, c);
     REQUIRE(shortcuts.empty());
   }
   SECTION("Where the right configuration needs to be found")
@@ -113,7 +128,7 @@ TEST_CASE("Contracting a Node")
     const auto& outEdges = g.getOutgoingEdgesOf(nodePos1);
     auto& edge1 = *outEdges.begin();
 
-    auto shortcuts = c.contract(g, nodePos1);
+    auto shortcuts = contractNode(nodePos1, c);
     REQUIRE(shortcuts.size() == 1);
     testEdgeInternals(shortcuts[0], NodeId{ 0 }, NodeId{ 2 }, Length{ 5.7 }, Height{ 16 },
         Unsuitability{ 6 }, edge0.id, edge1.id);
@@ -137,7 +152,7 @@ TEST_CASE("Detect cycles when contracting a Node")
 
   Contractor c{};
 
-  auto shortcuts = c.contract(g, NodePos{ 0 });
+  auto shortcuts = contractNode(NodePos{ 0 }, c);
 
   REQUIRE(shortcuts.empty());
 }

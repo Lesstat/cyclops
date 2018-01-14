@@ -20,6 +20,8 @@
 #include "dijkstra.hpp"
 #include <set>
 
+class MultiQueue;
+
 class Contractor {
 
   public:
@@ -30,12 +32,12 @@ class Contractor {
   Contractor& operator=(const Contractor& other) = delete;
   Contractor& operator=(Contractor&& other) = delete;
 
-  Edge createShortcut(const Edge& e1, const Edge& e2);
+  static Edge createShortcut(const Edge& e1, const Edge& e2);
 
-  bool isShortestPath(
-      Graph& g, const EdgeId& startEdgeId, const EdgeId& destEdgeId, const Config& conf);
+  std::pair<bool, std::optional<Route>> isShortestPath(Graph& g, Dijkstra& d,
+      const EdgeId& startEdgeId, const EdgeId& destEdgeId, const Config& conf);
 
-  std::vector<Edge> contract(Graph& g, const NodePos& node);
+  void contract(MultiQueue& queue, Graph& g);
   Graph contract(Graph& g);
   Graph mergeWithContracted(Graph& g);
   Graph contractCompletely(Graph& g);
