@@ -90,7 +90,11 @@ std::vector<Edge> Contractor::contract(Graph& g, const NodePos& node)
         Config newConfig{ LengthConfig{ values[0] }, HeightConfig{ values[1] },
           UnsuitabilityConfig{ values[2] } };
         if (config == newConfig) {
-          break;
+          if (lp.exact()) {
+            shortcuts.push_back(createShortcut(g.getEdge(in.id), g.getEdge(out.id)));
+            break;
+          }
+          lp.exact(true);
         }
         config = newConfig;
       }
@@ -209,6 +213,8 @@ Graph Contractor::mergeWithContracted(Graph& g)
   }
   std::copy(contractedEdges.begin(), contractedEdges.end(), std::back_inserter(edges));
 
+  std::cout << "Final graph has " << nodes.size() << " nodes and " << edges.size() << " edges."
+            << '\n';
   return Graph{ std::move(nodes), std::move(edges) };
 }
 

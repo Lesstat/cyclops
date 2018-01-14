@@ -58,7 +58,12 @@ void LinearProgram::objective(const std::vector<double>& coeff)
 
 bool LinearProgram::solve()
 {
-  size_t simplex = glp_simplex(lp, nullptr);
+  size_t simplex;
+  if (!exact_) {
+    simplex = glp_simplex(lp, nullptr);
+  } else {
+    simplex = glp_exact(lp, nullptr);
+  }
   size_t status = glp_get_status(lp);
   return simplex == 0 && status == GLP_OPT;
 }
@@ -73,3 +78,7 @@ std::vector<double> LinearProgram::variableValues()
   }
   return variables;
 }
+
+void LinearProgram::exact(bool exact) { exact_ = exact; }
+
+bool LinearProgram::exact() { return exact_; }
