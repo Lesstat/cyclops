@@ -23,6 +23,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <chrono>
+#include <fstream>
 
 Graph loadGraphFromTextFile(std::string& graphPath)
 {

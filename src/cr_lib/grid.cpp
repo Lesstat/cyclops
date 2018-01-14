@@ -29,7 +29,7 @@ double haversine_distance(const PositionalNode& a, const PositionalNode& b)
   double deltaTheta = (b.lat - a.lat) * RADIANS_CONVERSION;
   double deltaLambda = (b.lng - a.lng) * RADIANS_CONVERSION;
   double e
-      = pow(sin(deltaTheta / 2.0), 2) + cos(theta1) * cos(theta2) * pow(sin(deltaLambda / 2.0), 2);
+      = pow(sin(deltaTheta / 2.0), 2) + std::cos(theta1) * std::cos(theta2) * pow(sin(deltaLambda / 2.0), 2);
   double c = 2.0 * asin(sqrt(e));
   return EARTH_RADIUS * c;
 }
