@@ -86,6 +86,9 @@ const Cost& Edge::getCost() const { return cost; }
 
 void Edge::setCost(Cost c) { this->cost = c; }
 
+const ReplacedEdge& Edge::getEdgeA() const { return edgeA; }
+const ReplacedEdge& Edge::getEdgeB() const { return edgeB; }
+
 HalfEdge Edge::makeOutEdge() const
 {
   HalfEdge e;

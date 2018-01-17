@@ -104,8 +104,8 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
                 UnsuitabilityConfig{ values[2] } };
               if (config == newConfig) {
                 if (lp.exact()) {
-                  shortcuts.push_back(
-                      Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
+                  // shortcuts.push_back(
+                  //     Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
                   break;
                 }
                 lp.exact(true);

@@ -143,6 +143,8 @@ class Edge {
   NodePos getDestPos() const;
   void setSourcePos(NodePos p);
   void setDestPos(NodePos p);
+  const ReplacedEdge& getEdgeA() const;
+  const ReplacedEdge& getEdgeB() const;
 
   EdgeId getId() const;
   const Cost& getCost() const;
