@@ -17,10 +17,10 @@
 */
 #include "dijkstra.hpp"
 #include "graph.hpp"
-#include <atomic>
 #include <cassert>
 
-std::atomic<size_t> lastId = 0;
+std::atomic<size_t> Edge::lastId = 0;
+std::vector<Edge> Edge::edges{};
 
 Edge::Edge(NodeId source, NodeId dest)
     : Edge(source, dest, {}, {})
@@ -54,7 +54,7 @@ Edge Edge::createFromText(const std::string& text)
   short height, unsuitability;
   long edgeA, edgeB;
 
-  std::sscanf(text.c_str(), "%lu%lu%lf%hd%hd%li%li", &source, &dest, &length, &height,
+  std::sscanf(text.c_str(), "%lu%lu%lf%hd%hd%li%li", &source, &dest, &length, &height, // NOLINT
       &unsuitability, &edgeA, &edgeB); // NOLINT
 
   Edge e{ NodeId(source), NodeId(dest) };
@@ -112,3 +112,14 @@ double HalfEdge::costByConfiguration(const Config& conf) const
   assert(combinedCost >= 0);
   return combinedCost;
 }
+
+void Edge::administerEdges(const std::vector<Edge>& edges)
+{
+  while (Edge::edges.size() <= lastId) {
+    Edge::edges.emplace_back(Edge{});
+  }
+  for (const auto& edge : edges) {
+    Edge::edges[edge.getId()] = edge;
+  }
+}
+const Edge& Edge::getEdge(EdgeId id) { return edges[id]; }

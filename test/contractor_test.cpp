@@ -20,6 +20,12 @@
 #include "dijkstra.hpp"
 #include "multiqueue.hpp"
 
+Graph graphFromString(const std::string& s)
+{
+  auto iss = std::istringstream(s);
+  return Graph::createFromStream(iss);
+}
+
 TEST_CASE("Shortcut creation")
 {
   Contractor c{};
@@ -52,8 +58,6 @@ const std::string threeNodeGraph{ R"!!(# Build by: pbfextractor
 0 2 8.276483027784113 0 2 -1 -1
 
 )!!" };
-auto iss = std::istringstream(threeNodeGraph);
-auto g = Graph::createFromStream(iss);
 
 const std::string fourNodeGraph{ R"!!(# Build by: pbfextractor
 # Build on: SystemTime { tv_sec: 1512985452, tv_nsec: 881838750 }
@@ -73,6 +77,7 @@ const std::string fourNodeGraph{ R"!!(# Build by: pbfextractor
 TEST_CASE("Test if edges form shortest path")
 {
 
+  auto g = graphFromString(threeNodeGraph);
   NodePos nodePos1{ 1 };
   const auto& inEdges = g.getIngoingEdgesOf(nodePos1);
   auto& edge0 = *inEdges.begin();
@@ -86,17 +91,17 @@ TEST_CASE("Test if edges form shortest path")
   SECTION("With config where the edges form shortest path")
   {
     Config lengthOnlyConf{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } };
-    REQUIRE(c.isShortestPath(g, d, edge0.id, edge1.id, lengthOnlyConf).first == true);
+    REQUIRE(c.isShortestPath(d, edge0.id, edge1.id, lengthOnlyConf).first == true);
   }
 
   SECTION("With config where the edges do not form shortest path")
   {
     Config heightOnlyConf{ LengthConfig{ 0 }, HeightConfig{ 1 }, UnsuitabilityConfig{ 0 } };
-    REQUIRE(c.isShortestPath(g, d, edge0.id, edge1.id, heightOnlyConf).first == false);
+    REQUIRE(c.isShortestPath(d, edge0.id, edge1.id, heightOnlyConf).first == false);
   }
 }
 
-std::vector<Edge> contractNode(NodePos pos, Contractor c)
+std::vector<Edge> contractNode(Graph& g, NodePos pos, Contractor& c)
 {
   MultiQueue to{};
   auto back = std::make_shared<MultiQueue>();
@@ -112,11 +117,12 @@ std::vector<Edge> contractNode(NodePos pos, Contractor c)
 TEST_CASE("Contracting a Node")
 {
 
+  auto g = graphFromString(threeNodeGraph);
   Contractor c{};
 
   SECTION("Where no shortcuts need to be created")
   {
-    auto shortcuts = contractNode(NodePos{ 2 }, c);
+    auto shortcuts = contractNode(g, NodePos{ 2 }, c);
     REQUIRE(shortcuts.empty());
   }
   SECTION("Where the right configuration needs to be found")
@@ -128,7 +134,7 @@ TEST_CASE("Contracting a Node")
     const auto& outEdges = g.getOutgoingEdgesOf(nodePos1);
     auto& edge1 = *outEdges.begin();
 
-    auto shortcuts = contractNode(nodePos1, c);
+    auto shortcuts = contractNode(g, nodePos1, c);
     REQUIRE(shortcuts.size() == 1);
     testEdgeInternals(shortcuts[0], NodeId{ 0 }, NodeId{ 2 }, Length{ 5.7 }, Height{ 16 },
         Unsuitability{ 6 }, edge0.id, edge1.id);
@@ -147,18 +153,18 @@ TEST_CASE("Detect cycles when contracting a Node")
 0 1 2.5 0 4 -1 -1
 1 0 2.5 0 4 -1 -1
 )!!" };
-  auto iss = std::istringstream(cycleGraph);
-  auto g = Graph::createFromStream(iss);
+  auto g = graphFromString(cycleGraph);
 
   Contractor c{};
 
-  auto shortcuts = contractNode(NodePos{ 0 }, c);
+  auto shortcuts = contractNode(g, NodePos{ 0 }, c);
 
   REQUIRE(shortcuts.empty());
 }
 
 TEST_CASE("Finding and reducing independent sets")
 {
+  auto g = graphFromString(threeNodeGraph);
   Contractor c{};
 
   SECTION("In a three Node Graph")
@@ -219,10 +225,11 @@ TEST_CASE("Contracting one level of Graph")
 1 3 99.9 99 99 -1 -1
 
 )!!" };
-  auto iss = std::istringstream(fourNodeGraph);
-  Graph initialG = Graph::createFromStream(iss);
+  Graph initialG = graphFromString(fourNodeGraph);
+  auto routeInitialGraph = findRouteBetweenIds(initialG, NodeId{ 1 }, NodeId{ 3 });
 
   Graph intermedG = c.contract(initialG);
+  auto routeIntermedGraph = findRouteBetweenIds(intermedG, NodeId{ 1 }, NodeId{ 3 });
 
   SECTION("New Graph has correct set of nodes")
   {
@@ -245,8 +252,6 @@ TEST_CASE("Contracting one level of Graph")
   SECTION("Distances stay the same in all intermediate steps")
   {
 
-    auto routeInitialGraph = findRouteBetweenIds(initialG, NodeId{ 1 }, NodeId{ 3 });
-    auto routeIntermedGraph = findRouteBetweenIds(intermedG, NodeId{ 1 }, NodeId{ 3 });
     auto routeFinalGraph = findRouteBetweenIds(finalG, NodeId{ 1 }, NodeId{ 3 });
 
     compareRoutes(routeInitialGraph, routeIntermedGraph);

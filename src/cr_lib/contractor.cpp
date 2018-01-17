@@ -25,11 +25,11 @@
 #include <thread>
 
 std::pair<bool, std::optional<Route>> Contractor::isShortestPath(
-    Graph& g, Dijkstra& d, const EdgeId& startEdgeId, const EdgeId& destEdgeId, const Config& conf)
+    Dijkstra& d, const EdgeId& startEdgeId, const EdgeId& destEdgeId, const Config& conf)
 {
 
-  const auto& startEdge = g.getEdge(startEdgeId);
-  const auto& destEdge = g.getEdge(destEdgeId);
+  const auto& startEdge = Edge::getEdge(startEdgeId);
+  const auto& destEdge = Edge::getEdge(destEdgeId);
 
   auto foundRoute = d.findBestRoute(startEdge.getSourcePos(), destEdge.getDestPos(), conf);
   if (!foundRoute) {
@@ -77,10 +77,10 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
             Cost c1 = in.cost + out.cost;
 
             while (true) {
-              auto[isShortest, foundRoute] = isShortestPath(g, d, in.id, out.id, config);
+              auto[isShortest, foundRoute] = isShortestPath(d, in.id, out.id, config);
               if (isShortest) {
                 shortcuts.push_back(
-                    Contractor::createShortcut(g.getEdge(in.id), g.getEdge(out.id)));
+                    Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
                 break;
               }
 
@@ -105,7 +105,7 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
               if (config == newConfig) {
                 if (lp.exact()) {
                   shortcuts.push_back(
-                      Contractor::createShortcut(g.getEdge(in.id), g.getEdge(out.id)));
+                      Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
                   break;
                 }
                 lp.exact(true);
@@ -173,11 +173,11 @@ void copyEdgesOfNode(Graph& g, NodePos pos, std::vector<Edge>& edges)
 {
   auto outRange = g.getOutgoingEdgesOf(pos);
   std::transform(outRange.begin(), outRange.end(), std::back_inserter(edges),
-      [&g](const HalfEdge& e) -> Edge { return g.getEdge(e.id); });
+      [](const HalfEdge& e) -> Edge { return Edge::getEdge(e.id); });
 
   auto inRange = g.getIngoingEdgesOf(pos);
   std::transform(inRange.begin(), inRange.end(), std::back_inserter(edges),
-      [&g](const HalfEdge& e) -> Edge { return g.getEdge(e.id); });
+      [](const HalfEdge& e) -> Edge { return Edge::getEdge(e.id); });
 }
 
 Graph Contractor::contract(Graph& g)
@@ -200,7 +200,7 @@ Graph Contractor::contract(Graph& g)
       nodes.push_back(g.getNode(pos));
       for (const auto& edge : g.getOutgoingEdgesOf(pos)) {
         if (set.find(edge.end) == set.end()) {
-          edges.push_back(g.getEdge(edge.id));
+          edges.push_back(Edge::getEdge(edge.id));
         }
       }
     } else {
@@ -242,7 +242,7 @@ Graph Contractor::mergeWithContracted(Graph& g)
     nodes.push_back(node);
     auto outEdges = g.getOutgoingEdgesOf(pos);
     std::transform(outEdges.begin(), outEdges.end(), std::back_inserter(edges),
-        [&g](const auto& e) { return g.getEdge(e.id); });
+        [](const auto& e) { return Edge::getEdge(e.id); });
   }
   std::copy(contractedEdges.begin(), contractedEdges.end(), std::back_inserter(edges));
 
@@ -256,12 +256,12 @@ Graph Contractor::contractCompletely(Graph& g)
 
   Graph intermedG = contract(g);
   int uncontractedNodesPercent = intermedG.getNodeCount() * 100 / g.getNodeCount();
-  std::cout << 100 - uncontractedNodesPercent << "% of the graph is contracted" << '\r'
+  std::cout << 100 - uncontractedNodesPercent << "% of the graph is contracted" << '\n'
             << std::flush;
   while (uncontractedNodesPercent > 2) {
     intermedG = contract(intermedG);
     uncontractedNodesPercent = intermedG.getNodeCount() * 100 / g.getNodeCount();
-    std::cout << 100 - uncontractedNodesPercent << "% of the graph is contracted" << '\r'
+    std::cout << 100 - uncontractedNodesPercent << "% of the graph is contracted" << '\n'
               << std::flush;
   }
   std::cout << '\n';

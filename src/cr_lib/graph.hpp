@@ -20,6 +20,7 @@
 
 #include "namedType.hpp"
 #include "serialize_optional.hpp"
+#include <atomic>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/serialization/unordered_map.hpp>
 #include <boost/serialization/vector.hpp>
@@ -152,6 +153,9 @@ class Edge {
   HalfEdge makeInEdge() const;
 
   static Edge createFromText(const std::string& text);
+  static void administerEdges(const std::vector<Edge>& edges);
+  static const Edge& getEdge(EdgeId id);
+  static void init();
 
   friend void testEdgeInternals(const Edge& e, NodeId source, NodeId destination, Length length,
       Height height, Unsuitability unsuitability, const ReplacedEdge& edgeA,
@@ -168,6 +172,9 @@ class Edge {
   ReplacedEdge edgeB;
   NodePos sourcePos;
   NodePos destinationPos;
+
+  static std::atomic<size_t> lastId;
+  static std::vector<Edge> edges;
 
   template <class Archive> void serialize(Archive& ar, const unsigned int version)
   {
@@ -249,7 +256,6 @@ class Graph {
   EdgeRange getIngoingEdgesOf(NodePos pos) const;
 
   size_t getLevelOf(NodePos pos) const;
-  const Edge& getEdge(EdgeId e) const;
 
   static Graph createFromStream(std::istream& file);
   static Graph createFromBinaryFile(boost::archive::binary_iarchive& bin);
@@ -268,7 +274,7 @@ class Graph {
   std::vector<HalfEdge> inEdges;
   std::vector<HalfEdge> outEdges;
   std::vector<size_t> level;
-  std::unordered_map<EdgeId, Edge> edges;
+  size_t edgeCount;
 
   template <class Archive> void serialize(Archive& ar, const unsigned int version)
   {
@@ -280,7 +286,7 @@ class Graph {
     ar& inEdges;
     ar& outEdges;
     ar& level;
-    ar& edges;
+    ar& edgeCount;
   }
 };
 

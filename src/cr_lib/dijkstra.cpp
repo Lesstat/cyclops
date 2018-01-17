@@ -49,7 +49,7 @@ Route Dijkstra::buildRoute(NodePos node, NodeToEdgeMap previousEdgeS, NodeToEdge
   auto curNode = node;
   while (curNode != from) {
     const auto& edgeId = previousEdgeS[curNode];
-    const auto& edge = graph->getEdge(edgeId);
+    const auto& edge = Edge::getEdge(edgeId);
     route.costs = route.costs + edge.getCost();
     route.edges.push_front(edge);
     curNode = edge.getSourcePos();
@@ -58,7 +58,7 @@ Route Dijkstra::buildRoute(NodePos node, NodeToEdgeMap previousEdgeS, NodeToEdge
   curNode = node;
   while (curNode != to) {
     const auto& edgeId = previousEdgeT[curNode];
-    const auto& edge = graph->getEdge(edgeId);
+    const auto& edge = Edge::getEdge(edgeId);
     route.costs = route.costs + edge.getCost();
     route.edges.push_back(edge);
     curNode = edge.getDestPos();
