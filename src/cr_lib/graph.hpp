@@ -276,18 +276,25 @@ class Graph {
   std::vector<size_t> level;
   size_t edgeCount;
 
-  template <class Archive> void serialize(Archive& ar, const unsigned int version)
+  template <class Archive> void save(Archive& ar, const unsigned int /*version*/) const
   {
-    if (version > 0) {
-      throw std::invalid_argument{ "Version > 0 not implemented yet" };
-    }
     ar& nodes;
-    ar& offsets;
-    ar& inEdges;
-    ar& outEdges;
-    ar& level;
-    ar& edgeCount;
+    std::vector<Edge> edges{};
+    edges.reserve(edgeCount);
+    for (const auto& e : inEdges) {
+      edges.push_back(Edge::getEdge(e.id));
+    }
+    ar& edges;
   }
+  template <class Archive> void load(Archive& ar, const unsigned int /*version*/)
+  {
+    std::vector<Node> nodes;
+    std::vector<Edge> edges;
+    ar& nodes;
+    ar& edges;
+    *this = Graph(std::move(nodes), std::move(edges));
+  }
+  BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
 class EdgeRange {

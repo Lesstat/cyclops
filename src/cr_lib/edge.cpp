@@ -115,10 +115,10 @@ double HalfEdge::costByConfiguration(const Config& conf) const
 
 void Edge::administerEdges(const std::vector<Edge>& edges)
 {
-  while (Edge::edges.size() <= lastId) {
-    Edge::edges.emplace_back(Edge{});
-  }
   for (const auto& edge : edges) {
+    while (Edge::edges.size() <= edge.getId()) {
+      Edge::edges.emplace_back(Edge{});
+    }
     Edge::edges[edge.getId()] = edge;
   }
 }
