@@ -26,7 +26,7 @@ NormalDijkstra::NormalDijkstra(Graph* g, size_t nodeCount)
 std::optional<RouteWithCount> NormalDijkstra::findBestRoute(NodePos from, NodePos to, Config config)
 {
 
-  using QueueElem = std::tuple<NodePos, double, size_t>;
+  using QueueElem = std::tuple<NodePos, double>;
   auto cmp = [](QueueElem left, QueueElem right) {
     auto leftCost = std::get<double>(left);
     auto rightCost = std::get<double>(right);
@@ -36,22 +36,19 @@ std::optional<RouteWithCount> NormalDijkstra::findBestRoute(NodePos from, NodePo
 
   clearState();
   Queue heap{ cmp };
-  heap.push(std::make_tuple(from, 0, 1));
+  heap.push(std::make_tuple(from, 0));
   touched.push_back(from);
   cost[from] = 0;
-
   std::unordered_map<NodePos, EdgeId> previousEdge{};
 
   while (true) {
     if (heap.empty()) {
       return {};
     }
-    auto[node, pathCost, pathCount] = heap.top();
-    if (pathCount > 5)
-      std::cout << "path count: " << pathCount << '\n';
+    auto[node, pathCost] = heap.top();
     heap.pop();
     if (node == to) {
-      return buildRoute(from, to, previousEdge, pathCount);
+      return buildRoute(from, to, previousEdge);
     }
     if (pathCost > cost[node]) {
       continue;
@@ -59,15 +56,14 @@ std::optional<RouteWithCount> NormalDijkstra::findBestRoute(NodePos from, NodePo
 
     const auto& outEdges = graph->getOutgoingEdgesOf(node);
     for (const auto& edge : outEdges) {
-      NodePos nextNode = edge.end;
+      const NodePos& nextNode = edge.end;
       double nextCost = pathCost + edge.costByConfiguration(config);
-      QueueElem next = std::make_tuple(
-          nextNode, nextCost, nextCost == cost[nextNode] ? pathCount + 1 : pathCount);
       if (nextCost < cost[nextNode]) {
+        QueueElem next = std::make_tuple(nextNode, nextCost);
         cost[nextNode] = nextCost;
         touched.push_back(nextNode);
         previousEdge[nextNode] = edge.id;
-        heap.push(next);
+        heap.push(std::move(next));
       }
     }
   }
@@ -80,18 +76,18 @@ void NormalDijkstra::clearState()
   }
   touched.clear();
 }
+void insertUnpackedEdge(const Edge& e, std::deque<Edge>& route, bool front);
 
-RouteWithCount NormalDijkstra::buildRoute(const NodePos& from, const NodePos& to,
-    const std::unordered_map<NodePos, EdgeId>& previousEdge, size_t pathCount)
+RouteWithCount NormalDijkstra::buildRoute(
+    const NodePos& from, const NodePos& to, const std::unordered_map<NodePos, EdgeId>& previousEdge)
 {
   RouteWithCount route;
-  route.pathCount = pathCount;
   auto currentNode = to;
   while (currentNode != from) {
     auto& edgeId = previousEdge.at(currentNode);
     const auto& edge = Edge::getEdge(edgeId);
     route.costs = route.costs + edge.getCost();
-    route.edges.push_front(edge);
+    insertUnpackedEdge(edge, route.edges, true);
     currentNode = edge.getSourcePos();
   }
 

@@ -155,8 +155,8 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
         NodePos nextNode = edge.end;
         if (graph->getLevelOf(nextNode) >= graph->getLevelOf(node)) {
           double nextCost = cost + edge.costByConfiguration(config);
-          QueueElem next = std::make_pair(nextNode, nextCost);
           if (nextCost < costS[nextNode]) {
+            QueueElem next = std::make_pair(nextNode, nextCost);
             costS[nextNode] = nextCost;
             touchedS.push_back(nextNode);
             previousEdgeS[nextNode] = edge.id;
@@ -188,8 +188,8 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
         NodePos nextNode = edge.end;
         if (graph->getLevelOf(nextNode) >= graph->getLevelOf(node)) {
           double nextCost = cost + edge.costByConfiguration(config);
-          QueueElem next = std::make_pair(nextNode, nextCost);
           if (nextCost < costT[nextNode]) {
+            QueueElem next = std::make_pair(nextNode, nextCost);
             costT[nextNode] = nextCost;
             touchedT.push_back(nextNode);
             previousEdgeT[nextNode] = edge.id;

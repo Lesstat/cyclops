@@ -20,6 +20,7 @@
 #include "multiqueue.hpp"
 #include "ndijkstra.hpp"
 #include <any>
+#include <chrono>
 #include <iostream>
 #include <memory>
 #include <thread>
@@ -109,8 +110,8 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
                 UnsuitabilityConfig{ values[2] } };
               if (config == newConfig) {
                 if (lp.exact()) {
-                  // shortcuts.push_back(
-                  //     Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
+                  shortcuts.push_back(
+                      Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
                   break;
                 }
                 lp.exact(true);
@@ -187,6 +188,7 @@ void copyEdgesOfNode(Graph& g, NodePos pos, std::vector<Edge>& edges)
 
 Graph Contractor::contract(Graph& g)
 {
+  auto start = std::chrono::high_resolution_clock::now();
   const int THREAD_COUNT
       = std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1;
   MultiQueue q{};
@@ -229,6 +231,11 @@ Graph Contractor::contract(Graph& g)
     std::move(shortcuts.begin(), shortcuts.end(), std::back_inserter(edges));
   }
 
+  auto end = std::chrono::high_resolution_clock::now();
+
+  using s = std::chrono::seconds;
+  std::cout << "Last contraction step took " << std::chrono::duration_cast<s>(end - start).count()
+            << "s" << '\n';
   return Graph{ std::move(nodes), std::move(edges) };
 }
 
@@ -256,14 +263,14 @@ Graph Contractor::mergeWithContracted(Graph& g)
   return Graph{ std::move(nodes), std::move(edges) };
 }
 
-Graph Contractor::contractCompletely(Graph& g)
+Graph Contractor::contractCompletely(Graph& g, unsigned short rest)
 {
 
   Graph intermedG = contract(g);
   int uncontractedNodesPercent = intermedG.getNodeCount() * 100 / g.getNodeCount();
   std::cout << 100 - uncontractedNodesPercent << "% of the graph is contracted" << '\n'
             << std::flush;
-  while (uncontractedNodesPercent > 2) {
+  while (uncontractedNodesPercent > rest) {
     intermedG = contract(intermedG);
     uncontractedNodesPercent = intermedG.getNodeCount() * 100 / g.getNodeCount();
     std::cout << 100 - uncontractedNodesPercent << "% of the graph is contracted" << '\n'

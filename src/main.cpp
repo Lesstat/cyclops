@@ -24,6 +24,7 @@
 #include <boost/program_options.hpp>
 #include <chrono>
 #include <fstream>
+#include <random>
 
 Graph loadGraphFromTextFile(std::string& graphPath)
 {
@@ -60,11 +61,11 @@ Graph loadGraphFromBinaryFile(std::string& graphPath)
   return g;
 }
 
-Graph contractGraph(Graph& g)
+Graph contractGraph(Graph& g, unsigned short rest)
 {
   Contractor c{};
   auto start = std::chrono::high_resolution_clock::now();
-  Graph ch = c.contractCompletely(g);
+  Graph ch = c.contractCompletely(g, rest);
   auto end = std::chrono::high_resolution_clock::now();
   using m = std::chrono::minutes;
   std::cout << "contracting the graph took " << std::chrono::duration_cast<m>(end - start).count()
@@ -223,7 +224,7 @@ void runWebServer(Graph& g)
         const auto& node = g.getNode(edge.getSourcePos());
         resultJson << '[' << node.lng() << ", " << node.lat() << "],";
       }
-      if (route->edges.size() > 0) {
+      if (!route->edges.empty()) {
         const auto& lastEdge = route->edges[route->edges.size() - 1];
         const auto& node = g.getNode(lastEdge.getSourcePos());
         resultJson << '[' << node.lng() << ", " << node.lat() << "]] } } }";
@@ -250,6 +251,7 @@ int main(int argc, char* argv[])
   std::string textFileName{};
   std::string binFileName{};
   std::string saveFileName{};
+  unsigned short contractionPercent;
 
   po::options_description loading{ "loading options" };
   loading.add_options()(
@@ -257,9 +259,12 @@ int main(int argc, char* argv[])
       "bin,b", po::value<std::string>(&binFileName), "load graph form binary file");
 
   po::options_description action{ "actions" };
-  action.add_options()("contract,c", "contract graph")("dijkstra,d",
-      "start interactive dijkstra in cli")("web,w", "start webserver for interaction via browser")(
-      "save", po::value<std::string>(&saveFileName), "save graph to binary file");
+  action.add_options()("contract,c", "contract graph")("percent,p",
+      po::value<unsigned short>(&contractionPercent)->default_value(98),
+      "How far the graph should be contracted")("dijkstra,d", "start interactive dijkstra in cli")(
+      "web,w", "start webserver for interaction via browser")("save",
+      po::value<std::string>(&saveFileName),
+      "save graph to binary file")("test", "runs normal dijkstra and CH dijktra for comparison");
 
   po::options_description all;
   all.add_options()("help,h", "prints help message");
@@ -285,10 +290,12 @@ int main(int argc, char* argv[])
   }
 
   if (vm.count("contract") > 0) {
-    g = contractGraph(g);
+    std::cout << "Start contracting" << '\n';
+    g = contractGraph(g, 100 - contractionPercent);
   }
 
   if (!saveFileName.empty()) {
+    std::cout << "Saving" << '\n';
     saveToBinaryFile(g, saveFileName);
   }
 
@@ -298,6 +305,56 @@ int main(int argc, char* argv[])
 
   if (vm.count("web") > 0) {
     runWebServer(g);
+  }
+
+  if (vm.count("test") > 0) {
+    Dijkstra d = g.createDijkstra();
+    NormalDijkstra n = g.createNormalDijkstra();
+    std::random_device rd{};
+    std::uniform_int_distribution<size_t> dist(0, g.getNodeCount());
+    Config c{ LengthConfig{ 0.33 }, HeightConfig{ 0.33 }, UnsuitabilityConfig{ 0.33 } };
+    for (int i = 0; i < 100000; ++i) {
+      bool diff = false;
+      NodePos from{ dist(rd) };
+      NodePos to{ dist(rd) };
+      auto dRoute = d.findBestRoute(from, to, c);
+
+      auto nRoute = n.findBestRoute(from, to, c);
+      if (dRoute && nRoute) {
+        if (std::abs(dRoute->costs.length - nRoute->costs.length) > 1.0
+            || dRoute->costs.height != nRoute->costs.height
+            || dRoute->costs.unsuitability != nRoute->costs.unsuitability) {
+          std::cout << "cost differ in route from " << from << " to " << to << '\n';
+          std::cout << "dLength: " << dRoute->costs.length << ", nLength: " << nRoute->costs.length
+                    << '\n';
+          std::cout << "dHeight: " << dRoute->costs.height << ", nHeight: " << nRoute->costs.height
+                    << '\n';
+          std::cout << "dUnsuitability: " << dRoute->costs.unsuitability
+                    << ", nUnsuitability: " << nRoute->costs.unsuitability << '\n';
+        }
+        for (size_t j = 0; j < dRoute->edges.size(); ++j) {
+          const auto& dEdge = dRoute->edges[j];
+          const auto& nEdge = nRoute->edges.at(j);
+          if (dEdge.getSourcePos().get() != nEdge.getSourcePos().get()
+              || dEdge.getDestPos().get() != nEdge.getDestPos().get()) {
+            std::cout << "difference at " << j << "th edge" << '\n';
+            std::cout << "Edge Ids: dId: " << dEdge.getId() << ", nId: " << nEdge.getId() << '\n';
+            std::cout << "sourcePos: d: " << dEdge.getSourcePos() << ", n: " << nEdge.getSourcePos()
+                      << '\n';
+            std::cout << "destPos: d: " << dEdge.getDestPos() << ", n: " << nEdge.getDestPos()
+                      << '\n';
+            diff = true;
+            break;
+          }
+        }
+        if (diff) {
+          std::cout << "difference in Route form " << from << " to " << to << " found!" << '\n';
+        }
+      } else if (nRoute && !dRoute) {
+        std::cout << "Only Normal dijkstra found route form " << from << " to " << to << "!"
+                  << '\n';
+      }
+    }
   }
 
   return 0;

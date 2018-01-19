@@ -21,7 +21,7 @@
 
 struct RouteWithCount {
   Cost costs;
-  size_t pathCount;
+  size_t pathCount = 1;
   std::deque<Edge> edges;
 };
 
@@ -39,7 +39,7 @@ class NormalDijkstra {
   private:
   void clearState();
   RouteWithCount buildRoute(const NodePos& from, const NodePos& to,
-      const std::unordered_map<NodePos, EdgeId>& previousEdge, size_t pathCount);
+      const std::unordered_map<NodePos, EdgeId>& previousEdge);
 
   using NodeToEdgeMap = std::unordered_map<NodePos, EdgeId>;
   std::vector<double> cost;
