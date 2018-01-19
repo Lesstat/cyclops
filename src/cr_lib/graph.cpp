@@ -15,8 +15,8 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include "dijkstra.hpp"
 #include "grid.hpp"
+#include "ndijkstra.hpp"
 
 void connectEdgesToNodes(const std::vector<Node>& nodes, std::vector<Edge>& edges)
 {
@@ -127,6 +127,8 @@ std::ostream& operator<<(std::ostream& s, const Graph& g)
 std::vector<NodeOffset> const& Graph::getOffsets() const { return offsets; }
 
 Dijkstra Graph::createDijkstra() { return Dijkstra{ this, nodes.size() }; }
+
+NormalDijkstra Graph::createNormalDijkstra() { return NormalDijkstra{ this, nodes.size() }; }
 
 Grid Graph::createGrid(long sideLength) const
 {

@@ -16,16 +16,16 @@
  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "contractor.hpp"
-#include "dijkstra.hpp"
 #include "linearProgram.hpp"
 #include "multiqueue.hpp"
+#include "ndijkstra.hpp"
 #include <any>
 #include <iostream>
 #include <memory>
 #include <thread>
 
-std::pair<bool, std::optional<Route>> Contractor::isShortestPath(
-    Dijkstra& d, const EdgeId& startEdgeId, const EdgeId& destEdgeId, const Config& conf)
+std::pair<bool, std::optional<RouteWithCount>> Contractor::isShortestPath(
+    NormalDijkstra& d, const EdgeId& startEdgeId, const EdgeId& destEdgeId, const Config& conf)
 {
 
   const auto& startEdge = Edge::getEdge(startEdgeId);
@@ -35,6 +35,11 @@ std::pair<bool, std::optional<Route>> Contractor::isShortestPath(
   if (!foundRoute) {
     return std::make_pair(false, foundRoute);
   }
+  if (foundRoute->pathCount > 1) {
+    std::cout << "found multiple paths" << '\n';
+    return std::make_pair(false, foundRoute);
+  }
+
   auto route = foundRoute.value();
   bool isShortest = route.edges.size() == 2 && route.edges[0].getId() == startEdgeId
       && route.edges[1].getId() == destEdgeId;
@@ -57,7 +62,7 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
 {
   std::thread t([this, &queue, &g]() {
     std::any msg;
-    Dijkstra d = g.createDijkstra();
+    auto d = g.createNormalDijkstra();
     std::vector<Edge> shortcuts;
 
     while (true) {

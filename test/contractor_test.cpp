@@ -86,7 +86,7 @@ TEST_CASE("Test if edges form shortest path")
   auto& edge1 = *outEdges.begin();
 
   Contractor c{};
-  Dijkstra d = g.createDijkstra();
+  auto d = g.createNormalDijkstra();
 
   SECTION("With config where the edges form shortest path")
   {

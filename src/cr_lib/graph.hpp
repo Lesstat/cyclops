@@ -39,6 +39,7 @@ using Length = NamedType<double, struct LengthParameter>;
 using Unsuitability = NamedType<short, struct UnsuitabilityParameter>;
 
 class Dijkstra;
+class NormalDijkstra;
 struct Config;
 
 struct Cost {
@@ -252,6 +253,7 @@ class Graph {
 
   std::vector<NodeOffset> const& getOffsets() const;
   Dijkstra createDijkstra();
+  NormalDijkstra createNormalDijkstra();
   Grid createGrid(long sideLength = 100) const;
 
   EdgeRange getOutgoingEdgesOf(NodePos pos) const;

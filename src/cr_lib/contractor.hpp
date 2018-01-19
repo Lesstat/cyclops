@@ -17,7 +17,7 @@
 */
 #ifndef CONTRACTOR_H
 #define CONTRACTOR_H
-#include "dijkstra.hpp"
+#include "ndijkstra.hpp"
 #include <set>
 
 class MultiQueue;
@@ -34,8 +34,8 @@ class Contractor {
 
   static Edge createShortcut(const Edge& e1, const Edge& e2);
 
-  std::pair<bool, std::optional<Route>> isShortestPath(
-      Dijkstra& d, const EdgeId& startEdgeId, const EdgeId& destEdgeId, const Config& conf);
+  std::pair<bool, std::optional<RouteWithCount>> isShortestPath(
+      NormalDijkstra& d, const EdgeId& startEdgeId, const EdgeId& destEdgeId, const Config& conf);
 
   void contract(MultiQueue& queue, Graph& g);
   Graph contract(Graph& g);
@@ -48,8 +48,7 @@ class Contractor {
 
   protected:
   private:
-  std::optional<Dijkstra> dijkstra;
-  std::optional<Route> foundRoute;
+  std::optional<RouteWithCount> foundRoute;
   size_t level = 0;
   std::vector<Node> contractedNodes;
   std::vector<Edge> contractedEdges;
