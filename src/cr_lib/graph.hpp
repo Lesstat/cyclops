@@ -88,7 +88,7 @@ struct HalfEdge {
   NodePos end;
   Cost cost;
 
-  double costByConfiguration(const Config& conf) const;
+  float costByConfiguration(const Config& conf) const;
 
   private:
   friend class boost::serialization::access;

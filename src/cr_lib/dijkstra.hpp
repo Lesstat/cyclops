@@ -21,9 +21,9 @@
 #include "graph.hpp"
 #include <deque>
 
-using LengthConfig = NamedType<double, struct LengthConfigParameter>;
-using HeightConfig = NamedType<double, struct HeightConfigParameter>;
-using UnsuitabilityConfig = NamedType<double, struct UnsuitabilityConfigParameter>;
+using LengthConfig = NamedType<float, struct LengthConfigParameter>;
+using HeightConfig = NamedType<float, struct HeightConfigParameter>;
+using UnsuitabilityConfig = NamedType<float, struct UnsuitabilityConfigParameter>;
 
 struct Config {
   LengthConfig length;

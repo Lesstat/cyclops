@@ -107,9 +107,9 @@ HalfEdge Edge::makeInEdge() const
   return e;
 }
 
-double HalfEdge::costByConfiguration(const Config& conf) const
+float HalfEdge::costByConfiguration(const Config& conf) const
 {
-  double combinedCost = cost.length * conf.length + cost.height * conf.height
+  float combinedCost = cost.length * conf.length + cost.height * conf.height
       + cost.unsuitability * conf.unsuitability;
 
   assert(combinedCost >= 0);
