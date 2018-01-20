@@ -77,9 +77,10 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
         const auto& outEdges = g.getOutgoingEdgesOf(node);
         for (const auto& in : inEdges) {
           for (const auto& out : outEdges) {
-            LinearProgram lp{ 3 };
-            lp.objective({ 1.0, 1.0, 1.0 });
-            lp.addConstraint({ 1.0, 1.0, 1.0 }, 1.0, GLP_FX);
+            // LinearProgram lp{ 3 };
+            // lp.objective({ 1.0, 1.0, 1.0 });
+            // lp.addConstraint({ 1.0, 1.0, 1.0 }, 1.0, GLP_FX);
+            LinearProgram lp = LinearProgram::setUpLPForContraction();
 
             Cost c1 = in.cost + out.cost;
 

@@ -36,8 +36,11 @@ class LinearProgram {
   double objectiveFunctionValue();
   std::vector<double> variableValues();
 
+  static LinearProgram setUpLPForContraction();
+
   protected:
   private:
+  LinearProgram() = default;
   glp_prob* lp;
   size_t columnCount;
 };

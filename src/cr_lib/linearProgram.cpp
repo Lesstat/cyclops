@@ -79,16 +79,53 @@ bool LinearProgram::solve()
 
 double LinearProgram::objectiveFunctionValue()
 {
-  std::lock_guard guard{ key };
+  // std::lock_guard guard{ key };
   return glp_get_obj_val(lp);
 }
 
 std::vector<double> LinearProgram::variableValues()
 {
-  std::lock_guard guard{ key };
+  // std::lock_guard guard{ key };
   std::vector<double> variables(columnCount);
   for (size_t i = 0; i < columnCount; ++i) {
     variables[i] = glp_get_col_prim(lp, i + 1);
   }
   return variables;
+}
+
+LinearProgram LinearProgram::setUpLPForContraction()
+{
+  std::lock_guard guard{ key };
+  size_t cols = 3;
+
+  LinearProgram linearProgram;
+  linearProgram.columnCount = cols;
+  glp_term_out(GLP_OFF);
+  linearProgram.lp = glp_create_prob();
+  glp_add_cols(linearProgram.lp, cols);
+  for (size_t i = 1; i < cols + 1; ++i) {
+    glp_set_col_bnds(linearProgram.lp, i, GLP_LO, 0.0, 0.0);
+  }
+
+  glp_set_obj_dir(linearProgram.lp, GLP_MIN);
+  for (size_t i = 0; i < 3; ++i) {
+    glp_set_obj_coef(linearProgram.lp, i + 1, 1.0);
+  }
+
+  int row = glp_add_rows(linearProgram.lp, 1);
+  glp_set_row_bnds(linearProgram.lp, row, GLP_FX, 1.0, 1.0);
+
+  std::vector<int> ind(3 + 1);
+  std::vector<double> value(3 + 1);
+
+  int i = 1;
+  for (const auto& val : { 1.0, 1.0, 1.0 }) {
+    ind[i] = i;
+    value[i] = val;
+    ++i;
+  }
+
+  glp_set_mat_row(linearProgram.lp, row, 3, ind.data(), value.data());
+
+  return linearProgram;
 }
