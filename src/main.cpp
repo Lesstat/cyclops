@@ -344,6 +344,7 @@ int main(int argc, char* argv[])
             std::cout << "destPos: d: " << dEdge.getDestPos() << ", n: " << nEdge.getDestPos()
                       << '\n';
             diff = true;
+            return 1;
             break;
           }
         }

@@ -65,6 +65,7 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
     std::any msg;
     auto d = g.createNormalDijkstra();
     std::vector<Edge> shortcuts;
+    shortcuts.reserve(g.getNodeCount());
 
     while (true) {
       queue.receive(msg);
@@ -109,12 +110,9 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
               Config newConfig{ LengthConfig{ values[0] }, HeightConfig{ values[1] },
                 UnsuitabilityConfig{ values[2] } };
               if (config == newConfig) {
-                if (lp.exact()) {
-                  shortcuts.push_back(
-                      Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
-                  break;
-                }
-                lp.exact(true);
+                shortcuts.push_back(
+                    Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
+                break;
               }
               config = newConfig;
             }

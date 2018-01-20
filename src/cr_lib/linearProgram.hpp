@@ -35,14 +35,11 @@ class LinearProgram {
   bool solve();
   double objectiveFunctionValue();
   std::vector<double> variableValues();
-  void exact(bool exact);
-  bool exact();
 
   protected:
   private:
   glp_prob* lp;
   size_t columnCount;
-  bool exact_ = false;
 };
 
 #endif /* LINEARPROGRAM_H */
