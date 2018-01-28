@@ -36,10 +36,6 @@ std::pair<bool, std::optional<RouteWithCount>> Contractor::isShortestPath(
   if (!foundRoute) {
     return std::make_pair(false, foundRoute);
   }
-  if (foundRoute->pathCount > 1) {
-    std::cout << "found multiple paths" << '\n';
-    return std::make_pair(false, foundRoute);
-  }
 
   auto route = foundRoute.value();
   bool isShortest = route.edges.size() == 2 && route.edges[0].getId() == startEdgeId
@@ -77,9 +73,6 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
         const auto& outEdges = g.getOutgoingEdgesOf(node);
         for (const auto& in : inEdges) {
           for (const auto& out : outEdges) {
-            // LinearProgram lp{ 3 };
-            // lp.objective({ 1.0, 1.0, 1.0 });
-            // lp.addConstraint({ 1.0, 1.0, 1.0 }, 1.0, GLP_FX);
             LinearProgram lp = LinearProgram::setUpLPForContraction();
 
             Cost c1 = in.cost + out.cost;
@@ -87,9 +80,12 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
             while (true) {
               auto[isShortest, foundRoute] = isShortestPath(d, in.id, out.id, config);
               if (isShortest) {
-                shortcuts.push_back(
-                    Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
-                break;
+                if (foundRoute->pathCount == 1) {
+                  shortcuts.push_back(
+                      Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
+                  break;
+                }
+                foundRoute = d.findOtherRoute(*foundRoute);
               }
 
               if (!foundRoute || foundRoute->edges.empty()) {

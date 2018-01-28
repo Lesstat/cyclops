@@ -35,15 +35,18 @@ class NormalDijkstra {
   NormalDijkstra& operator=(NormalDijkstra&& other) noexcept = default;
 
   std::optional<RouteWithCount> findBestRoute(NodePos from, NodePos to, Config config);
+  RouteWithCount findOtherRoute(const RouteWithCount& route);
 
   private:
   void clearState();
-  RouteWithCount buildRoute(const NodePos& from, const NodePos& to,
-      const std::unordered_map<NodePos, EdgeId>& previousEdge);
+  RouteWithCount buildRoute(const NodePos& from, const NodePos& to);
 
   using NodeToEdgeMap = std::unordered_map<NodePos, EdgeId>;
   std::vector<double> cost;
   std::vector<NodePos> touched;
+  std::vector<size_t> paths;
+  std::unordered_map<NodePos, std::vector<EdgeId>> previousEdge;
+  Config usedConfig;
   Graph* graph;
 };
 
