@@ -59,19 +59,20 @@ std::optional<RouteWithCount> NormalDijkstra::findBestRoute(NodePos from, NodePo
     }
 
     const auto& outEdges = graph->getOutgoingEdgesOf(node);
-    for (const auto& edge : outEdges) {
-      const NodePos& nextNode = edge.end;
+    for (const auto& edgeId : outEdges) {
+      const auto& edge = Edge::getEdge(edgeId);
+      const NodePos& nextNode = edge.getDestPos();
       double nextCost = pathCost + edge.costByConfiguration(config);
       if (nextCost < cost[nextNode]) {
         QueueElem next = std::make_tuple(nextNode, nextCost);
         cost[nextNode] = nextCost;
         paths[nextNode] = paths[node];
         touched.push_back(nextNode);
-        previousEdge[nextNode] = { edge.id };
+        previousEdge[nextNode] = { edge.getId() };
         heap.push(std::move(next));
       } else if (std::abs(nextCost - cost[nextNode]) < 0.1) {
         paths[nextNode] += paths[node];
-        previousEdge[nextNode].push_back(edge.id);
+        previousEdge[nextNode].push_back(edge.getId());
       }
     }
   }
