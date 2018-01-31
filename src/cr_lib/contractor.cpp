@@ -170,15 +170,15 @@ std::set<NodePos> Contractor::reduce(std::set<NodePos>& set, const Graph& g)
   return result;
 }
 
-void copyEdgesOfNode(Graph& g, NodePos pos, std::vector<Edge>& edges)
+void copyEdgesOfNode(Graph& g, NodePos pos, std::vector<EdgeId>& edges)
 {
   auto outRange = g.getOutgoingEdgesOf(pos);
   std::transform(outRange.begin(), outRange.end(), std::back_inserter(edges),
-      [](const HalfEdge& e) -> Edge { return Edge::getEdge(e.id); });
+      [](const HalfEdge& e) -> EdgeId { return e.id; });
 
   auto inRange = g.getIngoingEdgesOf(pos);
   std::transform(inRange.begin(), inRange.end(), std::back_inserter(edges),
-      [](const HalfEdge& e) -> Edge { return Edge::getEdge(e.id); });
+      [](const HalfEdge& e) -> EdgeId { return e.id; });
 }
 
 Graph Contractor::contract(Graph& g)
@@ -194,7 +194,7 @@ Graph Contractor::contract(Graph& g)
   ++level;
   auto set = reduce(independentSet(g), g);
   std::vector<Node> nodes{};
-  std::vector<Edge> edges{};
+  std::vector<EdgeId> edges{};
 
   for (size_t i = 0; i < g.getNodeCount(); ++i) {
     NodePos pos{ i };
@@ -202,7 +202,7 @@ Graph Contractor::contract(Graph& g)
       nodes.push_back(g.getNode(pos));
       for (const auto& edge : g.getOutgoingEdgesOf(pos)) {
         if (set.find(edge.end) == set.end()) {
-          edges.push_back(Edge::getEdge(edge.id));
+          edges.push_back(edge.id);
         }
       }
     } else {
@@ -223,7 +223,9 @@ Graph Contractor::contract(Graph& g)
     std::any msg;
     back->receive(msg);
     auto shortcuts = std::any_cast<std::vector<Edge>>(msg);
-    std::move(shortcuts.begin(), shortcuts.end(), std::back_inserter(edges));
+    Edge::administerEdges(shortcuts);
+    std::transform(shortcuts.begin(), shortcuts.end(), std::back_inserter(edges),
+        [](const auto& edge) { return edge.getId(); });
   }
 
   auto end = std::chrono::high_resolution_clock::now();
@@ -237,7 +239,7 @@ Graph Contractor::contract(Graph& g)
 Graph Contractor::mergeWithContracted(Graph& g)
 {
   std::vector<Node> nodes{};
-  std::vector<Edge> edges{};
+  std::vector<EdgeId> edges{};
   std::copy(contractedNodes.begin(), contractedNodes.end(), std::back_inserter(nodes));
 
   ++level;
@@ -249,7 +251,7 @@ Graph Contractor::mergeWithContracted(Graph& g)
     nodes.push_back(node);
     auto outEdges = g.getOutgoingEdgesOf(pos);
     std::transform(outEdges.begin(), outEdges.end(), std::back_inserter(edges),
-        [](const auto& e) { return Edge::getEdge(e.id); });
+        [](const auto& e) { return e.id; });
   }
   std::copy(contractedEdges.begin(), contractedEdges.end(), std::back_inserter(edges));
 

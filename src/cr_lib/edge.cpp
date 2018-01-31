@@ -126,3 +126,10 @@ void Edge::administerEdges(const std::vector<Edge>& edges)
   }
 }
 const Edge& Edge::getEdge(EdgeId id) { return edges[id]; }
+
+void Edge::setPosition(EdgeId id, NodePos source, NodePos dest)
+{
+  Edge& edge = Edge::edges[id];
+  edge.setSourcePos(source);
+  edge.setDestPos(dest);
+}

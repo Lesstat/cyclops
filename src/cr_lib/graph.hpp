@@ -158,6 +158,7 @@ class Edge {
   static Edge createFromText(const std::string& text);
   static void administerEdges(const std::vector<Edge>& edges);
   static const Edge& getEdge(EdgeId id);
+  static void setPosition(EdgeId id, NodePos source, NodePos dest);
   static void init();
 
   friend void testEdgeInternals(const Edge& e, NodeId source, NodeId destination, Length length,
@@ -243,6 +244,7 @@ class EdgeRange;
 class Graph {
   public:
   Graph(std::vector<Node>&& nodes, std::vector<Edge>&& edges);
+  Graph(std::vector<Node>&& nodes, std::vector<EdgeId>&& edges);
   Graph(const Graph& other) = delete;
   Graph(Graph&& other) noexcept = default;
   virtual ~Graph() noexcept = default;
@@ -272,6 +274,8 @@ class Graph {
 
   private:
   friend class boost::serialization::access;
+
+  void init(std::vector<Node>&& nodes, std::vector<EdgeId>&& edges);
 
   std::vector<Node> nodes;
   std::vector<NodeOffset> offsets;

@@ -51,7 +51,7 @@ class Contractor {
   std::optional<RouteWithCount> foundRoute;
   size_t level = 0;
   std::vector<Node> contractedNodes;
-  std::vector<Edge> contractedEdges;
+  std::vector<EdgeId> contractedEdges;
 };
 
 #endif /* CONTRACTOR_H */
