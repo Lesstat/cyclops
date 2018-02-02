@@ -219,10 +219,12 @@ Graph Contractor::contract(Graph& g)
   for (int i = 0; i < THREAD_COUNT; ++i) {
     q.send(std::any{ back });
   }
+  size_t shortcutCount = 0;
   for (int i = 0; i < THREAD_COUNT; ++i) {
     std::any msg;
     back->receive(msg);
     auto shortcuts = std::any_cast<std::vector<Edge>>(msg);
+    shortcutCount += shortcuts.size();
     Edge::administerEdges(shortcuts);
     std::transform(shortcuts.begin(), shortcuts.end(), std::back_inserter(edges),
         [](const auto& edge) { return edge.getId(); });
@@ -233,6 +235,7 @@ Graph Contractor::contract(Graph& g)
   using s = std::chrono::seconds;
   std::cout << "Last contraction step took " << std::chrono::duration_cast<s>(end - start).count()
             << "s" << '\n';
+  std::cout << "Created " << shortcutCount << " shortcuts." << '\n';
   return Graph{ std::move(nodes), std::move(edges) };
 }
 
