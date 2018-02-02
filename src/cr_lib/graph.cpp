@@ -122,16 +122,10 @@ void Graph::init(std::vector<Node>&& nodes, std::vector<EdgeId>&& edges)
   }
 
   calculateOffsets(edges, offsets, Pos::source);
-  std::transform(edges.begin(), edges.end(), std::back_inserter(outEdges), [](const EdgeId& id) {
-    const auto& e = Edge::getEdge(id);
-    return e.makeOutEdge();
-  });
+  std::copy(edges.begin(), edges.end(), std::back_inserter(outEdges));
 
   calculateOffsets(edges, offsets, Pos::dest);
-  std::transform(edges.begin(), edges.end(), std::back_inserter(inEdges), [](const EdgeId& id) {
-    const auto& e = Edge::getEdge(id);
-    return e.makeInEdge();
-  });
+  std::copy(edges.begin(), edges.end(), std::back_inserter(inEdges));
 }
 
 std::ostream& operator<<(std::ostream& s, const Graph& g)

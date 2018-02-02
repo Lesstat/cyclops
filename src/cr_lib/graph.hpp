@@ -279,8 +279,8 @@ class Graph {
 
   std::vector<Node> nodes;
   std::vector<NodeOffset> offsets;
-  std::vector<HalfEdge> inEdges;
-  std::vector<HalfEdge> outEdges;
+  std::vector<EdgeId> inEdges;
+  std::vector<EdgeId> outEdges;
   std::vector<size_t> level;
   size_t edgeCount;
 
@@ -290,7 +290,7 @@ class Graph {
     std::vector<Edge> edges{};
     edges.reserve(edgeCount);
     for (const auto& e : inEdges) {
-      edges.push_back(Edge::getEdge(e.id));
+      edges.push_back(Edge::getEdge(e));
     }
     ar& edges;
   }
@@ -307,7 +307,7 @@ class Graph {
 
 class EdgeRange {
   public:
-  using iterator = std::vector<HalfEdge>::const_iterator;
+  using iterator = std::vector<EdgeId>::const_iterator;
 
   EdgeRange(iterator begin, iterator end)
       : begin_(begin)
