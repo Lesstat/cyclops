@@ -178,6 +178,8 @@ void copyEdgesOfNode(Graph& g, NodePos pos, std::vector<EdgeId>& edges)
 {
   auto outRange = g.getOutgoingEdgesOf(pos);
   std::copy(outRange.begin(), outRange.end(), std::back_inserter(edges));
+  auto inRange = g.getIngoingEdgesOf(pos);
+  std::copy(inRange.begin(), inRange.end(), std::back_inserter(edges));
 }
 
 Graph Contractor::contract(Graph& g)
