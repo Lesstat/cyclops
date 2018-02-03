@@ -251,14 +251,18 @@ int testGraph(Graph& g)
   std::random_device rd{};
   std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
   Config c{ LengthConfig{ 0.33 }, HeightConfig{ 0.33 }, UnsuitabilityConfig{ 0.33 } };
+
+  size_t route = 0;
+  size_t noRoute = 0;
+
   for (int i = 0; i < 100000; ++i) {
-    bool diff = false;
     NodePos from{ dist(rd) };
     NodePos to{ dist(rd) };
     auto dRoute = d.findBestRoute(from, to, c);
 
     auto nRoute = n.findBestRoute(from, to, c);
     if (dRoute && nRoute) {
+      ++route;
       if (std::abs(dRoute->costs.length - nRoute->costs.length) > 1.0
           || dRoute->costs.height != nRoute->costs.height
           || dRoute->costs.unsuitability != nRoute->costs.unsuitability) {
@@ -281,18 +285,19 @@ int testGraph(Graph& g)
                     << '\n';
           std::cout << "destPos: d: " << dEdge.getDestPos() << ", n: " << nEdge.getDestPos()
                     << '\n';
-          diff = true;
           return 1;
           break;
         }
       }
-      if (diff) {
-        std::cout << "difference in Route form " << from << " to " << to << " found!" << '\n';
-      }
     } else if (nRoute && !dRoute) {
       std::cout << "Only Normal dijkstra found route form " << from << " to " << to << "!" << '\n';
+      return 1;
+    } else {
+      ++noRoute;
     }
   }
+  std::cout << "Compared " << route << " routes" << '\n';
+  std::cout << "Did not find a route in " << noRoute << " cases" << '\n';
   return 0;
 }
 
