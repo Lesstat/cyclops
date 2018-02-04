@@ -71,21 +71,20 @@ bool LinearProgram::solve()
 {
   std::lock_guard guard{ key };
   size_t simplex;
-  simplex = glp_simplex(lp, nullptr);
+  if (!exact_) {
+    simplex = glp_simplex(lp, nullptr);
+  } else {
+    simplex = glp_exact(lp, nullptr);
+  }
 
   size_t status = glp_get_status(lp);
   return simplex == 0 && status == GLP_OPT;
 }
 
-double LinearProgram::objectiveFunctionValue()
-{
-  // std::lock_guard guard{ key };
-  return glp_get_obj_val(lp);
-}
+double LinearProgram::objectiveFunctionValue() { return glp_get_obj_val(lp); }
 
 std::vector<double> LinearProgram::variableValues()
 {
-  // std::lock_guard guard{ key };
   std::vector<double> variables(columnCount);
   for (size_t i = 0; i < columnCount; ++i) {
     variables[i] = glp_get_col_prim(lp, i + 1);
@@ -129,3 +128,6 @@ LinearProgram LinearProgram::setUpLPForContraction()
 
   return linearProgram;
 }
+
+bool LinearProgram::exact() { return exact_; }
+void LinearProgram::exact(bool exact) { exact_ = exact; }

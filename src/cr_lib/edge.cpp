@@ -71,14 +71,7 @@ Edge Edge::createFromText(const std::string& text)
   return e;
 }
 
-double Edge::costByConfiguration(const Config& conf) const
-{
-  double combinedCost = cost.length * conf.length + cost.height * conf.height
-      + cost.unsuitability * conf.unsuitability;
-
-  assert(combinedCost >= 0);
-  return combinedCost;
-}
+double Edge::costByConfiguration(const Config& conf) const { return cost * conf; }
 
 EdgeId Edge::getId() const { return internalId; }
 
@@ -107,17 +100,11 @@ HalfEdge Edge::makeInEdge() const
   return e;
 }
 
-float HalfEdge::costByConfiguration(const Config& conf) const
-{
-  float combinedCost = cost.length * conf.length + cost.height * conf.height
-      + cost.unsuitability * conf.unsuitability;
-
-  assert(combinedCost >= 0);
-  return combinedCost;
-}
+float HalfEdge::costByConfiguration(const Config& conf) const { return cost * conf; }
 
 void Edge::administerEdges(const std::vector<Edge>& edges)
 {
+  Edge::edges.reserve(lastId);
   for (const auto& edge : edges) {
     while (Edge::edges.size() <= edge.getId()) {
       Edge::edges.emplace_back(Edge{});
@@ -125,11 +112,20 @@ void Edge::administerEdges(const std::vector<Edge>& edges)
     Edge::edges[edge.getId()] = edge;
   }
 }
-const Edge& Edge::getEdge(EdgeId id) { return edges[id]; }
+const Edge& Edge::getEdge(EdgeId id) { return edges.at(id); }
 
 void Edge::setPosition(EdgeId id, NodePos source, NodePos dest)
 {
   Edge& edge = Edge::edges[id];
   edge.setSourcePos(source);
   edge.setDestPos(dest);
+}
+
+float Cost::operator*(const Config& conf) const
+{
+  float combinedCost = this->length * conf.length + this->height * conf.height
+      + this->unsuitability * conf.unsuitability;
+
+  assert(combinedCost >= 0);
+  return combinedCost + std::numeric_limits<float>::epsilon();
 }

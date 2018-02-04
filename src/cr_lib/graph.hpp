@@ -58,6 +58,7 @@ struct Cost {
       , unsuitability(0)
   {
   }
+  float operator*(const Config& conf) const;
 
   Cost operator+(const Cost& c) const
   {
@@ -255,7 +256,7 @@ class Graph {
 
   std::vector<NodeOffset> const& getOffsets() const;
   Dijkstra createDijkstra();
-  NormalDijkstra createNormalDijkstra();
+  NormalDijkstra createNormalDijkstra(bool unpack = false);
   Grid createGrid(long sideLength = 100) const;
 
   EdgeRange getOutgoingEdgesOf(NodePos pos) const;

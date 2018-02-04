@@ -38,11 +38,15 @@ class LinearProgram {
 
   static LinearProgram setUpLPForContraction();
 
+  bool exact();
+  void exact(bool exact);
+
   protected:
   private:
   LinearProgram() = default;
   glp_prob* lp;
   size_t columnCount;
+  bool exact_ = false;
 };
 
 #endif /* LINEARPROGRAM_H */

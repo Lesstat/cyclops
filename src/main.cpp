@@ -247,7 +247,7 @@ void runWebServer(Graph& g)
 int testGraph(Graph& g)
 {
   Dijkstra d = g.createDijkstra();
-  NormalDijkstra n = g.createNormalDijkstra();
+  NormalDijkstra n = g.createNormalDijkstra(true);
   std::random_device rd{};
   std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
   Config c{ LengthConfig{ 0.33 }, HeightConfig{ 0.33 }, UnsuitabilityConfig{ 0.33 } };
@@ -276,7 +276,7 @@ int testGraph(Graph& g)
       }
       for (size_t j = 0; j < dRoute->edges.size(); ++j) {
         const auto& dEdge = dRoute->edges[j];
-        const auto& nEdge = nRoute->edges.at(j);
+        const auto& nEdge = Edge::getEdge(nRoute->edges.at(j));
         if (dEdge.getSourcePos().get() != nEdge.getSourcePos().get()
             || dEdge.getDestPos().get() != nEdge.getDestPos().get()) {
           std::cout << "difference at " << j << "th edge" << '\n';

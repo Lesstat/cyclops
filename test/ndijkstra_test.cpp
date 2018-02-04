@@ -50,4 +50,7 @@ TEST_CASE("Find other route with same costs")
   auto otherRoute = d.findOtherRoute(*route);
   REQUIRE(otherRoute.pathCount == 2);
   REQUIRE(otherRoute.edges.size() == 2);
+
+  auto allRoutes = d.findAllBestRoutes(NodePos{ 0 }, NodePos{ 2 }, 100);
+  REQUIRE(allRoutes.size() == 2);
 }

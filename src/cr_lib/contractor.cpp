@@ -38,8 +38,8 @@ std::pair<bool, std::optional<RouteWithCount>> Contractor::isShortestPath(
   }
 
   auto route = foundRoute.value();
-  bool isShortest = route.edges.size() == 2 && route.edges[0].getId() == startEdgeId
-      && route.edges[1].getId() == destEdgeId;
+  bool isShortest
+      = route.edges.size() == 2 && route.edges[0] == startEdgeId && route.edges[1] == destEdgeId;
   return std::make_pair(isShortest, foundRoute);
 }
 
@@ -63,6 +63,8 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
     std::vector<Edge> shortcuts;
     shortcuts.reserve(g.getNodeCount());
 
+    size_t shortCount = 0;
+    size_t sameCount = 0;
     while (true) {
       queue.receive(msg);
       try {
@@ -79,28 +81,37 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
 
             Cost c1 = in.getCost() + out.getCost();
 
+            size_t maxRoutes = 10;
+
             while (true) {
               auto[isShortest, foundRoute] = isShortestPath(d, in.getId(), out.getId(), config);
               if (isShortest) {
                 if (foundRoute->pathCount == 1) {
+                  ++shortCount;
                   shortcuts.push_back(Contractor::createShortcut(
                       Edge::getEdge(in.getId()), Edge::getEdge(out.getId())));
                   break;
                 }
-                foundRoute = d.findOtherRoute(*foundRoute);
               }
 
               if (!foundRoute || foundRoute->edges.empty()) {
                 break;
               }
-              Cost c2{};
-              for (const auto& edge : foundRoute->edges) {
-                c2 = c2 + edge.getCost();
+              auto routes = d.findAllBestRoutes(in.getSourcePos(), out.getDestPos(), maxRoutes);
+              for (const auto& route : routes) {
+                if (route.edges.size() == 2 && route.edges[0] == inId && route.edges[1] == outId) {
+                  continue;
+                }
+                Cost c2{};
+                for (const auto& edgeId : route.edges) {
+                  const auto& edge = Edge::getEdge(edgeId);
+                  c2 = c2 + edge.getCost();
+                }
+                Cost newCost = c1 - c2;
+                lp.addConstraint({ newCost.length, static_cast<double>(newCost.height),
+                                     static_cast<double>(newCost.unsuitability) },
+                    0.0);
               }
-              Cost newCost = c1 - c2;
-              lp.addConstraint({ newCost.length, static_cast<double>(newCost.height),
-                                   static_cast<double>(newCost.unsuitability) },
-                  0.0);
 
               if (!lp.solve()) {
                 break;
@@ -109,9 +120,17 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
               Config newConfig{ LengthConfig{ values[0] }, HeightConfig{ values[1] },
                 UnsuitabilityConfig{ values[2] } };
               if (config == newConfig) {
-                shortcuts.push_back(Contractor::createShortcut(
-                    Edge::getEdge(in.getId()), Edge::getEdge(out.getId())));
-                break;
+                if (maxRoutes < foundRoute->pathCount) {
+                  maxRoutes *= 2;
+                  continue;
+                }
+                if (lp.exact()) {
+                  ++sameCount;
+                  shortcuts.push_back(Contractor::createShortcut(
+                      Edge::getEdge(in.getId()), Edge::getEdge(out.getId())));
+                  break;
+                }
+                lp.exact(true);
               }
               config = newConfig;
             }
@@ -120,6 +139,7 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
       } catch (std::bad_any_cast e) {
         auto responder = std::any_cast<std::shared_ptr<MultiQueue>>(msg);
         responder->send(shortcuts);
+        std::cout << "short/same: " << shortCount << "/" << sameCount << '\n';
         return;
       }
     }
@@ -221,23 +241,25 @@ Graph Contractor::contract(Graph& g)
   for (int i = 0; i < THREAD_COUNT; ++i) {
     q.send(std::any{ back });
   }
-  size_t shortcutCount = 0;
+  std::vector<Edge> shortcuts{};
   for (int i = 0; i < THREAD_COUNT; ++i) {
     std::any msg;
     back->receive(msg);
-    auto shortcuts = std::any_cast<std::vector<Edge>>(msg);
-    shortcutCount += shortcuts.size();
-    Edge::administerEdges(shortcuts);
-    std::transform(shortcuts.begin(), shortcuts.end(), std::back_inserter(edges),
-        [](const auto& edge) { return edge.getId(); });
+    auto shortcutsMsg = std::any_cast<std::vector<Edge>>(msg);
+    std::move(shortcutsMsg.begin(), shortcutsMsg.end(), std::back_inserter(shortcuts));
   }
+  Edge::administerEdges(shortcuts);
+  std::transform(shortcuts.begin(), shortcuts.end(), std::back_inserter(edges),
+      [](const auto& edge) { return edge.getId(); });
 
   auto end = std::chrono::high_resolution_clock::now();
 
   using s = std::chrono::seconds;
   std::cout << "Last contraction step took " << std::chrono::duration_cast<s>(end - start).count()
             << "s" << '\n';
-  std::cout << "Created " << shortcutCount << " shortcuts." << '\n';
+  std::cout << "Created " << shortcuts.size() << " shortcuts." << '\n';
+  shortcuts.clear();
+
   return Graph{ std::move(nodes), std::move(edges) };
 }
 

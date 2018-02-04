@@ -152,7 +152,10 @@ std::vector<NodeOffset> const& Graph::getOffsets() const { return offsets; }
 
 Dijkstra Graph::createDijkstra() { return Dijkstra{ this, nodes.size() }; }
 
-NormalDijkstra Graph::createNormalDijkstra() { return NormalDijkstra{ this, nodes.size() }; }
+NormalDijkstra Graph::createNormalDijkstra(bool unpack)
+{
+  return NormalDijkstra{ this, nodes.size(), unpack };
+}
 
 Grid Graph::createGrid(long sideLength) const
 {

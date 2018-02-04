@@ -18,16 +18,17 @@
 #ifndef NDIJKSTRA_H
 #define NDIJKSTRA_H
 #include "dijkstra.hpp"
+#include <set>
 
 struct RouteWithCount {
   Cost costs;
   size_t pathCount = 1;
-  std::deque<Edge> edges;
+  std::deque<EdgeId> edges;
 };
 
 class NormalDijkstra {
   public:
-  NormalDijkstra(Graph* g, size_t nodeCount);
+  NormalDijkstra(Graph* g, size_t nodeCount, bool unpack = false);
   NormalDijkstra(const NormalDijkstra& other) = default;
   NormalDijkstra(NormalDijkstra&& other) noexcept = default;
   virtual ~NormalDijkstra() noexcept = default;
@@ -37,17 +38,29 @@ class NormalDijkstra {
   std::optional<RouteWithCount> findBestRoute(NodePos from, NodePos to, Config config);
   RouteWithCount findOtherRoute(const RouteWithCount& route);
 
+  std::vector<RouteWithCount> findAllBestRoutes(
+      const NodePos& from, const NodePos& to, const size_t& max);
+
   private:
   void clearState();
   RouteWithCount buildRoute(const NodePos& from, const NodePos& to);
 
-  using NodeToEdgeMap = std::unordered_map<NodePos, EdgeId>;
+  void findRoutes(const NodePos& from, const NodePos& to, const size_t& max);
+
   std::vector<double> cost;
   std::vector<NodePos> touched;
   std::vector<size_t> paths;
   std::unordered_map<NodePos, std::vector<EdgeId>> previousEdge;
+
+  std::vector<RouteWithCount> allRoutes;
+
+  Cost pathCost;
+  size_t pathCount;
+
   Config usedConfig;
   Graph* graph;
+
+  bool unpack;
 };
 
 #endif /* NDIJKSTRA_H */

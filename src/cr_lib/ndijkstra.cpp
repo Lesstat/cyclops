@@ -16,13 +16,15 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "ndijkstra.hpp"
-#include <set>
+#include <unordered_set>
 
-NormalDijkstra::NormalDijkstra(Graph* g, size_t nodeCount)
+NormalDijkstra::NormalDijkstra(Graph* g, size_t nodeCount, bool unpack)
     : cost(nodeCount, std::numeric_limits<double>::max())
     , paths(nodeCount, 0)
+    , pathCount(0)
     , usedConfig(LengthConfig{ 0.0 }, HeightConfig{ 0.0 }, UnsuitabilityConfig{ 0.0 })
     , graph(g)
+    , unpack(unpack)
 {
 }
 
@@ -86,8 +88,31 @@ void NormalDijkstra::clearState()
     paths[pos] = 0;
   }
   touched.clear();
+  pathCost = Cost{};
+  pathCount = 0;
 }
-void insertUnpackedEdge(const Edge& e, std::deque<Edge>& route, bool front);
+void insertUnpackedEdge(const Edge& e, std::deque<EdgeId>& route, bool front)
+{
+  const auto& edgeA = e.getEdgeA();
+  const auto& edgeB = e.getEdgeB();
+
+  if (edgeA) {
+    if (front) {
+      insertUnpackedEdge(Edge::getEdge(*edgeB), route, front);
+      insertUnpackedEdge(Edge::getEdge(*edgeA), route, front);
+    } else {
+
+      insertUnpackedEdge(Edge::getEdge(*edgeA), route, front);
+      insertUnpackedEdge(Edge::getEdge(*edgeB), route, front);
+    }
+  } else {
+    if (front) {
+      route.push_front(e.getId());
+    } else {
+      route.push_back(e.getId());
+    }
+  }
+}
 
 RouteWithCount NormalDijkstra::buildRoute(const NodePos& from, const NodePos& to)
 {
@@ -99,10 +124,16 @@ RouteWithCount NormalDijkstra::buildRoute(const NodePos& from, const NodePos& to
     auto& edgeId = previousEdge.at(currentNode).front();
     const auto& edge = Edge::getEdge(edgeId);
     route.costs = route.costs + edge.getCost();
-    insertUnpackedEdge(edge, route.edges, true);
+    if (unpack) {
+      insertUnpackedEdge(edge, route.edges, true);
+    } else {
+      route.edges.push_front(edge.getId());
+    }
     currentNode = edge.getSourcePos();
   }
 
+  pathCost = route.costs;
+  pathCount = route.pathCount;
   return route;
 }
 
@@ -112,8 +143,8 @@ RouteWithCount NormalDijkstra::findOtherRoute(const RouteWithCount& route)
     throw std::invalid_argument("no alternative route present");
   }
   std::set<NodePos> visited;
-  auto from = route.edges.front().getSourcePos();
-  auto to = route.edges.back().getDestPos();
+  auto from = Edge::getEdge(route.edges.front()).getSourcePos();
+  auto to = Edge::getEdge(route.edges.back()).getDestPos();
   bool once = true;
 
   RouteWithCount newRoute;
@@ -144,4 +175,61 @@ RouteWithCount NormalDijkstra::findOtherRoute(const RouteWithCount& route)
   }
 
   return newRoute;
+}
+
+void NormalDijkstra::findRoutes(const NodePos& from, const NodePos& to, const size_t& max)
+{
+  using QueueElem = std::tuple<RouteWithCount, NodePos, std::unordered_set<NodePos>>;
+  auto cmp = [this](QueueElem left, QueueElem right) {
+    auto leftRoute = std::get<RouteWithCount>(left);
+    auto rightRoute = std::get<RouteWithCount>(right);
+    return leftRoute.costs * usedConfig > rightRoute.costs * usedConfig;
+  };
+  using Queue = std::priority_queue<QueueElem, std::vector<QueueElem>, decltype(cmp)>;
+
+  Queue heap{ cmp };
+  heap.emplace(RouteWithCount(), to, std::unordered_set<NodePos>());
+
+  while (!heap.empty()) {
+
+    if (allRoutes.size() >= max) {
+      return;
+    }
+
+    auto[hRoute, hTo, hVisited] = heap.top();
+    heap.pop();
+
+    if (hVisited.size() > touched.size()) {
+      continue;
+    }
+    if (hTo == from) {
+      allRoutes.push_back(hRoute);
+    } else {
+      for (const auto& edgeId : previousEdge[hTo]) {
+        const auto& edge = Edge::getEdge(edgeId);
+        const auto& source = edge.getSourcePos();
+        if (hVisited.find(source) != hVisited.end()) {
+          continue;
+        }
+        auto newVisited = hVisited;
+        newVisited.insert(source);
+        RouteWithCount newRoute = hRoute;
+        newRoute.costs = newRoute.costs + edge.getCost();
+        if (std::abs(cost[source] + edge.costByConfiguration(usedConfig) - cost[hTo]) > 0.00000001
+            || newRoute.costs * usedConfig > pathCost * usedConfig) {
+          continue;
+        }
+        newRoute.edges.push_front(edgeId);
+        heap.emplace(newRoute, source, newVisited);
+      }
+    }
+  }
+}
+
+std::vector<RouteWithCount> NormalDijkstra::findAllBestRoutes(
+    const NodePos& from, const NodePos& to, const size_t& max)
+{
+  allRoutes = std::vector<RouteWithCount>();
+  findRoutes(from, to, std::min(max, pathCount));
+  return allRoutes;
 }
