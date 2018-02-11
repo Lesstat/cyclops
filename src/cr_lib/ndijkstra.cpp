@@ -142,7 +142,7 @@ RouteWithCount NormalDijkstra::findOtherRoute(const RouteWithCount& route)
   if (route.pathCount <= 1) {
     throw std::invalid_argument("no alternative route present");
   }
-  std::set<NodePos> visited;
+  std::unordered_set<NodePos> visited;
   auto from = Edge::getEdge(route.edges.front()).getSourcePos();
   auto to = Edge::getEdge(route.edges.back()).getDestPos();
   bool once = true;
@@ -176,60 +176,65 @@ RouteWithCount NormalDijkstra::findOtherRoute(const RouteWithCount& route)
 
   return newRoute;
 }
-
-void NormalDijkstra::findRoutes(const NodePos& from, const NodePos& to, const size_t& max)
+RouteIterator NormalDijkstra::routeIter(NodePos from, NodePos to)
 {
-  using QueueElem = std::tuple<RouteWithCount, NodePos, std::unordered_set<NodePos>>;
-  auto cmp = [this](QueueElem left, QueueElem right) {
-    auto leftRoute = std::get<RouteWithCount>(left);
-    auto rightRoute = std::get<RouteWithCount>(right);
-    return leftRoute.costs * usedConfig > rightRoute.costs * usedConfig;
-  };
-  using Queue = std::priority_queue<QueueElem, std::vector<QueueElem>, decltype(cmp)>;
-
-  Queue heap{ cmp };
-  heap.emplace(RouteWithCount(), to, std::unordered_set<NodePos>());
-
-  while (!heap.empty()) {
-
-    if (allRoutes.size() >= max) {
-      return;
-    }
-
-    auto[hRoute, hTo, hVisited] = heap.top();
-    heap.pop();
-
-    if (hVisited.size() > touched.size()) {
-      continue;
-    }
-    if (hTo == from) {
-      allRoutes.push_back(hRoute);
-    } else {
-      for (const auto& edgeId : previousEdge[hTo]) {
-        const auto& edge = Edge::getEdge(edgeId);
-        const auto& source = edge.getSourcePos();
-        if (hVisited.find(source) != hVisited.end()) {
-          continue;
-        }
-        auto newVisited = hVisited;
-        newVisited.insert(source);
-        RouteWithCount newRoute = hRoute;
-        newRoute.costs = newRoute.costs + edge.getCost();
-        if (std::abs(cost[source] + edge.costByConfiguration(usedConfig) - cost[hTo]) > 0.00000001
-            || newRoute.costs * usedConfig > pathCost * usedConfig) {
-          continue;
-        }
-        newRoute.edges.push_front(edgeId);
-        heap.emplace(newRoute, source, newVisited);
-      }
-    }
-  }
+  return RouteIterator(this, from, to);
 }
 
-std::vector<RouteWithCount> NormalDijkstra::findAllBestRoutes(
-    const NodePos& from, const NodePos& to, const size_t& max)
+RouteIterator::RouteIterator(NormalDijkstra* dijkstra, NodePos from, NodePos to, size_t maxHeapSize)
+    : dijkstra(dijkstra)
+    , maxHeapSize(maxHeapSize)
+    , from(from)
+    , to(to)
+    , heap(BiggerCost(dijkstra->usedConfig))
 {
-  allRoutes = std::vector<RouteWithCount>();
-  findRoutes(from, to, std::min(max, pathCount));
-  return allRoutes;
+  heap.emplace(RouteWithCount(), to);
+}
+
+bool RouteIterator::finished() { return outputCount >= dijkstra->pathCount; }
+void RouteIterator::doubleHeapsize()
+{
+  if (maxHeapSize > 50000) {
+    outputCount = dijkstra->pathCount;
+    return;
+  }
+  maxHeapSize *= 2;
+};
+
+std::optional<RouteWithCount> RouteIterator::next()
+{
+
+  while (!heap.empty()) {
+    if (finished()) {
+      std::cout << "finished" << '\n';
+      return {};
+    }
+    if (heap.size() > maxHeapSize) {
+      return {};
+    }
+
+    auto[hRoute, hTo] = heap.top();
+    heap.pop();
+
+    if (hTo == from) {
+      outputCount++;
+      return hRoute;
+    }
+    for (const auto& edgeId : dijkstra->previousEdge[hTo]) {
+      const auto& edge = Edge::getEdge(edgeId);
+      const auto& source = edge.getSourcePos();
+      RouteWithCount newRoute = hRoute;
+      newRoute.costs = newRoute.costs + edge.getCost();
+      if (std::abs(dijkstra->cost[source] + edge.costByConfiguration(dijkstra->usedConfig)
+              - dijkstra->cost[hTo])
+              > 0.00000001
+          || newRoute.costs * dijkstra->usedConfig > dijkstra->pathCost * dijkstra->usedConfig) {
+        continue;
+      }
+      newRoute.edges.push_front(edgeId);
+      heap.emplace(newRoute, source);
+    }
+  }
+  outputCount = dijkstra->pathCount;
+  return {};
 }

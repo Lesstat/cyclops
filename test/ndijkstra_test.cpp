@@ -51,6 +51,11 @@ TEST_CASE("Find other route with same costs")
   REQUIRE(otherRoute.pathCount == 2);
   REQUIRE(otherRoute.edges.size() == 2);
 
-  auto allRoutes = d.findAllBestRoutes(NodePos{ 0 }, NodePos{ 2 }, 100);
+  auto routeIter = d.routeIter(NodePos{ 0 }, NodePos{ 2 });
+  std::vector<RouteWithCount> allRoutes;
+  allRoutes.push_back(*routeIter.next());
+  allRoutes.push_back(*routeIter.next());
+
+  REQUIRE(routeIter.finished());
   REQUIRE(allRoutes.size() == 2);
 }

@@ -25,7 +25,6 @@
 #include <boost/serialization/unordered_map.hpp>
 #include <boost/serialization/vector.hpp>
 #include <optional>
-#include <unordered_map>
 #include <vector>
 
 using OsmId = NamedType<size_t, struct OsmIdParameter>;

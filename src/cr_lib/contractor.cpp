@@ -55,6 +55,19 @@ Edge Contractor::createShortcut(const Edge& e1, const Edge& e2)
   return shortcut;
 }
 
+void addConstraint(const RouteWithCount& route, const Cost& c1, LinearProgram& lp)
+{
+  Cost c2{};
+  for (const auto& edgeId : route.edges) {
+    const auto& edge = Edge::getEdge(edgeId);
+    c2 = c2 + edge.getCost();
+  }
+  Cost newCost = c1 - c2;
+  lp.addConstraint({ newCost.length, static_cast<double>(newCost.height),
+                       static_cast<double>(newCost.unsuitability) },
+      0.0);
+}
+
 void Contractor::contract(MultiQueue& queue, Graph& g)
 {
   std::thread t([this, &queue, &g]() {
@@ -79,9 +92,7 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
             const auto& in = Edge::getEdge(inId);
             const auto& out = Edge::getEdge(outId);
 
-            Cost c1 = in.getCost() + out.getCost();
-
-            size_t maxRoutes = 10;
+            Cost shortcutCost = in.getCost() + out.getCost();
 
             while (true) {
               auto[isShortest, foundRoute] = isShortestPath(d, in.getId(), out.getId(), config);
@@ -97,20 +108,18 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
               if (!foundRoute || foundRoute->edges.empty()) {
                 break;
               }
-              auto routes = d.findAllBestRoutes(in.getSourcePos(), out.getDestPos(), maxRoutes);
-              for (const auto& route : routes) {
+              auto routes = d.routeIter(in.getSourcePos(), out.getDestPos());
+            extraction:
+              while (!routes.finished()) {
+                auto optRoute = routes.next();
+                if (!optRoute.has_value()) {
+                  break;
+                }
+                auto route = *optRoute;
                 if (route.edges.size() == 2 && route.edges[0] == inId && route.edges[1] == outId) {
                   continue;
                 }
-                Cost c2{};
-                for (const auto& edgeId : route.edges) {
-                  const auto& edge = Edge::getEdge(edgeId);
-                  c2 = c2 + edge.getCost();
-                }
-                Cost newCost = c1 - c2;
-                lp.addConstraint({ newCost.length, static_cast<double>(newCost.height),
-                                     static_cast<double>(newCost.unsuitability) },
-                    0.0);
+                addConstraint(route, shortcutCost, lp);
               }
 
               if (!lp.solve()) {
@@ -120,9 +129,9 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
               Config newConfig{ LengthConfig{ values[0] }, HeightConfig{ values[1] },
                 UnsuitabilityConfig{ values[2] } };
               if (config == newConfig) {
-                if (maxRoutes < foundRoute->pathCount) {
-                  maxRoutes *= 2;
-                  continue;
+                if (!routes.finished()) {
+                  routes.doubleHeapsize();
+                  goto extraction;
                 }
                 if (lp.exact()) {
                   ++sameCount;

@@ -18,7 +18,8 @@
 #ifndef NDIJKSTRA_H
 #define NDIJKSTRA_H
 #include "dijkstra.hpp"
-#include <set>
+#include <queue>
+#include <unordered_map>
 
 struct RouteWithCount {
   Cost costs;
@@ -26,33 +27,31 @@ struct RouteWithCount {
   std::deque<EdgeId> edges;
 };
 
+class RouteIterator;
+
 class NormalDijkstra {
   public:
   NormalDijkstra(Graph* g, size_t nodeCount, bool unpack = false);
   NormalDijkstra(const NormalDijkstra& other) = default;
-  NormalDijkstra(NormalDijkstra&& other) noexcept = default;
+  NormalDijkstra(NormalDijkstra&& other) = default;
   virtual ~NormalDijkstra() noexcept = default;
   NormalDijkstra& operator=(const NormalDijkstra& other) = default;
-  NormalDijkstra& operator=(NormalDijkstra&& other) noexcept = default;
+  NormalDijkstra& operator=(NormalDijkstra&& other) = default;
 
   std::optional<RouteWithCount> findBestRoute(NodePos from, NodePos to, Config config);
   RouteWithCount findOtherRoute(const RouteWithCount& route);
+  RouteIterator routeIter(NodePos from, NodePos to);
 
-  std::vector<RouteWithCount> findAllBestRoutes(
-      const NodePos& from, const NodePos& to, const size_t& max);
+  friend RouteIterator;
 
   private:
   void clearState();
   RouteWithCount buildRoute(const NodePos& from, const NodePos& to);
 
-  void findRoutes(const NodePos& from, const NodePos& to, const size_t& max);
-
   std::vector<double> cost;
   std::vector<NodePos> touched;
   std::vector<size_t> paths;
   std::unordered_map<NodePos, std::vector<EdgeId>> previousEdge;
-
-  std::vector<RouteWithCount> allRoutes;
 
   Cost pathCost;
   size_t pathCount;
@@ -63,4 +62,38 @@ class NormalDijkstra {
   bool unpack;
 };
 
+using QueueElem = std::tuple<RouteWithCount, NodePos>;
+struct BiggerCost {
+  BiggerCost(Config usedConfig)
+      : usedConfig(usedConfig)
+  {
+  }
+  bool operator()(QueueElem left, QueueElem right)
+  {
+    auto leftRoute = std::get<RouteWithCount>(left);
+    auto rightRoute = std::get<RouteWithCount>(right);
+    return leftRoute.costs * usedConfig > rightRoute.costs * usedConfig;
+  }
+
+  Config usedConfig;
+};
+
+class RouteIterator {
+  public:
+  RouteIterator(NormalDijkstra* dijkstra, NodePos from, NodePos to, size_t maxHeapSize = 1000);
+  ~RouteIterator() = default;
+
+  std::optional<RouteWithCount> next();
+  bool finished();
+  void doubleHeapsize();
+
+  private:
+  NormalDijkstra* dijkstra;
+  size_t maxHeapSize;
+  NodePos from;
+  NodePos to;
+  size_t outputCount = 0;
+  using Queue = std::priority_queue<QueueElem, std::vector<QueueElem>, BiggerCost>;
+  Queue heap;
+};
 #endif /* NDIJKSTRA_H */
