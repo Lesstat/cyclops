@@ -255,17 +255,16 @@ int testGraph(Graph& g)
   size_t route = 0;
   size_t noRoute = 0;
 
-  for (int i = 0; i < 100000; ++i) {
+  for (int i = 0; i < 100; ++i) {
     NodePos from{ dist(rd) };
     NodePos to{ dist(rd) };
-    auto dRoute = d.findBestRoute(from, to, c);
 
+    auto dRoute = d.findBestRoute(from, to, c);
     auto nRoute = n.findBestRoute(from, to, c);
+
     if (dRoute && nRoute) {
       ++route;
-      if (std::abs(dRoute->costs.length - nRoute->costs.length) > 1.0
-          || dRoute->costs.height != nRoute->costs.height
-          || dRoute->costs.unsuitability != nRoute->costs.unsuitability) {
+      if (std::abs(dRoute->costs * c - nRoute->costs * c) > 0.01) {
         std::cout << "cost differ in route from " << from << " to " << to << '\n';
         std::cout << "dLength: " << dRoute->costs.length << ", nLength: " << nRoute->costs.length
                   << '\n';
@@ -273,21 +272,9 @@ int testGraph(Graph& g)
                   << '\n';
         std::cout << "dUnsuitability: " << dRoute->costs.unsuitability
                   << ", nUnsuitability: " << nRoute->costs.unsuitability << '\n';
-      }
-      for (size_t j = 0; j < dRoute->edges.size(); ++j) {
-        const auto& dEdge = dRoute->edges[j];
-        const auto& nEdge = Edge::getEdge(nRoute->edges.at(j));
-        if (dEdge.getSourcePos().get() != nEdge.getSourcePos().get()
-            || dEdge.getDestPos().get() != nEdge.getDestPos().get()) {
-          std::cout << "difference at " << j << "th edge" << '\n';
-          std::cout << "Edge Ids: dId: " << dEdge.getId() << ", nId: " << nEdge.getId() << '\n';
-          std::cout << "sourcePos: d: " << dEdge.getSourcePos() << ", n: " << nEdge.getSourcePos()
-                    << '\n';
-          std::cout << "destPos: d: " << dEdge.getDestPos() << ", n: " << nEdge.getDestPos()
-                    << '\n';
-          return 1;
-          break;
-        }
+        std::cout << "total cost d: " << dRoute->costs * c
+                  << ", total cost n: " << nRoute->costs * c << '\n';
+        return 1;
       }
     } else if (nRoute && !dRoute) {
       std::cout << "Only Normal dijkstra found route form " << from << " to " << to << "!" << '\n';
