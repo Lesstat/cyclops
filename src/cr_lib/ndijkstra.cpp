@@ -21,6 +21,7 @@
 NormalDijkstra::NormalDijkstra(Graph* g, size_t nodeCount, bool unpack)
     : cost(nodeCount, std::numeric_limits<double>::max())
     , paths(nodeCount, 0)
+    , previousEdge(nodeCount)
     , pathCount(0)
     , usedConfig(LengthConfig{ 0.0 }, HeightConfig{ 0.0 }, UnsuitabilityConfig{ 0.0 })
     , graph(g)
@@ -82,10 +83,10 @@ std::optional<RouteWithCount> NormalDijkstra::findBestRoute(NodePos from, NodePo
 
 void NormalDijkstra::clearState()
 {
-  previousEdge.clear();
   for (const auto& pos : touched) {
     cost[pos] = std::numeric_limits<double>::max();
     paths[pos] = 0;
+    previousEdge[pos].clear();
   }
   touched.clear();
   pathCost = Cost{};

@@ -51,7 +51,7 @@ class NormalDijkstra {
   std::vector<double> cost;
   std::vector<NodePos> touched;
   std::vector<size_t> paths;
-  std::unordered_map<NodePos, std::vector<EdgeId>> previousEdge;
+  std::vector<std::vector<EdgeId>> previousEdge;
 
   Cost pathCost;
   size_t pathCount;
