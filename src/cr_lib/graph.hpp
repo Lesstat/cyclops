@@ -72,11 +72,8 @@ struct Cost {
 
   private:
   friend class boost::serialization::access;
-  template <class Archive> void serialize(Archive& ar, const unsigned int version)
+  template <class Archive> void serialize(Archive& ar, const unsigned int /*version*/)
   {
-    if (version > 0) {
-      throw std::invalid_argument{ "Version > 0 not implemented yet" };
-    }
     ar& length;
     ar& height;
     ar& unsuitability;
@@ -92,11 +89,8 @@ struct HalfEdge {
 
   private:
   friend class boost::serialization::access;
-  template <class Archive> void serialize(Archive& ar, const unsigned int version)
+  template <class Archive> void serialize(Archive& ar, const unsigned int /*version*/)
   {
-    if (version > 0) {
-      throw std::invalid_argument{ "Version > 0 not implemented yet" };
-    }
     ar& id;
     ar& end;
     ar& cost;
@@ -115,11 +109,8 @@ struct NodeOffset {
 
   private:
   friend class boost::serialization::access;
-  template <class Archive> void serialize(Archive& ar, const unsigned int version)
+  template <class Archive> void serialize(Archive& ar, const unsigned int /*version*/)
   {
-    if (version > 0) {
-      throw std::invalid_argument{ "Version > 0 not implemented yet" };
-    }
     ar& in;
     ar& out;
   }
@@ -180,11 +171,8 @@ class Edge {
   static std::atomic<size_t> lastId;
   static std::vector<Edge> edges;
 
-  template <class Archive> void serialize(Archive& ar, const unsigned int version)
+  template <class Archive> void serialize(Archive& ar, const unsigned int /*version*/)
   {
-    if (version > 0) {
-      throw std::invalid_argument{ "Version > 0 not implemented yet" };
-    }
     ar& internalId;
     ar& source;
     ar& destination;
@@ -226,11 +214,8 @@ class Node {
   Lng lng_;
   Height height;
   size_t level = 0;
-  template <class Archive> void serialize(Archive& ar, const unsigned int version)
+  template <class Archive> void serialize(Archive& ar, const unsigned int /*version*/)
   {
-    if (version > 0) {
-      throw std::invalid_argument{ "Version > 0 not implemented yet" };
-    }
     ar& id_;
     ar& lat_;
     ar& lng_;

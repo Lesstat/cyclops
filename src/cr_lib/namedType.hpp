@@ -39,12 +39,8 @@ template <typename T, typename Parameter> class NamedType {
 
   T value_;
 
-  template <class Archive> void serialize(Archive& ar, const unsigned int version)
+  template <class Archive> void serialize(Archive& ar, const unsigned int /*version*/)
   {
-    if (version > 0) {
-      throw std::invalid_argument{ "Version > 0 not implemented yet" };
-    }
-
     ar& value_;
   }
 };
