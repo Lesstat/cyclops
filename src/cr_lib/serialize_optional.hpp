@@ -21,38 +21,43 @@
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/split_free.hpp>
 
-template <class Archive, class T>
-void save(Archive& ar, const std::optional<T>& t, const unsigned int /*version*/
-)
-{
-  const bool tflag = t.has_value();
-  ar << boost::serialization::make_nvp("initialized", tflag);
-  if (tflag) {
-    ar << boost::serialization::make_nvp("value", *t);
+namespace boost {
+namespace serialization {
+
+  template <class Archive, class T>
+  void save(Archive& ar, const std::optional<T>& t, const unsigned int /*version*/
+  )
+  {
+    const bool tflag = t.has_value();
+    ar << boost::serialization::make_nvp("initialized", tflag);
+    if (tflag) {
+      ar << boost::serialization::make_nvp("value", *t);
+    }
+  }
+
+  template <class Archive, class T>
+  void load(Archive& ar, std::optional<T>& t, const unsigned int /*version*/
+  )
+  {
+    bool tflag;
+    ar >> boost::serialization::make_nvp("initialized", tflag);
+    if (!tflag) {
+      t.reset();
+      return;
+    }
+
+    if (!t.has_value()) {
+      t = T();
+    }
+    ar >> boost::serialization::make_nvp("value", *t);
+  }
+
+  template <class Archive, class T>
+  void serialize(Archive& ar, std::optional<T>& t, const unsigned int version)
+  {
+    boost::serialization::split_free(ar, t, version);
   }
 }
-
-template <class Archive, class T>
-void load(Archive& ar, std::optional<T>& t, const unsigned int /*version*/
-)
-{
-  bool tflag;
-  ar >> boost::serialization::make_nvp("initialized", tflag);
-  if (!tflag) {
-    t.reset();
-    return;
-  }
-
-  if (!t.has_value()) {
-    t = T();
-  }
-  ar >> boost::serialization::make_nvp("value", *t);
-}
-
-template <class Archive, class T>
-void serialize(Archive& ar, std::optional<T>& t, const unsigned int version)
-{
-  boost::serialization::split_free(ar, t, version);
 }
 
 #endif /* SERIALIZE_OPTIONAL_H */
