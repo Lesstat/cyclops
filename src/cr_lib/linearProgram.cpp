@@ -16,7 +16,6 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "linearProgram.hpp"
-#include "glpk.h"
 #include <mutex>
 
 std::mutex key;
@@ -24,95 +23,93 @@ std::mutex key;
 LinearProgram::LinearProgram(size_t cols)
     : columnCount(cols)
 {
-  std::lock_guard guard{ key };
-  glp_term_out(GLP_OFF);
-  lp = glp_create_prob();
-  glp_add_cols(lp, cols);
-  for (size_t i = 1; i < cols + 1; ++i) {
-    glp_set_col_bnds(lp, i, GLP_LO, 0.0, 0.0);
+  // glp_add_cols(lp, cols);
+  lp.setLogLevel(0);
+
+  lp.resize(0, cols);
+  for (size_t i = 0; i < cols; ++i) {
+    lp.setColLower(i, 0.0);
   }
 }
 
-LinearProgram::~LinearProgram() noexcept
+LinearProgram::~LinearProgram() noexcept = default;
+
+void LinearProgram::addConstraint(const std::vector<double>& coeff, double max)
 {
-  std::lock_guard guard{ key };
-  glp_delete_prob(lp);
-}
+  // int row = glp_add_rows(lp, 1);
+  // glp_set_row_bnds(lp, row, type, max, max);
 
-void LinearProgram::addConstraint(const std::vector<double>& coeff, double max, size_t type)
-{
-  std::lock_guard guard{ key };
-  int row = glp_add_rows(lp, 1);
-  glp_set_row_bnds(lp, row, type, max, max);
+  std::vector<int> ind(coeff.size());
+  std::vector<double> value(coeff.size());
 
-  std::vector<int> ind(coeff.size() + 1);
-  std::vector<double> value(coeff.size() + 1);
-
-  int i = 1;
+  int i = 0;
   for (const auto& val : coeff) {
     ind[i] = i;
     value[i] = val;
     ++i;
   }
+  lp.addRow(ind.size(), ind.data(), value.data(), -COIN_DBL_MAX, max);
 
-  glp_set_mat_row(lp, row, coeff.size(), ind.data(), value.data());
+  // glp_set_mat_row(lp, row, coeff.size(), ind.data(), value.data());
 }
 
 void LinearProgram::objective(const std::vector<double>& coeff)
 {
-  std::lock_guard guard{ key };
-  glp_set_obj_dir(lp, GLP_MIN);
+  // glp_set_obj_dir(lp, GLP_MIN);
+  lp.setOptimizationDirection(1);
   for (size_t i = 0; i < coeff.size(); ++i) {
-    glp_set_obj_coef(lp, i + 1, coeff[i]);
+    lp.setObjCoeff(i, coeff[i]);
+    // glp_set_obj_coef(lp, i + 1, coeff[i]);
   }
 }
 
 bool LinearProgram::solve()
 {
-  std::lock_guard guard{ key };
   size_t simplex;
-  if (!exact_) {
-    simplex = glp_simplex(lp, nullptr);
-  } else {
-    simplex = glp_exact(lp, nullptr);
-  }
+  simplex = lp.primal();
 
-  size_t status = glp_get_status(lp);
-  return simplex == 0 && status == GLP_OPT;
+  //   size_t status = glp_get_status(lp);
+  return lp.isProvenOptimal();
 }
 
-double LinearProgram::objectiveFunctionValue() { return glp_get_obj_val(lp); }
+double LinearProgram::objectiveFunctionValue()
+{
+  return lp.objectiveValue();
+  //   return glp_get_obj_val(lp);
+}
 
 std::vector<double> LinearProgram::variableValues()
 {
-  std::vector<double> variables(columnCount);
-  for (size_t i = 0; i < columnCount; ++i) {
-    variables[i] = glp_get_col_prim(lp, i + 1);
-  }
+  auto cols = lp.getColSolution();
+  std::vector<double> variables(&cols[0], &cols[columnCount - 1]);
+
+  // for (size_t i = 0; i < columnCount; ++i) {
+  //   // variables[i] = glp_get_col_prim(lp, i + 1);
+  //   variables[i] = lp.getColSolution();
+  // }
   return variables;
 }
 
 LinearProgram LinearProgram::setUpLPForContraction()
 {
-  std::lock_guard guard{ key };
   size_t cols = 3;
 
   LinearProgram linearProgram;
   linearProgram.columnCount = cols;
-  glp_term_out(GLP_OFF);
-  linearProgram.lp = glp_create_prob();
-  glp_add_cols(linearProgram.lp, cols);
+  // glp_term_out(GLP_OFF);
+  // linearProgram.lp = glp_create_prob();
+  // glp_add_cols(linearProgram.lp, cols);
   for (size_t i = 1; i < cols + 1; ++i) {
-    glp_set_col_bnds(linearProgram.lp, i, GLP_LO, 0.0, 0.0);
+    // glp_set_col_bnds(linearProgram.lp, i, GLP_LO, 0.0, 0.0);
   }
 
-  glp_set_obj_dir(linearProgram.lp, GLP_MIN);
+  // glp_set_obj_dir(linearProgram.lp, GLP_MIN);
   for (size_t i = 0; i < 3; ++i) {
-    glp_set_obj_coef(linearProgram.lp, i + 1, 1.0);
+    // glp_set_obj_coef(linearProgram.lp, i + 1, 1.0);
   }
 
-  int row = glp_add_rows(linearProgram.lp, 1);
-  glp_set_row_bnds(linearProgram.lp, row, GLP_FX, 1.0, 1.0);
+  // int row = glp_add_rows(linearProgram.lp, 1);
+  // glp_set_row_bnds(linearProgram.lp, row, GLP_FX, 1.0, 1.0);
 
   std::vector<int> ind(3 + 1);
   std::vector<double> value(3 + 1);
@@ -124,7 +121,7 @@ LinearProgram LinearProgram::setUpLPForContraction()
     ++i;
   }
 
-  glp_set_mat_row(linearProgram.lp, row, 3, ind.data(), value.data());
+  // glp_set_mat_row(linearProgram.lp, row, 3, ind.data(), value.data());
 
   return linearProgram;
 }

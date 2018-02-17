@@ -83,7 +83,10 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
         const auto& outEdges = g.getOutgoingEdgesOf(node);
         for (const auto& in : inEdges) {
           for (const auto& out : outEdges) {
-            LinearProgram lp = LinearProgram::setUpLPForContraction();
+            // LinearProgram lp = LinearProgram::setUpLPForContraction();
+            LinearProgram lp{ 3 };
+            lp.objective({ 1.0, 1.0, 1.0 });
+            lp.addConstraint({ 1.0, 1.0, 1.0 }, 1.0);
 
             Cost shortcutCost = in.cost + out.cost;
 

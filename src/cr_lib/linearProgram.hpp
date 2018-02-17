@@ -18,19 +18,19 @@
 #ifndef LINEARPROGRAM_H
 #define LINEARPROGRAM_H
 
-#include "glpk.h"
+#include "ClpSimplex.hpp"
 #include <vector>
 
 class LinearProgram {
   public:
   LinearProgram(size_t cols);
   LinearProgram(const LinearProgram& other) = default;
-  LinearProgram(LinearProgram&& other) noexcept = default;
+  LinearProgram(LinearProgram&& other) = default;
   virtual ~LinearProgram() noexcept;
   LinearProgram& operator=(const LinearProgram& other) = default;
-  LinearProgram& operator=(LinearProgram&& other) noexcept = default;
+  LinearProgram& operator=(LinearProgram&& other) = default;
 
-  void addConstraint(const std::vector<double>& coeff, double max, size_t type = GLP_UP);
+  void addConstraint(const std::vector<double>& coeff, double max);
   void objective(const std::vector<double>& coeff);
   bool solve();
   double objectiveFunctionValue();
@@ -44,8 +44,9 @@ class LinearProgram {
   protected:
   private:
   LinearProgram() = default;
-  glp_prob* lp;
+  ClpSimplex lp;
   size_t columnCount;
+  size_t rowCount = 0;
   bool exact_ = false;
 };
 
