@@ -83,6 +83,7 @@ struct Cost {
 struct HalfEdge {
   EdgeId id;
   NodePos end;
+  NodePos begin;
   Cost cost;
 
   float costByConfiguration(const Config& conf) const;
@@ -131,10 +132,6 @@ class Edge {
 
   NodeId getSourceId() const;
   NodeId getDestId() const;
-  NodePos getSourcePos() const;
-  NodePos getDestPos() const;
-  void setSourcePos(NodePos p);
-  void setDestPos(NodePos p);
   const ReplacedEdge& getEdgeA() const;
   const ReplacedEdge& getEdgeB() const;
 
@@ -143,13 +140,11 @@ class Edge {
   double costByConfiguration(const Config& conf) const;
   void setCost(Cost c);
 
-  HalfEdge makeOutEdge() const;
-  HalfEdge makeInEdge() const;
+  HalfEdge makeHalfEdge(NodePos begin, NodePos end) const;
 
   static Edge createFromText(const std::string& text);
   static void administerEdges(const std::vector<Edge>& edges);
   static const Edge& getEdge(EdgeId id);
-  static void setPosition(EdgeId id, NodePos source, NodePos dest);
   static void init();
 
   friend void testEdgeInternals(const Edge& e, NodeId source, NodeId destination, Length length,
@@ -165,8 +160,6 @@ class Edge {
   Cost cost;
   ReplacedEdge edgeA;
   ReplacedEdge edgeB;
-  NodePos sourcePos;
-  NodePos destinationPos;
 
   static std::atomic<size_t> lastId;
   static std::vector<Edge> edges;
@@ -179,8 +172,6 @@ class Edge {
     ar& cost;
     ar& edgeA;
     ar& edgeB;
-    ar& sourcePos;
-    ar& destinationPos;
   }
 };
 
@@ -261,11 +252,12 @@ class Graph {
   friend class boost::serialization::access;
 
   void init(std::vector<Node>&& nodes, std::vector<EdgeId>&& edges);
+  void connectEdgesToNodes(const std::vector<Node>& nodes, const std::vector<EdgeId>& edges);
 
   std::vector<Node> nodes;
   std::vector<NodeOffset> offsets;
-  std::vector<EdgeId> inEdges;
-  std::vector<EdgeId> outEdges;
+  std::vector<HalfEdge> inEdges;
+  std::vector<HalfEdge> outEdges;
   std::vector<size_t> level;
   size_t edgeCount;
 
@@ -275,7 +267,7 @@ class Graph {
     std::vector<Edge> edges{};
     edges.reserve(edgeCount);
     for (const auto& e : inEdges) {
-      edges.push_back(Edge::getEdge(e));
+      edges.push_back(Edge::getEdge(e.id));
     }
     ar& edges;
   }
@@ -292,7 +284,7 @@ class Graph {
 
 class EdgeRange {
   public:
-  using iterator = std::vector<EdgeId>::const_iterator;
+  using iterator = std::vector<HalfEdge>::const_iterator;
 
   EdgeRange(iterator begin, iterator end)
       : begin_(begin)

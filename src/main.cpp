@@ -221,13 +221,15 @@ void runWebServer(Graph& g)
           << ", \"route\": { \"type\": \"Feature\", \"geometry\": { \"type\": \"LineString\", "
           << "\"coordinates\":[";
       for (const auto& edge : route->edges) {
-        const auto& node = g.getNode(edge.getSourcePos());
+        const auto& node = g.getNode(*g.nodePosById(edge.getSourceId()));
         resultJson << '[' << node.lng() << ", " << node.lat() << "],";
       }
       if (!route->edges.empty()) {
         const auto& lastEdge = route->edges[route->edges.size() - 1];
-        const auto& node = g.getNode(lastEdge.getSourcePos());
+        const auto& node = g.getNode(*g.nodePosById(lastEdge.getSourceId()));
         resultJson << '[' << node.lng() << ", " << node.lat() << "]] } } }";
+        const auto& endNode = g.getNode(*g.nodePosById(lastEdge.getDestId()));
+        resultJson << '[' << endNode.lng() << ", " << endNode.lat() << "]] } } }";
       }
       // std::cout << resultJson.str() << '\n';
       auto json = resultJson.str();

@@ -62,20 +62,19 @@ std::optional<RouteWithCount> NormalDijkstra::findBestRoute(NodePos from, NodePo
     }
 
     const auto& outEdges = graph->getOutgoingEdgesOf(node);
-    for (const auto& edgeId : outEdges) {
-      const auto& edge = Edge::getEdge(edgeId);
-      const NodePos& nextNode = edge.getDestPos();
+    for (const auto& edge : outEdges) {
+      const NodePos& nextNode = edge.end;
       double nextCost = pathCost + edge.costByConfiguration(config);
       if (nextCost < cost[nextNode]) {
         QueueElem next = std::make_tuple(nextNode, nextCost);
         cost[nextNode] = nextCost;
         paths[nextNode] = paths[node];
         touched.push_back(nextNode);
-        previousEdge[nextNode] = { edge.getId() };
+        previousEdge[nextNode] = { edge };
         heap.push(std::move(next));
       } else if (std::abs(nextCost - cost[nextNode]) < 0.1) {
         paths[nextNode] += paths[node];
-        previousEdge[nextNode].push_back(edge.getId());
+        previousEdge[nextNode].push_back(edge);
       }
     }
   }
@@ -122,15 +121,14 @@ RouteWithCount NormalDijkstra::buildRoute(const NodePos& from, const NodePos& to
   route.pathCount = paths[to];
   auto currentNode = to;
   while (currentNode != from) {
-    auto& edgeId = previousEdge.at(currentNode).front();
-    const auto& edge = Edge::getEdge(edgeId);
-    route.costs = route.costs + edge.getCost();
+    auto& edge = previousEdge.at(currentNode).front();
+    route.costs = route.costs + edge.cost;
     if (unpack) {
-      insertUnpackedEdge(edge, route.edges, true);
+      insertUnpackedEdge(Edge::getEdge(edge.id), route.edges, true);
     } else {
-      route.edges.push_front(edge.getId());
+      route.edges.push_front(edge.id);
     }
-    currentNode = edge.getSourcePos();
+    currentNode = edge.begin;
   }
 
   pathCost = route.costs;
@@ -138,45 +136,6 @@ RouteWithCount NormalDijkstra::buildRoute(const NodePos& from, const NodePos& to
   return route;
 }
 
-RouteWithCount NormalDijkstra::findOtherRoute(const RouteWithCount& route)
-{
-  if (route.pathCount <= 1) {
-    throw std::invalid_argument("no alternative route present");
-  }
-  std::unordered_set<NodePos> visited;
-  auto from = Edge::getEdge(route.edges.front()).getSourcePos();
-  auto to = Edge::getEdge(route.edges.back()).getDestPos();
-  bool once = true;
-
-  RouteWithCount newRoute;
-  newRoute.pathCount = route.pathCount;
-  auto currentNode = to;
-  while (currentNode != from) {
-    visited.emplace(currentNode);
-    auto& edgeIds = previousEdge.at(currentNode);
-
-    bool found = false;
-    for (auto edgeId = edgeIds.begin(); edgeId != edgeIds.end(); ++edgeId) {
-      if (once && edgeIds.size() > 1 && edgeId == edgeIds.begin()) {
-        once = false;
-        continue;
-      }
-      const auto& edge = Edge::getEdge(*edgeId);
-      if (visited.find(edge.getSourcePos()) == visited.end()) {
-        newRoute.costs = newRoute.costs + edge.getCost();
-        insertUnpackedEdge(edge, newRoute.edges, true);
-        currentNode = edge.getSourcePos();
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      std::cout << "infinite loop" << '\n';
-    }
-  }
-
-  return newRoute;
-}
 RouteIterator NormalDijkstra::routeIter(NodePos from, NodePos to)
 {
   return RouteIterator(this, from, to);
@@ -221,18 +180,17 @@ std::optional<RouteWithCount> RouteIterator::next()
       outputCount++;
       return hRoute;
     }
-    for (const auto& edgeId : dijkstra->previousEdge[hTo]) {
-      const auto& edge = Edge::getEdge(edgeId);
-      const auto& source = edge.getSourcePos();
+    for (const auto& edge : dijkstra->previousEdge[hTo]) {
+      const auto& source = edge.end;
       RouteWithCount newRoute = hRoute;
-      newRoute.costs = newRoute.costs + edge.getCost();
+      newRoute.costs = newRoute.costs + edge.cost;
       if (std::abs(dijkstra->cost[source] + edge.costByConfiguration(dijkstra->usedConfig)
               - dijkstra->cost[hTo])
               > 0.00000001
           || newRoute.costs * dijkstra->usedConfig > dijkstra->pathCost * dijkstra->usedConfig) {
         continue;
       }
-      newRoute.edges.push_front(edgeId);
+      newRoute.edges.push_front(edge.id);
       heap.emplace(newRoute, source);
     }
   }

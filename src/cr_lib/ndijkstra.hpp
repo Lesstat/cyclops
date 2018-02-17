@@ -39,7 +39,6 @@ class NormalDijkstra {
   NormalDijkstra& operator=(NormalDijkstra&& other) = default;
 
   std::optional<RouteWithCount> findBestRoute(NodePos from, NodePos to, Config config);
-  RouteWithCount findOtherRoute(const RouteWithCount& route);
   RouteIterator routeIter(NodePos from, NodePos to);
 
   friend RouteIterator;
@@ -51,7 +50,7 @@ class NormalDijkstra {
   std::vector<double> cost;
   std::vector<NodePos> touched;
   std::vector<size_t> paths;
-  std::vector<std::vector<EdgeId>> previousEdge;
+  std::vector<std::vector<HalfEdge>> previousEdge;
 
   Cost pathCost;
   size_t pathCount;

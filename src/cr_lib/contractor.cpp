@@ -26,20 +26,17 @@
 #include <thread>
 
 std::pair<bool, std::optional<RouteWithCount>> Contractor::isShortestPath(
-    NormalDijkstra& d, const EdgeId& startEdgeId, const EdgeId& destEdgeId, const Config& conf)
+    NormalDijkstra& d, const HalfEdge& startEdge, const HalfEdge& destEdge, const Config& conf)
 {
 
-  const auto& startEdge = Edge::getEdge(startEdgeId);
-  const auto& destEdge = Edge::getEdge(destEdgeId);
-
-  auto foundRoute = d.findBestRoute(startEdge.getSourcePos(), destEdge.getDestPos(), conf);
+  auto foundRoute = d.findBestRoute(startEdge.end, destEdge.end, conf);
   if (!foundRoute) {
     return std::make_pair(false, foundRoute);
   }
 
   auto route = foundRoute.value();
   bool isShortest
-      = route.edges.size() == 2 && route.edges[0] == startEdgeId && route.edges[1] == destEdgeId;
+      = route.edges.size() == 2 && route.edges[0] == startEdge.id && route.edges[1] == destEdge.id;
   return std::make_pair(isShortest, foundRoute);
 }
 
@@ -49,8 +46,6 @@ Edge Contractor::createShortcut(const Edge& e1, const Edge& e2)
     throw std::invalid_argument("Edges are not connected");
   }
   Edge shortcut{ e1.getSourceId(), e2.getDestId(), e1.getId(), e2.getId() };
-  shortcut.setSourcePos(e1.getSourcePos());
-  shortcut.setDestPos(e1.getDestPos());
   shortcut.setCost(e1.getCost() + e2.getCost());
   return shortcut;
 }
@@ -86,21 +81,19 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
         Config config{ LengthConfig{ 0.33 }, HeightConfig{ 0.33 }, UnsuitabilityConfig{ 0.33 } };
         const auto& inEdges = g.getIngoingEdgesOf(node);
         const auto& outEdges = g.getOutgoingEdgesOf(node);
-        for (const auto& inId : inEdges) {
-          for (const auto& outId : outEdges) {
+        for (const auto& in : inEdges) {
+          for (const auto& out : outEdges) {
             LinearProgram lp = LinearProgram::setUpLPForContraction();
-            const auto& in = Edge::getEdge(inId);
-            const auto& out = Edge::getEdge(outId);
 
-            Cost shortcutCost = in.getCost() + out.getCost();
+            Cost shortcutCost = in.cost + out.cost;
 
             while (true) {
-              auto[isShortest, foundRoute] = isShortestPath(d, in.getId(), out.getId(), config);
+              auto[isShortest, foundRoute] = isShortestPath(d, in, out, config);
               if (isShortest) {
                 if (foundRoute->pathCount == 1) {
                   ++shortCount;
-                  shortcuts.push_back(Contractor::createShortcut(
-                      Edge::getEdge(in.getId()), Edge::getEdge(out.getId())));
+                  shortcuts.push_back(
+                      Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
                   break;
                 }
               }
@@ -108,7 +101,7 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
               if (!foundRoute || foundRoute->edges.empty()) {
                 break;
               }
-              auto routes = d.routeIter(in.getSourcePos(), out.getDestPos());
+              auto routes = d.routeIter(in.end, out.end);
             extraction:
               while (!routes.finished()) {
                 auto optRoute = routes.next();
@@ -116,7 +109,8 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
                   break;
                 }
                 auto route = *optRoute;
-                if (route.edges.size() == 2 && route.edges[0] == inId && route.edges[1] == outId) {
+                if (route.edges.size() == 2 && route.edges[0] == in.id
+                    && route.edges[1] == out.id) {
                   continue;
                 }
                 addConstraint(route, shortcutCost, lp);
@@ -135,8 +129,8 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
                 }
                 if (lp.exact()) {
                   ++sameCount;
-                  shortcuts.push_back(Contractor::createShortcut(
-                      Edge::getEdge(in.getId()), Edge::getEdge(out.getId())));
+                  shortcuts.push_back(
+                      Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
                   break;
                 }
                 lp.exact(true);
@@ -165,13 +159,11 @@ std::set<NodePos> Contractor::independentSet(const Graph& g)
   for (size_t i = 0; i < nodeCount; ++i) {
     NodePos pos{ i };
     if (selected[i]) {
-      for (const auto& inEdgeId : g.getIngoingEdgesOf(pos)) {
-        const auto& inEdge = Edge::getEdge(inEdgeId);
-        selected[inEdge.getSourcePos()] = false;
+      for (const auto& inEdge : g.getIngoingEdgesOf(pos)) {
+        selected[inEdge.end] = false;
       }
-      for (const auto& outEdgeId : g.getOutgoingEdgesOf(pos)) {
-        const auto& outEdge = Edge::getEdge(outEdgeId);
-        selected[outEdge.getDestPos()] = false;
+      for (const auto& outEdge : g.getOutgoingEdgesOf(pos)) {
+        selected[outEdge.end] = false;
       }
       set.insert(pos);
     }
@@ -206,9 +198,11 @@ std::set<NodePos> Contractor::reduce(std::set<NodePos>& set, const Graph& g)
 void copyEdgesOfNode(Graph& g, NodePos pos, std::vector<EdgeId>& edges)
 {
   auto outRange = g.getOutgoingEdgesOf(pos);
-  std::copy(outRange.begin(), outRange.end(), std::back_inserter(edges));
+  std::transform(outRange.begin(), outRange.end(), std::back_inserter(edges),
+      [](const auto& e) { return e.id; });
   auto inRange = g.getIngoingEdgesOf(pos);
-  std::copy(inRange.begin(), inRange.end(), std::back_inserter(edges));
+  std::transform(
+      inRange.begin(), inRange.end(), std::back_inserter(edges), [](const auto e) { return e.id; });
 }
 
 Graph Contractor::contract(Graph& g)
@@ -230,10 +224,9 @@ Graph Contractor::contract(Graph& g)
     NodePos pos{ i };
     if (set.find(pos) == set.end()) {
       nodes.push_back(g.getNode(pos));
-      for (const auto& edgeId : g.getOutgoingEdgesOf(pos)) {
-        const auto& edge = Edge::getEdge(edgeId);
-        if (set.find(edge.getDestPos()) == set.end()) {
-          edges.push_back(edgeId);
+      for (const auto& edge : g.getOutgoingEdgesOf(pos)) {
+        if (set.find(edge.end) == set.end()) {
+          edges.push_back(edge.id);
         }
       }
     } else {
@@ -286,7 +279,8 @@ Graph Contractor::mergeWithContracted(Graph& g)
     node.assignLevel(level);
     nodes.push_back(node);
     auto outEdges = g.getOutgoingEdgesOf(pos);
-    std::copy(outEdges.begin(), outEdges.end(), std::back_inserter(edges));
+    std::transform(outEdges.begin(), outEdges.end(), std::back_inserter(edges),
+        [](const auto& e) { return e.id; });
   }
 
   std::copy(contractedEdges.begin(), contractedEdges.end(), std::back_inserter(edges));

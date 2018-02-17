@@ -71,7 +71,7 @@ class Dijkstra {
   private:
   void clearState();
 
-  using NodeToEdgeMap = std::unordered_map<NodePos, EdgeId>;
+  using NodeToEdgeMap = std::unordered_map<NodePos, HalfEdge>;
   Route buildRoute(NodePos node, NodeToEdgeMap previousEdgeS, NodeToEdgeMap previousEdgeT,
       NodePos from, NodePos to);
   std::vector<double> costS;

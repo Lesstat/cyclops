@@ -80,12 +80,10 @@ TEST_CASE("Test if edges form shortest path")
   auto g = graphFromString(threeNodeGraph);
   NodePos nodePos1{ 1 };
   const auto& inEdges = g.getIngoingEdgesOf(nodePos1);
-  auto& edge0Id = *inEdges.begin();
-  const auto& edge0 = Edge::getEdge(edge0Id);
+  auto& edge0 = *inEdges.begin();
 
   const auto& outEdges = g.getOutgoingEdgesOf(nodePos1);
-  auto& edge1Id = *outEdges.begin();
-  const auto& edge1 = Edge::getEdge(edge1Id);
+  auto& edge1 = *outEdges.begin();
 
   Contractor c{};
   auto d = g.createNormalDijkstra();
@@ -93,13 +91,13 @@ TEST_CASE("Test if edges form shortest path")
   SECTION("With config where the edges form shortest path")
   {
     Config lengthOnlyConf{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } };
-    REQUIRE(c.isShortestPath(d, edge0.getId(), edge1.getId(), lengthOnlyConf).first == true);
+    REQUIRE(c.isShortestPath(d, edge0, edge1, lengthOnlyConf).first == true);
   }
 
   SECTION("With config where the edges do not form shortest path")
   {
     Config heightOnlyConf{ LengthConfig{ 0 }, HeightConfig{ 1 }, UnsuitabilityConfig{ 0 } };
-    REQUIRE(c.isShortestPath(d, edge0.getId(), edge1.getId(), heightOnlyConf).first == false);
+    REQUIRE(c.isShortestPath(d, edge0, edge1, heightOnlyConf).first == false);
   }
 }
 
@@ -131,17 +129,15 @@ TEST_CASE("Contracting a Node")
   {
     NodePos nodePos1{ 1 };
     const auto& inEdges = g.getIngoingEdgesOf(nodePos1);
-    auto& edge0Id = *inEdges.begin();
-    const auto& edge0 = Edge::getEdge(edge0Id);
+    auto& edge0 = *inEdges.begin();
 
     const auto& outEdges = g.getOutgoingEdgesOf(nodePos1);
-    auto& edge1Id = *outEdges.begin();
-    const auto& edge1 = Edge::getEdge(edge1Id);
+    auto& edge1 = *outEdges.begin();
 
     auto shortcuts = contractNode(g, nodePos1, c);
     REQUIRE(shortcuts.size() == 1);
     testEdgeInternals(shortcuts[0], NodeId{ 0 }, NodeId{ 2 }, Length{ 5.7 }, Height{ 16 },
-        Unsuitability{ 6 }, edge0.getId(), edge1.getId());
+        Unsuitability{ 6 }, edge0.id, edge1.id);
   }
 }
 TEST_CASE("Detect cycles when contracting a Node")

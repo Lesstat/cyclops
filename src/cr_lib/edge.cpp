@@ -39,12 +39,6 @@ Edge::Edge(NodeId source, NodeId dest, ReplacedEdge edgeA, ReplacedEdge edgeB)
 
 NodeId Edge::getSourceId() const { return source; }
 NodeId Edge::getDestId() const { return destination; }
-NodePos Edge::getSourcePos() const { return sourcePos; }
-NodePos Edge::getDestPos() const { return destinationPos; }
-
-void Edge::setDestPos(NodePos p) { destinationPos = p; }
-
-void Edge::setSourcePos(NodePos p) { sourcePos = p; }
 
 Edge Edge::createFromText(const std::string& text)
 {
@@ -82,20 +76,12 @@ void Edge::setCost(Cost c) { this->cost = c; }
 const ReplacedEdge& Edge::getEdgeA() const { return edgeA; }
 const ReplacedEdge& Edge::getEdgeB() const { return edgeB; }
 
-HalfEdge Edge::makeOutEdge() const
+HalfEdge Edge::makeHalfEdge(NodePos begin, NodePos end) const
 {
   HalfEdge e;
   e.id = internalId;
-  e.end = destinationPos;
-  e.cost = cost;
-  return e;
-}
-
-HalfEdge Edge::makeInEdge() const
-{
-  HalfEdge e;
-  e.id = internalId;
-  e.end = sourcePos;
+  e.begin = begin;
+  e.end = end;
   e.cost = cost;
   return e;
 }
@@ -113,13 +99,6 @@ void Edge::administerEdges(const std::vector<Edge>& edges)
   }
 }
 const Edge& Edge::getEdge(EdgeId id) { return edges.at(id); }
-
-void Edge::setPosition(EdgeId id, NodePos source, NodePos dest)
-{
-  Edge& edge = Edge::edges[id];
-  edge.setSourcePos(source);
-  edge.setDestPos(dest);
-}
 
 float Cost::operator*(const Config& conf) const
 {
