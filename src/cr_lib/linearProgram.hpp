@@ -30,7 +30,7 @@ class LinearProgram {
   LinearProgram& operator=(const LinearProgram& other) = default;
   LinearProgram& operator=(LinearProgram&& other) = default;
 
-  void addConstraint(const std::vector<double>& coeff, double max);
+  void addConstraint(const std::vector<double>& coeff, double max, double min = -COIN_DBL_MAX);
   void objective(const std::vector<double>& coeff);
   bool solve();
   double objectiveFunctionValue();

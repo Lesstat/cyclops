@@ -19,11 +19,13 @@
 #define DIJKSTRA_H
 
 #include "graph.hpp"
+#include <cmath>
 #include <deque>
+#include <iostream>
 
-using LengthConfig = NamedType<float, struct LengthConfigParameter>;
-using HeightConfig = NamedType<float, struct HeightConfigParameter>;
-using UnsuitabilityConfig = NamedType<float, struct UnsuitabilityConfigParameter>;
+using LengthConfig = NamedType<double, struct LengthConfigParameter>;
+using HeightConfig = NamedType<double, struct HeightConfigParameter>;
+using UnsuitabilityConfig = NamedType<double, struct UnsuitabilityConfigParameter>;
 
 struct Config {
   LengthConfig length;
@@ -34,6 +36,11 @@ struct Config {
   {
     if (c < 0) {
       c = configType{ 0 };
+    } else if (!std::isfinite(c)) {
+      std::cout << "Masking infinity" << '\n';
+      c = configType{ 1 };
+    } else if (c > 1) {
+      c = configType{ 1 };
     }
   }
 

@@ -17,6 +17,7 @@
 */
 #include "dijkstra.hpp"
 #include "graph.hpp"
+#include <algorithm>
 #include <cassert>
 
 std::atomic<size_t> Edge::lastId = 0;
@@ -105,6 +106,11 @@ float Cost::operator*(const Config& conf) const
   float combinedCost = this->length * conf.length + this->height * conf.height
       + this->unsuitability * conf.unsuitability;
 
-  assert(combinedCost >= 0);
+  if (!(combinedCost >= 0)) {
+    std::cout << "length " << this->length << " * " << conf.length << '\n'
+              << "height " << this->height << " * " << conf.height << '\n'
+              << "unsuit " << this->unsuitability << " * " << conf.unsuitability << '\n';
+    assert(false);
+  }
   return combinedCost + std::numeric_limits<float>::epsilon();
 }

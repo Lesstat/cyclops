@@ -152,14 +152,7 @@ RouteIterator::RouteIterator(NormalDijkstra* dijkstra, NodePos from, NodePos to,
 }
 
 bool RouteIterator::finished() { return outputCount >= dijkstra->pathCount; }
-void RouteIterator::doubleHeapsize()
-{
-  if (maxHeapSize > 50000) {
-    outputCount = dijkstra->pathCount;
-    return;
-  }
-  maxHeapSize *= 2;
-};
+void RouteIterator::doubleHeapsize() { maxHeapSize *= 2; };
 
 std::optional<RouteWithCount> RouteIterator::next()
 {
@@ -181,7 +174,7 @@ std::optional<RouteWithCount> RouteIterator::next()
       return hRoute;
     }
     for (const auto& edge : dijkstra->previousEdge[hTo]) {
-      const auto& source = edge.end;
+      const auto& source = edge.begin;
       RouteWithCount newRoute = hRoute;
       newRoute.costs = newRoute.costs + edge.cost;
       if (std::abs(dijkstra->cost[source] + edge.costByConfiguration(dijkstra->usedConfig)

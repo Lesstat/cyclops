@@ -145,7 +145,6 @@ class Edge {
   static Edge createFromText(const std::string& text);
   static void administerEdges(const std::vector<Edge>& edges);
   static const Edge& getEdge(EdgeId id);
-  static void init();
 
   friend void testEdgeInternals(const Edge& e, NodeId source, NodeId destination, Length length,
       Height height, Unsuitability unsuitability, const ReplacedEdge& edgeA,

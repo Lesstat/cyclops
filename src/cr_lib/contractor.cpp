@@ -60,7 +60,7 @@ void addConstraint(const RouteWithCount& route, const Cost& c1, LinearProgram& l
   Cost newCost = c1 - c2;
   lp.addConstraint({ newCost.length, static_cast<double>(newCost.height),
                        static_cast<double>(newCost.unsuitability) },
-      0.0);
+      -0.0000001);
 }
 
 void Contractor::contract(MultiQueue& queue, Graph& g)
@@ -83,10 +83,9 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
         const auto& outEdges = g.getOutgoingEdgesOf(node);
         for (const auto& in : inEdges) {
           for (const auto& out : outEdges) {
-            // LinearProgram lp = LinearProgram::setUpLPForContraction();
             LinearProgram lp{ 3 };
             lp.objective({ 1.0, 1.0, 1.0 });
-            lp.addConstraint({ 1.0, 1.0, 1.0 }, 1.0);
+            lp.addConstraint({ 1.0, 1.0, 1.0 }, 1.0, 1.0);
 
             Cost shortcutCost = in.cost + out.cost;
 
@@ -123,6 +122,10 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
                 break;
               }
               auto values = lp.variableValues();
+              if (values[0] + values[1] + values[2] > 2) {
+                std::cout << "Cancelling to big" << '\n';
+                break;
+              }
               Config newConfig{ LengthConfig{ values[0] }, HeightConfig{ values[1] },
                 UnsuitabilityConfig{ values[2] } };
               if (config == newConfig) {
