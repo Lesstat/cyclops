@@ -18,8 +18,6 @@
 #include "linearProgram.hpp"
 #include <mutex>
 
-std::mutex key;
-
 LinearProgram::LinearProgram(size_t cols)
     : columnCount(cols)
 {
