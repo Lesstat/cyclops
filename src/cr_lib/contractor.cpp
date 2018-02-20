@@ -60,7 +60,7 @@ void addConstraint(const RouteWithCount& route, const Cost& c1, LinearProgram& l
   Cost newCost = c1 - c2;
   lp.addConstraint({ newCost.length, static_cast<double>(newCost.height),
                        static_cast<double>(newCost.unsuitability) },
-      -0.0000001);
+      0.0);
 }
 
 void Contractor::contract(MultiQueue& queue, Graph& g)
@@ -86,6 +86,9 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
             LinearProgram lp{ 3 };
             lp.objective({ 1.0, 1.0, 1.0 });
             lp.addConstraint({ 1.0, 1.0, 1.0 }, 1.0, 1.0);
+            lp.addConstraint({ 1.0, 0.0, 0.0 }, 1.0, 0.001);
+            lp.addConstraint({ 0.0, 1.0, 0.0 }, 1.0, 0.001);
+            lp.addConstraint({ 0.0, 0.0, 1.0 }, 1.0, 0.001);
 
             Cost shortcutCost = in.cost + out.cost;
 
