@@ -230,3 +230,9 @@ Graph Graph::createFromBinaryFile(boost::archive::binary_iarchive& bin)
   bin >> g;
   return g;
 }
+
+size_t Graph::getInTimesOutDegree(NodePos node) const
+{
+  auto& offset = offsets[node];
+  return offset.in * offset.out;
+}

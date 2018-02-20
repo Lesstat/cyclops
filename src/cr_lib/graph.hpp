@@ -247,6 +247,8 @@ class Graph {
   size_t getNodeCount() const;
   size_t getEdgeCount() const;
 
+  size_t getInTimesOutDegree(NodePos node) const;
+
   private:
   friend class boost::serialization::access;
 

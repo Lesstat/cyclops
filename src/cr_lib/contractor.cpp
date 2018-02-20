@@ -228,6 +228,8 @@ Graph Contractor::contract(Graph& g)
   auto set = reduce(independentSet(g), g);
   std::vector<Node> nodes{};
   std::vector<EdgeId> edges{};
+  std::vector<NodePos> nodesToContract{};
+  nodesToContract.reserve(set.size());
 
   for (size_t i = 0; i < g.getNodeCount(); ++i) {
     NodePos pos{ i };
@@ -239,7 +241,7 @@ Graph Contractor::contract(Graph& g)
         }
       }
     } else {
-      q.send(std::any{ pos });
+      nodesToContract.push_back(pos);
 
       Node node = g.getNode(pos);
       node.assignLevel(level);
@@ -248,6 +250,13 @@ Graph Contractor::contract(Graph& g)
       copyEdgesOfNode(g, pos, contractedEdges);
     }
   }
+  std::sort(begin(nodesToContract), end(nodesToContract), [&g](const auto& pos1, const auto& pos2) {
+    return g.getInTimesOutDegree(pos1) > g.getInTimesOutDegree(pos2);
+  });
+  for (const auto& node : nodesToContract) {
+    q.send(std::any{ node });
+  }
+
   auto back = std::make_shared<MultiQueue>();
   for (int i = 0; i < THREAD_COUNT; ++i) {
     q.send(std::any{ back });
