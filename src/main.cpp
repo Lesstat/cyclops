@@ -293,6 +293,7 @@ int testGraph(Graph& g)
 namespace po = boost::program_options;
 int main(int argc, char* argv[])
 {
+  std::cout.imbue(std::locale(""));
 
   std::string textFileName{};
   std::string binFileName{};
