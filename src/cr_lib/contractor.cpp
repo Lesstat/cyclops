@@ -156,16 +156,20 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
 
         Cost shortcutCost = in.cost + out.cost;
 
+        auto storeShortcut
+            = [&in, &out, &lp, &lpCount, &shortcuts, &stats](StatisticsCollector::CountType type) {
+                stats.countShortcut(type);
+                stats.recordMaxValues(lpCount, lp.constraintCount());
+                shortcuts.push_back(
+                    Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
+              };
+
         while (true) {
           auto[isShortest, foundRoute] = isShortestPath(d, in, out, config);
           if (isShortest) {
             if (foundRoute->pathCount == 1) {
-              stats.countShortcut(StatisticsCollector::CountType::shortestPath);
-              stats.recordMaxValues(lpCount, lp.constraintCount());
-              shortcuts.push_back(
-                  Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
+              storeShortcut(StatisticsCollector::CountType::shortestPath);
               break;
-              ;
             }
           }
 
@@ -188,17 +192,13 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
           }
 
           if (lp.constraintCount() > 150) {
-            stats.countShortcut(StatisticsCollector::CountType::toManyConstraints);
-            stats.recordMaxValues(lpCount, lp.constraintCount());
-            shortcuts.push_back(
-                Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
+            storeShortcut(StatisticsCollector::CountType::toManyConstraints);
             break;
           }
           ++lpCount;
           if (!lp.solve()) {
             stats.recordMaxValues(lpCount, lp.constraintCount());
             break;
-            ;
           }
           auto values = lp.variableValues();
 
@@ -209,10 +209,7 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
               routes.doubleHeapsize();
               goto extraction;
             }
-            stats.countShortcut(StatisticsCollector::CountType::repeatingConfig);
-            stats.recordMaxValues(lpCount, lp.constraintCount());
-            shortcuts.push_back(
-                Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
+            storeShortcut(StatisticsCollector::CountType::repeatingConfig);
             break;
           }
           config = newConfig;
