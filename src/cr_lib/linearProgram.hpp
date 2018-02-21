@@ -40,16 +40,11 @@ class LinearProgram {
 
   static LinearProgram setUpLPForContraction();
 
-  bool exact();
-  void exact(bool exact);
-
   protected:
   private:
   LinearProgram() = default;
   ClpSimplex lp;
   size_t columnCount;
-  size_t rowCount = 0;
-  bool exact_ = false;
 };
 
 #endif /* LINEARPROGRAM_H */

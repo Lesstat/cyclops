@@ -71,7 +71,4 @@ std::vector<double> LinearProgram::variableValues()
   return variables;
 }
 
-bool LinearProgram::exact() { return exact_; }
-void LinearProgram::exact(bool exact) { exact_ = exact; }
-
 size_t LinearProgram::constraintCount() const { return lp.getNumRows(); }
