@@ -322,20 +322,25 @@ Graph Contractor::contract(Graph& g)
       copyEdgesOfNode(g, pos, contractedEdges);
     }
   }
+
   std::sort(begin(nodesToContract), end(nodesToContract), [&g](const auto& pos1, const auto& pos2) {
     return g.getInTimesOutDegree(pos1) > g.getInTimesOutDegree(pos2);
   });
+
+  size_t edgePairCount = 0;
   for (const auto& node : nodesToContract) {
     const auto& inEdges = g.getIngoingEdgesOf(node);
     const auto& outEdges = g.getOutgoingEdgesOf(node);
     for (const auto& in : inEdges) {
       for (const auto& out : outEdges) {
         q.send(EdgePair{ in, out });
+        ++edgePairCount;
       }
     }
   }
 
   if (printStatistics) {
+    std::cout << edgePairCount << " edge pairs to contract" << '\n';
     StatisticsCollector::printHeader();
   }
 
