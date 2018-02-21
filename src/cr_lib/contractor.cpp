@@ -129,6 +129,19 @@ void addConstraint(const RouteWithCount& route, const Cost& c1, LinearProgram& l
       0.0);
 }
 
+void extractRoutesAndAddConstraints(RouteIterator& routes, const Cost& shortcutCost,
+    LinearProgram& lp, const HalfEdge& out, const HalfEdge& in)
+{
+  for (auto optRoute = routes.next(); optRoute; optRoute = routes.next()) {
+    auto route = *optRoute;
+    if (route.edges.size() == 2 && route.edges[0] == in.id && route.edges[1] == out.id) {
+      continue;
+    }
+    addConstraint(route, shortcutCost, lp);
+    optRoute = routes.next();
+  }
+}
+
 void Contractor::contract(MultiQueue& queue, Graph& g)
 {
   std::thread t([this, &queue, &g]() {
@@ -156,15 +169,16 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
 
         Cost shortcutCost = in.cost + out.cost;
 
-        auto storeShortcut
-            = [&in, &out, &lp, &lpCount, &shortcuts, &stats](StatisticsCollector::CountType type) {
-                stats.countShortcut(type);
-                stats.recordMaxValues(lpCount, lp.constraintCount());
-                shortcuts.push_back(
-                    Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
-              };
-
-        while (true) {
+        bool finished = false;
+        auto storeShortcut = [&in, &out, &lp, &lpCount, &shortcuts, &stats, &finished](
+                                 StatisticsCollector::CountType type) {
+          finished = true;
+          stats.countShortcut(type);
+          stats.recordMaxValues(lpCount, lp.constraintCount());
+          shortcuts.push_back(
+              Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
+        };
+        while (!finished) {
           auto[isShortest, foundRoute] = isShortestPath(d, in, out, config);
           if (isShortest) {
             if (foundRoute->pathCount == 1) {
@@ -178,41 +192,33 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
             break;
           }
           auto routes = d.routeIter(in.end, out.end);
-        extraction:
           while (!routes.finished()) {
-            auto optRoute = routes.next();
-            if (!optRoute.has_value()) {
+            extractRoutesAndAddConstraints(routes, shortcutCost, lp, out, in);
+
+            if (lp.constraintCount() > 150) {
+              storeShortcut(StatisticsCollector::CountType::toManyConstraints);
               break;
             }
-            auto route = *optRoute;
-            if (route.edges.size() == 2 && route.edges[0] == in.id && route.edges[1] == out.id) {
-              continue;
+
+            ++lpCount;
+            if (!lp.solve()) {
+              stats.recordMaxValues(lpCount, lp.constraintCount());
+              finished = true;
+              break;
             }
-            addConstraint(route, shortcutCost, lp);
-          }
+            auto values = lp.variableValues();
 
-          if (lp.constraintCount() > 150) {
-            storeShortcut(StatisticsCollector::CountType::toManyConstraints);
-            break;
-          }
-          ++lpCount;
-          if (!lp.solve()) {
-            stats.recordMaxValues(lpCount, lp.constraintCount());
-            break;
-          }
-          auto values = lp.variableValues();
-
-          Config newConfig{ LengthConfig{ values[0] }, HeightConfig{ values[1] },
-            UnsuitabilityConfig{ values[2] } };
-          if (config == newConfig) {
-            if (!routes.finished()) {
+            Config newConfig{ LengthConfig{ values[0] }, HeightConfig{ values[1] },
+              UnsuitabilityConfig{ values[2] } };
+            if (config == newConfig) {
+              if (routes.finished()) {
+                storeShortcut(StatisticsCollector::CountType::repeatingConfig);
+                break;
+              }
               routes.doubleHeapsize();
-              goto extraction;
             }
-            storeShortcut(StatisticsCollector::CountType::repeatingConfig);
-            break;
+            config = newConfig;
           }
-          config = newConfig;
         }
 
       } catch (std::bad_any_cast e) {
