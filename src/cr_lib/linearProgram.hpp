@@ -36,6 +36,8 @@ class LinearProgram {
   double objectiveFunctionValue();
   std::vector<double> variableValues();
 
+  size_t constraintCount() const;
+
   static LinearProgram setUpLPForContraction();
 
   bool exact();

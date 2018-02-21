@@ -151,7 +151,7 @@ RouteIterator::RouteIterator(NormalDijkstra* dijkstra, NodePos from, NodePos to,
   heap.emplace(RouteWithCount(), to);
 }
 
-bool RouteIterator::finished() { return outputCount >= dijkstra->pathCount; }
+bool RouteIterator::finished() { return outputCount >= dijkstra->pathCount || outputCount >= 150; }
 void RouteIterator::doubleHeapsize() { maxHeapSize *= 2; };
 
 std::optional<RouteWithCount> RouteIterator::next()

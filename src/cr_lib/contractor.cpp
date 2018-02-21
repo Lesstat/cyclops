@@ -25,6 +25,72 @@
 #include <memory>
 #include <thread>
 
+class StatisticsCollector {
+  public:
+  enum class CountType { shortestPath, repeatingConfig, toManyConstraints };
+
+  StatisticsCollector(bool active)
+      : active(active){};
+  StatisticsCollector(const StatisticsCollector& other) = default;
+  StatisticsCollector(StatisticsCollector&& other) noexcept = default;
+  virtual ~StatisticsCollector() noexcept
+  {
+    if (!active) {
+      return;
+    }
+    std::lock_guard guard(key);
+    std::cout << shortCount << "\t\t" << sameCount << "\t\t\t" << toManyConstraints << "\t\t\t"
+              << lpMax << "\t\t" << constMax << '\n';
+  }
+  StatisticsCollector& operator=(const StatisticsCollector& other) = default;
+  StatisticsCollector& operator=(StatisticsCollector&& other) noexcept = default;
+
+  static void printHeader()
+  {
+    std::cout << "| \t\t Reasons for shortcut creation \t\t | \t\t  Max values \t\t|  " << '\n';
+    std::cout << "short \t\t repeating \t\t constraints \t\t lp calls \t max constraints" << '\n';
+  }
+
+  void countShortcut(CountType t)
+  {
+    switch (t) {
+    case CountType::shortestPath: {
+      ++shortCount;
+      break;
+    }
+    case CountType::repeatingConfig: {
+      ++sameCount;
+      break;
+    }
+    case CountType::toManyConstraints: {
+      ++toManyConstraints;
+      break;
+    }
+    }
+  }
+  void recordMaxValues(size_t lpCalls, size_t constraints)
+  {
+    lpMax = std::max(lpCalls, lpMax);
+    constMax = std::max(constraints, constMax);
+  }
+
+  protected:
+  private:
+  bool active;
+  size_t shortCount = 0;
+  size_t sameCount = 0;
+  size_t toManyConstraints = 0;
+  size_t lpMax = 0;
+  size_t constMax = 0;
+  static std::mutex key;
+};
+std::mutex StatisticsCollector::key{};
+
+Contractor::Contractor(bool printStatistics)
+    : printStatistics(printStatistics)
+{
+}
+
 std::pair<bool, std::optional<RouteWithCount>> Contractor::isShortestPath(
     NormalDijkstra& d, const HalfEdge& startEdge, const HalfEdge& destEdge, const Config& conf)
 {
@@ -71,8 +137,7 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
     std::vector<Edge> shortcuts;
     shortcuts.reserve(g.getNodeCount());
 
-    size_t shortCount = 0;
-    size_t sameCount = 0;
+    StatisticsCollector stats{ printStatistics };
     while (true) {
       queue.receive(msg);
       try {
@@ -92,11 +157,13 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
 
             Cost shortcutCost = in.cost + out.cost;
 
+            size_t lpCount = 0;
             while (true) {
               auto[isShortest, foundRoute] = isShortestPath(d, in, out, config);
               if (isShortest) {
                 if (foundRoute->pathCount == 1) {
-                  ++shortCount;
+                  stats.countShortcut(StatisticsCollector::CountType::shortestPath);
+                  stats.recordMaxValues(lpCount, lp.constraintCount());
                   shortcuts.push_back(
                       Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
                   break;
@@ -104,6 +171,7 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
               }
 
               if (!foundRoute || foundRoute->edges.empty()) {
+                stats.recordMaxValues(lpCount, lp.constraintCount());
                 break;
               }
               auto routes = d.routeIter(in.end, out.end);
@@ -121,7 +189,16 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
                 addConstraint(route, shortcutCost, lp);
               }
 
+              if (lp.constraintCount() > 150) {
+                stats.countShortcut(StatisticsCollector::CountType::toManyConstraints);
+                stats.recordMaxValues(lpCount, lp.constraintCount());
+                shortcuts.push_back(
+                    Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
+                break;
+              }
+              ++lpCount;
               if (!lp.solve()) {
+                stats.recordMaxValues(lpCount, lp.constraintCount());
                 break;
               }
               auto values = lp.variableValues();
@@ -136,13 +213,11 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
                   routes.doubleHeapsize();
                   goto extraction;
                 }
-                if (lp.exact()) {
-                  ++sameCount;
-                  shortcuts.push_back(
-                      Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
-                  break;
-                }
-                lp.exact(true);
+                stats.countShortcut(StatisticsCollector::CountType::repeatingConfig);
+                stats.recordMaxValues(lpCount, lp.constraintCount());
+                shortcuts.push_back(
+                    Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
+                break;
               }
               config = newConfig;
             }
@@ -151,7 +226,6 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
       } catch (std::bad_any_cast e) {
         auto responder = std::any_cast<std::shared_ptr<MultiQueue>>(msg);
         responder->send(shortcuts);
-        std::cout << "short/same: " << shortCount << "/" << sameCount << '\n';
         return;
       }
     }
@@ -255,6 +329,9 @@ Graph Contractor::contract(Graph& g)
   });
   for (const auto& node : nodesToContract) {
     q.send(std::any{ node });
+  }
+  if (printStatistics) {
+    StatisticsCollector::printHeader();
   }
 
   auto back = std::make_shared<MultiQueue>();

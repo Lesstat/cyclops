@@ -26,6 +26,7 @@ class Contractor {
 
   public:
   Contractor() = default;
+  Contractor(bool printStatistics);
   Contractor(const Contractor& other) = default;
   Contractor(Contractor&& other) = default;
   virtual ~Contractor() noexcept = default;
@@ -52,6 +53,7 @@ class Contractor {
   size_t level = 0;
   std::vector<Node> contractedNodes;
   std::vector<EdgeId> contractedEdges;
+  bool printStatistics = false;
 };
 
 #endif /* CONTRACTOR_H */

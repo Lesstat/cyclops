@@ -61,9 +61,9 @@ Graph loadGraphFromBinaryFile(std::string& graphPath)
   return g;
 }
 
-Graph contractGraph(Graph& g, unsigned short rest)
+Graph contractGraph(Graph& g, unsigned short rest, bool printStats)
 {
-  Contractor c{};
+  Contractor c{ printStats };
   auto start = std::chrono::high_resolution_clock::now();
   Graph ch = c.contractCompletely(g, rest);
   auto end = std::chrono::high_resolution_clock::now();
@@ -305,12 +305,15 @@ int main(int argc, char* argv[])
       "bin,b", po::value<std::string>(&binFileName), "load graph form binary file");
 
   po::options_description action{ "actions" };
-  action.add_options()("contract,c", "contract graph")("percent,p",
+  action.add_options()("contract,c", "contract graph");
+  action.add_options()("percent,p",
       po::value<unsigned short>(&contractionPercent)->default_value(98),
-      "How far the graph should be contracted")("dijkstra,d", "start interactive dijkstra in cli")(
-      "web,w", "start webserver for interaction via browser")("save",
-      po::value<std::string>(&saveFileName),
-      "save graph to binary file")("test", "runs normal dijkstra and CH dijktra for comparison");
+      "How far the graph should be contracted");
+  action.add_options()("stats", "print statistics while contracting");
+  action.add_options()("dijkstra,d", "start interactive dijkstra in cli");
+  action.add_options()("web,w", "start webserver for interaction via browser");
+  action.add_options()("save", po::value<std::string>(&saveFileName), "save graph to binary file");
+  action.add_options()("test", "runs normal dijkstra and CH dijktra for comparison");
 
   po::options_description all;
   all.add_options()("help,h", "prints help message");
@@ -336,8 +339,9 @@ int main(int argc, char* argv[])
   }
 
   if (vm.count("contract") > 0) {
+    bool printStats = vm.count("stats") > 0;
     std::cout << "Start contracting" << '\n';
-    g = contractGraph(g, 100 - contractionPercent);
+    g = contractGraph(g, 100 - contractionPercent, printStats);
   }
 
   if (!saveFileName.empty()) {
