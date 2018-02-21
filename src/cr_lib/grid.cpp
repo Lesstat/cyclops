@@ -28,8 +28,8 @@ double haversine_distance(const PositionalNode& a, const PositionalNode& b)
   double theta2 = b.lat * RADIANS_CONVERSION;
   double deltaTheta = (b.lat - a.lat) * RADIANS_CONVERSION;
   double deltaLambda = (b.lng - a.lng) * RADIANS_CONVERSION;
-  double e
-      = pow(sin(deltaTheta / 2.0), 2) + std::cos(theta1) * std::cos(theta2) * pow(sin(deltaLambda / 2.0), 2);
+  double e = pow(sin(deltaTheta / 2.0), 2)
+      + std::cos(theta1) * std::cos(theta2) * pow(sin(deltaLambda / 2.0), 2);
   double c = 2.0 * asin(sqrt(e));
   return EARTH_RADIUS * c;
 }
@@ -153,5 +153,5 @@ size_t Grid::coordsToIndex(Lat lat, Lng lng)
   if (y == sideLength) {
     y -= 1;
   }
-  return NodePos{ y * (sideLength) + x };
+  return NodePos{ static_cast<size_t>(y * (sideLength) + x) };
 }
