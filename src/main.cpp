@@ -227,7 +227,7 @@ void runWebServer(Graph& g)
       if (!route->edges.empty()) {
         const auto& lastEdge = route->edges[route->edges.size() - 1];
         const auto& node = g.getNode(*g.nodePosById(lastEdge.getSourceId()));
-        resultJson << '[' << node.lng() << ", " << node.lat() << "]] } } }";
+        resultJson << '[' << node.lng() << ", " << node.lat() << "], ";
         const auto& endNode = g.getNode(*g.nodePosById(lastEdge.getDestId()));
         resultJson << '[' << endNode.lng() << ", " << endNode.lat() << "]] } } }";
       }
