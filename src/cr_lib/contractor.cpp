@@ -141,88 +141,83 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
     while (true) {
       queue.receive(msg);
       try {
-        auto node = std::any_cast<NodePos>(msg);
+        auto pair = std::any_cast<EdgePair>(msg);
+        auto& in = pair.in;
+        auto& out = pair.out;
 
+        size_t lpCount = 0;
         Config config{ LengthConfig{ 0.33 }, HeightConfig{ 0.33 }, UnsuitabilityConfig{ 0.33 } };
-        const auto& inEdges = g.getIngoingEdgesOf(node);
-        const auto& outEdges = g.getOutgoingEdgesOf(node);
-        for (const auto& in : inEdges) {
-          for (const auto& out : outEdges) {
-            LinearProgram lp{ 3 };
-            lp.objective({ 1.0, 1.0, 1.0 });
-            lp.addConstraint({ 1.0, 1.0, 1.0 }, 1.0, 1.0);
-            lp.addConstraint({ 1.0, 0.0, 0.0 }, 1.0, 0.001);
-            lp.addConstraint({ 0.0, 1.0, 0.0 }, 1.0, 0.001);
-            lp.addConstraint({ 0.0, 0.0, 1.0 }, 1.0, 0.001);
+        LinearProgram lp{ 3 };
+        lp.objective({ 1.0, 1.0, 1.0 });
+        lp.addConstraint({ 1.0, 1.0, 1.0 }, 1.0, 1.0);
+        lp.addConstraint({ 1.0, 0.0, 0.0 }, 1.0, 0.001);
+        lp.addConstraint({ 0.0, 1.0, 0.0 }, 1.0, 0.001);
+        lp.addConstraint({ 0.0, 0.0, 1.0 }, 1.0, 0.001);
 
-            Cost shortcutCost = in.cost + out.cost;
+        Cost shortcutCost = in.cost + out.cost;
 
-            size_t lpCount = 0;
-            while (true) {
-              auto[isShortest, foundRoute] = isShortestPath(d, in, out, config);
-              if (isShortest) {
-                if (foundRoute->pathCount == 1) {
-                  stats.countShortcut(StatisticsCollector::CountType::shortestPath);
-                  stats.recordMaxValues(lpCount, lp.constraintCount());
-                  shortcuts.push_back(
-                      Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
-                  break;
-                }
-              }
-
-              if (!foundRoute || foundRoute->edges.empty()) {
-                stats.recordMaxValues(lpCount, lp.constraintCount());
-                break;
-              }
-              auto routes = d.routeIter(in.end, out.end);
-            extraction:
-              while (!routes.finished()) {
-                auto optRoute = routes.next();
-                if (!optRoute.has_value()) {
-                  break;
-                }
-                auto route = *optRoute;
-                if (route.edges.size() == 2 && route.edges[0] == in.id
-                    && route.edges[1] == out.id) {
-                  continue;
-                }
-                addConstraint(route, shortcutCost, lp);
-              }
-
-              if (lp.constraintCount() > 150) {
-                stats.countShortcut(StatisticsCollector::CountType::toManyConstraints);
-                stats.recordMaxValues(lpCount, lp.constraintCount());
-                shortcuts.push_back(
-                    Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
-                break;
-              }
-              ++lpCount;
-              if (!lp.solve()) {
-                stats.recordMaxValues(lpCount, lp.constraintCount());
-                break;
-              }
-              auto values = lp.variableValues();
-              if (values[0] + values[1] + values[2] > 2) {
-                std::cout << "Cancelling to big" << '\n';
-                break;
-              }
-              Config newConfig{ LengthConfig{ values[0] }, HeightConfig{ values[1] },
-                UnsuitabilityConfig{ values[2] } };
-              if (config == newConfig) {
-                if (!routes.finished()) {
-                  routes.doubleHeapsize();
-                  goto extraction;
-                }
-                stats.countShortcut(StatisticsCollector::CountType::repeatingConfig);
-                stats.recordMaxValues(lpCount, lp.constraintCount());
-                shortcuts.push_back(
-                    Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
-                break;
-              }
-              config = newConfig;
+        while (true) {
+          auto[isShortest, foundRoute] = isShortestPath(d, in, out, config);
+          if (isShortest) {
+            if (foundRoute->pathCount == 1) {
+              stats.countShortcut(StatisticsCollector::CountType::shortestPath);
+              stats.recordMaxValues(lpCount, lp.constraintCount());
+              shortcuts.push_back(
+                  Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
+              break;
+              ;
             }
           }
+
+          if (!foundRoute || foundRoute->edges.empty()) {
+            stats.recordMaxValues(lpCount, lp.constraintCount());
+            break;
+          }
+          auto routes = d.routeIter(in.end, out.end);
+        extraction:
+          while (!routes.finished()) {
+            auto optRoute = routes.next();
+            if (!optRoute.has_value()) {
+              break;
+            }
+            auto route = *optRoute;
+            if (route.edges.size() == 2 && route.edges[0] == in.id && route.edges[1] == out.id) {
+              continue;
+            }
+            addConstraint(route, shortcutCost, lp);
+          }
+
+          if (lp.constraintCount() > 150) {
+            stats.countShortcut(StatisticsCollector::CountType::toManyConstraints);
+            stats.recordMaxValues(lpCount, lp.constraintCount());
+            shortcuts.push_back(
+                Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
+            break;
+          }
+          ++lpCount;
+          if (!lp.solve()) {
+            stats.recordMaxValues(lpCount, lp.constraintCount());
+            break;
+            ;
+          }
+          auto values = lp.variableValues();
+
+          Config newConfig{ LengthConfig{ values[0] }, HeightConfig{ values[1] },
+            UnsuitabilityConfig{ values[2] } };
+          if (config == newConfig) {
+            if (!routes.finished()) {
+              routes.doubleHeapsize();
+              goto extraction;
+            }
+            stats.countShortcut(StatisticsCollector::CountType::repeatingConfig);
+            stats.recordMaxValues(lpCount, lp.constraintCount());
+            shortcuts.push_back(
+                Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
+            break;
+          }
+          config = newConfig;
         }
+
       } catch (std::bad_any_cast e) {
         auto responder = std::any_cast<std::shared_ptr<MultiQueue>>(msg);
         responder->send(shortcuts);
@@ -328,16 +323,24 @@ Graph Contractor::contract(Graph& g)
     return g.getInTimesOutDegree(pos1) > g.getInTimesOutDegree(pos2);
   });
   for (const auto& node : nodesToContract) {
-    q.send(std::any{ node });
+    const auto& inEdges = g.getIngoingEdgesOf(node);
+    const auto& outEdges = g.getOutgoingEdgesOf(node);
+    for (const auto& in : inEdges) {
+      for (const auto& out : outEdges) {
+        q.send(EdgePair{ in, out });
+      }
+    }
   }
+
   if (printStatistics) {
     StatisticsCollector::printHeader();
   }
 
   auto back = std::make_shared<MultiQueue>();
   for (int i = 0; i < THREAD_COUNT; ++i) {
-    q.send(std::any{ back });
+    q.send(back);
   }
+
   std::vector<Edge> shortcuts{};
   for (int i = 0; i < THREAD_COUNT; ++i) {
     std::any msg;

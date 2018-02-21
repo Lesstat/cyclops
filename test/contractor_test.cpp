@@ -105,7 +105,11 @@ std::vector<Edge> contractNode(Graph& g, NodePos pos, Contractor& c)
 {
   MultiQueue to{};
   auto back = std::make_shared<MultiQueue>();
-  to.send(pos);
+  for (const auto& in : g.getIngoingEdgesOf(pos)) {
+    for (const auto& out : g.getOutgoingEdgesOf(pos)) {
+      to.send(EdgePair{ in, out });
+    }
+  }
   to.send(back);
   c.contract(to, g);
   std::any msg;

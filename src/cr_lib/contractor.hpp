@@ -56,4 +56,8 @@ class Contractor {
   bool printStatistics = false;
 };
 
+struct EdgePair {
+  HalfEdge in;
+  HalfEdge out;
+};
 #endif /* CONTRACTOR_H */
