@@ -17,9 +17,15 @@
 */
 #include "multiqueue.hpp"
 
+MultiQueue::MultiQueue(size_t size)
+    : size(size)
+{
+}
+
 void MultiQueue::send(const std::any& value)
 {
   std::lock_guard guard(key);
+  non_full.wait(key, [this] { return size > fifo.size(); });
   fifo.push_back(value);
   non_empty.notify_all();
 }
@@ -30,6 +36,7 @@ void MultiQueue::receive(std::any& value)
   non_empty.wait(key, [this] { return !fifo.empty(); });
   value = fifo.front();
   fifo.pop_front();
+  non_full.notify_all();
 }
 
 bool MultiQueue::try_receive(std::any& value)

@@ -22,7 +22,7 @@
 
 class MultiQueue {
   public:
-  MultiQueue() = default;
+  MultiQueue(size_t size = 5000000);
   MultiQueue(const MultiQueue& other) = default;
   MultiQueue(MultiQueue&& other) = default;
   virtual ~MultiQueue() noexcept = default;
@@ -37,5 +37,7 @@ class MultiQueue {
   private:
   std::mutex key;
   std::condition_variable_any non_empty;
+  std::condition_variable_any non_full;
   std::deque<std::any> fifo;
+  size_t size;
 };

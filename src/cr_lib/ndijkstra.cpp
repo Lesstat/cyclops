@@ -159,7 +159,6 @@ std::optional<RouteWithCount> RouteIterator::next()
 
   while (!heap.empty()) {
     if (finished()) {
-      std::cout << "finished" << '\n';
       return {};
     }
     if (heap.size() > maxHeapSize) {
