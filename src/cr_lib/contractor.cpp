@@ -152,7 +152,7 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
 
     StatisticsCollector stats{ printStatistics };
     while (true) {
-      queue.receive(msg);
+      msg = queue.receive();
       try {
         auto pair = std::any_cast<EdgePair>(msg);
         auto& in = pair.in;
@@ -351,8 +351,7 @@ Graph Contractor::contract(Graph& g)
 
   std::vector<Edge> shortcuts{};
   for (int i = 0; i < THREAD_COUNT; ++i) {
-    std::any msg;
-    back->receive(msg);
+    std::any msg = back->receive();
     auto shortcutsMsg = std::any_cast<std::vector<Edge>>(msg);
     std::move(shortcutsMsg.begin(), shortcutsMsg.end(), std::back_inserter(shortcuts));
   }

@@ -112,8 +112,7 @@ std::vector<Edge> contractNode(Graph& g, NodePos pos, Contractor& c)
   }
   to.send(back);
   c.contract(to, g);
-  std::any msg;
-  back->receive(msg);
+  std::any msg = back->receive();
 
   return std::any_cast<std::vector<Edge>>(msg);
 }

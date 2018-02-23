@@ -24,19 +24,20 @@ MultiQueue::MultiQueue(size_t size)
 
 void MultiQueue::send(const std::any& value)
 {
-  std::lock_guard guard(key);
-  non_full.wait(key, [this] { return size > fifo.size(); });
+  std::unique_lock guard(key);
+  non_full.wait(guard, [this] { return size > fifo.size(); });
   fifo.push_back(value);
-  non_empty.notify_all();
+  non_empty.notify_one();
 }
 
-void MultiQueue::receive(std::any& value)
+std::any MultiQueue::receive()
 {
-  std::lock_guard guard(key);
-  non_empty.wait(key, [this] { return !fifo.empty(); });
-  value = fifo.front();
+  std::unique_lock guard(key);
+  non_empty.wait(guard, [this] { return !fifo.empty(); });
+  auto value = fifo.front();
   fifo.pop_front();
-  non_full.notify_all();
+  non_full.notify_one();
+  return value;
 }
 
 bool MultiQueue::try_receive(std::any& value)

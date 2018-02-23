@@ -30,7 +30,7 @@ class MultiQueue {
   MultiQueue& operator=(MultiQueue&& other) = default;
 
   void send(const std::any&);
-  void receive(std::any&);
+  std::any receive();
   bool try_receive(std::any&);
 
   protected:
