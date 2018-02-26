@@ -25,6 +25,7 @@
 #include <boost/serialization/unordered_map.hpp>
 #include <boost/serialization/vector.hpp>
 #include <optional>
+#include <unordered_set>
 #include <vector>
 
 using OsmId = NamedType<size_t, struct OsmIdParameter>;
@@ -248,6 +249,9 @@ class Graph {
   size_t getEdgeCount() const;
 
   size_t getInTimesOutDegree(NodePos node) const;
+
+  std::unordered_map<NodeId, const Node*> getNodePosByIds(
+      const std::unordered_set<NodeId>& ids) const;
 
   private:
   friend class boost::serialization::access;

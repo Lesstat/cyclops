@@ -215,23 +215,29 @@ void runWebServer(Graph& g)
     if (route) {
 
       std::stringstream resultJson;
-      resultJson
-          << "{ \"length\": " << route->costs.length << ", \"height\": " << route->costs.height
-          << ", \"unsuitability\": " << route->costs.unsuitability
-          << ", \"route\": { \"type\": \"Feature\", \"geometry\": { \"type\": \"LineString\", "
-          << "\"coordinates\":[";
+      resultJson << "{ \"length\": " << route->costs.length
+                 << ", \"height\": " << route->costs.height
+                 << ", \"unsuitability\": " << route->costs.unsuitability
+                 << R"(, "route": { "type": "Feature", "geometry": { "type": "LineString", )"
+                 << "\"coordinates\":[";
+
+      std::unordered_set<NodeId> nodes;
+      nodes.reserve(route->edges.size());
       for (const auto& edge : route->edges) {
-        const auto& node = g.getNode(*g.nodePosById(edge.getSourceId()));
-        resultJson << '[' << node.lng() << ", " << node.lat() << "],";
+        nodes.insert(edge.getSourceId());
+        nodes.insert(edge.getDestId());
+      }
+      auto idToNode = g.getNodePosByIds(nodes);
+
+      for (const auto& edge : route->edges) {
+        auto node = idToNode[edge.getSourceId()];
+        resultJson << '[' << node->lng() << ", " << node->lat() << "],";
       }
       if (!route->edges.empty()) {
         const auto& lastEdge = route->edges[route->edges.size() - 1];
-        const auto& node = g.getNode(*g.nodePosById(lastEdge.getSourceId()));
-        resultJson << '[' << node.lng() << ", " << node.lat() << "], ";
-        const auto& endNode = g.getNode(*g.nodePosById(lastEdge.getDestId()));
-        resultJson << '[' << endNode.lng() << ", " << endNode.lat() << "]] } } }";
+        auto endNode = idToNode[lastEdge.getDestId()];
+        resultJson << '[' << endNode->lng() << ", " << endNode->lat() << "]] } } }";
       }
-      // std::cout << resultJson.str() << '\n';
       auto json = resultJson.str();
 
       SimpleWeb::CaseInsensitiveMultimap header;

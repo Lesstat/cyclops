@@ -236,3 +236,16 @@ size_t Graph::getInTimesOutDegree(NodePos node) const
   auto& offset = offsets[node];
   return offset.in * offset.out;
 }
+
+std::unordered_map<NodeId, const Node*> Graph::getNodePosByIds(
+    const std::unordered_set<NodeId>& ids) const
+{
+  std::unordered_map<NodeId, const Node*> result;
+  result.reserve(ids.size());
+  for (const auto& node : nodes) {
+    if (ids.find(node.id()) != ids.end()) {
+      result[node.id()] = &node;
+    }
+  }
+  return result;
+}
