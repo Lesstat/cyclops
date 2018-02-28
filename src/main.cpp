@@ -18,6 +18,7 @@
 #include "contractor.hpp"
 #include "dijkstra.hpp"
 #include "grid.hpp"
+#include "routeComparator.hpp"
 #include "server_http.hpp"
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/filesystem.hpp>
@@ -25,6 +26,46 @@
 #include <chrono>
 #include <fstream>
 #include <random>
+
+Config generateRandomConfig()
+{
+  std::random_device rd{};
+  std::uniform_real_distribution lenDist(0.0, 1.0);
+  LengthConfig l(lenDist(rd));
+  std::uniform_real_distribution heightDist(0.0, 1.0 - l.get());
+  HeightConfig h(heightDist(rd));
+  UnsuitabilityConfig u(1 - l - h);
+
+  return Config{ l, h, u };
+}
+
+std::string routeToJson(const Route& route, const Graph& g)
+{
+  std::stringstream resultJson;
+  resultJson << "{ \"length\": " << route.costs.length << ", \"height\": " << route.costs.height
+             << ", \"unsuitability\": " << route.costs.unsuitability
+             << R"(, "route": { "type": "Feature", "geometry": { "type": "LineString", )"
+             << "\"coordinates\":[";
+
+  std::unordered_set<NodeId> nodes;
+  nodes.reserve(route.edges.size());
+  for (const auto& edge : route.edges) {
+    nodes.insert(edge.getSourceId());
+    nodes.insert(edge.getDestId());
+  }
+  auto idToNode = g.getNodePosByIds(nodes);
+
+  for (const auto& edge : route.edges) {
+    auto node = idToNode[edge.getSourceId()];
+    resultJson << '[' << node->lng() << ", " << node->lat() << "],";
+  }
+  if (!route.edges.empty()) {
+    const auto& lastEdge = route.edges[route.edges.size() - 1];
+    auto endNode = idToNode[lastEdge.getDestId()];
+    resultJson << '[' << endNode->lng() << ", " << endNode->lat() << "]] } } }";
+  }
+  return resultJson.str();
+}
 
 Graph loadGraphFromTextFile(std::string& graphPath)
 {
@@ -214,32 +255,7 @@ void runWebServer(Graph& g)
               << "ms" << '\n';
     if (route) {
 
-      std::stringstream resultJson;
-      resultJson << "{ \"length\": " << route->costs.length
-                 << ", \"height\": " << route->costs.height
-                 << ", \"unsuitability\": " << route->costs.unsuitability
-                 << R"(, "route": { "type": "Feature", "geometry": { "type": "LineString", )"
-                 << "\"coordinates\":[";
-
-      std::unordered_set<NodeId> nodes;
-      nodes.reserve(route->edges.size());
-      for (const auto& edge : route->edges) {
-        nodes.insert(edge.getSourceId());
-        nodes.insert(edge.getDestId());
-      }
-      auto idToNode = g.getNodePosByIds(nodes);
-
-      for (const auto& edge : route->edges) {
-        auto node = idToNode[edge.getSourceId()];
-        resultJson << '[' << node->lng() << ", " << node->lat() << "],";
-      }
-      if (!route->edges.empty()) {
-        const auto& lastEdge = route->edges[route->edges.size() - 1];
-        auto endNode = idToNode[lastEdge.getDestId()];
-        resultJson << '[' << endNode->lng() << ", " << endNode->lat() << "]] } } }";
-      }
-      auto json = resultJson.str();
-
+      auto json = routeToJson(*route, g);
       SimpleWeb::CaseInsensitiveMultimap header;
       header.emplace("Content-Type", "application/json");
       response->write(SimpleWeb::StatusCode::success_ok, json, header);
@@ -247,6 +263,65 @@ void runWebServer(Graph& g)
     response->write(SimpleWeb::StatusCode::client_error_not_found, "Did not find route");
 
   };
+
+  server.resource["^/alternative/random"]["GET"]
+      = [&g, &dijkstra](Response response, Request request) {
+          std::optional<size_t> s{}, t{};
+          auto query_fields = request->parse_query_string();
+          for (const auto& field : query_fields) {
+            if (field.first == "s") {
+              s = static_cast<size_t>(stoull(field.second));
+            } else if (field.first == "t") {
+              t = static_cast<size_t>(stoull(field.second));
+            }
+          }
+
+          if (!(s && t)) {
+            response->write(SimpleWeb::StatusCode::client_error_bad_request,
+                "Request needs to contain the parameters: s, t");
+          }
+          std::stringstream result;
+
+          std::optional<Route> route = {};
+          std::optional<Route> route2 = {};
+          Config conf1{ LengthConfig{ 0 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } };
+          Config conf2{ LengthConfig{ 0 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } };
+          double shared = 1.0;
+          double threshold = 0.3;
+
+          size_t counter = 0;
+          while (shared > threshold) {
+            if (++counter % 100 == 0) {
+              threshold += 0.1;
+            }
+            conf1 = generateRandomConfig();
+            route = dijkstra.findBestRoute(NodePos{ *s }, NodePos{ *t }, conf1);
+            if (!route) {
+              response->write(SimpleWeb::StatusCode::client_error_not_found, "Did not find route");
+              return;
+            }
+
+            conf2 = generateRandomConfig();
+            route2 = dijkstra.findBestRoute(NodePos{ *s }, NodePos{ *t }, conf2);
+            shared = calculateSharing(*route, *route2);
+          }
+
+          result << R"({ "config1": " )" << std::round(conf1.length * 100) << "/"
+                 << std::round(conf1.height * 100) << "/" << std::round(conf1.unsuitability * 100)
+                 << R"(", )";
+          result << R"( "route1":  )" << routeToJson(*route, g) << ", ";
+
+          result << R"( "config2": " )" << std::round(conf2.length * 100) << "/"
+                 << std::round(conf2.height * 100) << "/" << std::round(conf2.unsuitability * 100)
+                 << R"(", )";
+          result << R"( "route2":  )" << routeToJson(*route2, g) << ", ";
+          result << R"( "shared":  )" << std::round(shared * 100) << "}";
+
+          SimpleWeb::CaseInsensitiveMultimap header;
+          header.emplace("Content-Type", "application/json");
+          response->write(SimpleWeb::StatusCode::success_ok, result, header);
+
+        };
 
   std::cout << "Starting web server at http://localhost:" << server.config.port << '\n';
   server.start();

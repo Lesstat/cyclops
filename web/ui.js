@@ -107,3 +107,40 @@ function panOutMap(){
     
 }
 
+function randomSample(){
+
+    geoJson.clearLayers(); 
+    var xmlhttp = new XMLHttpRequest();
+    
+    xmlhttp.responseType = 'json';
+    xmlhttp.onload = function() {
+	if (xmlhttp.status == 200) {
+	    var myStyle1 = {
+		"color": "#3333FF",
+		"weight": 5,
+		"opacity": 0.65
+	    };
+	    document.getElementById("blue_conf").innerHTML = xmlhttp.response.config1;
+	    geoJson.addLayer(L.geoJSON(xmlhttp.response.route1.route.geometry, { style: myStyle1 }));
+
+	    var myStyle2 = {
+		"color": "#33FF00",
+		"weight": 5,
+		"opacity": 0.65
+	    };
+	    document.getElementById("green_conf").innerHTML = xmlhttp.response.config2;
+	    geoJson.addLayer(L.geoJSON(xmlhttp.response.route2.route.geometry, { style: myStyle2 }));
+	    document.getElementById("shared").innerHTML = xmlhttp.response.shared;
+	}
+	else {
+	    document.getElementById("route_length").innerHTML = "Unknown";
+	    document.getElementById("route_height").innerHTML = "Unknown";
+	    document.getElementById("route_unsuitability").innerHTML = "Unknown";
+	}
+    };
+    var s = document.getElementById("start").innerHTML;
+    var t = document.getElementById("end").innerHTML;
+    xmlhttp.open("GET", "/alternative/random?s="+ s + "&t=" + t);
+    xmlhttp.send();
+}
+

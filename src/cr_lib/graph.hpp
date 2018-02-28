@@ -34,9 +34,9 @@ using NodePos = NamedType<size_t, struct NodePosParameter>;
 using EdgeId = NamedType<size_t, struct EdgeParameter>;
 using Lat = NamedType<double, struct LatParameter>;
 using Lng = NamedType<double, struct LngParameter>;
-using Height = NamedType<short, struct HeightParameter>;
+using Height = NamedType<int, struct HeightParameter>;
 using Length = NamedType<double, struct LengthParameter>;
-using Unsuitability = NamedType<short, struct UnsuitabilityParameter>;
+using Unsuitability = NamedType<int, struct UnsuitabilityParameter>;
 
 class Dijkstra;
 class NormalDijkstra;
