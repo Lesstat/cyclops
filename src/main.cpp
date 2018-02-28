@@ -306,12 +306,12 @@ void runWebServer(Graph& g)
             shared = calculateSharing(*route, *route2);
           }
 
-          result << R"({ "config1": " )" << std::round(conf1.length * 100) << "/"
+          result << R"({ "config1": ")" << std::round(conf1.length * 100) << "/"
                  << std::round(conf1.height * 100) << "/" << std::round(conf1.unsuitability * 100)
                  << R"(", )";
           result << R"( "route1":  )" << routeToJson(*route, g) << ", ";
 
-          result << R"( "config2": " )" << std::round(conf2.length * 100) << "/"
+          result << R"( "config2": ")" << std::round(conf2.length * 100) << "/"
                  << std::round(conf2.height * 100) << "/" << std::round(conf2.unsuitability * 100)
                  << R"(", )";
           result << R"( "route2":  )" << routeToJson(*route2, g) << ", ";
