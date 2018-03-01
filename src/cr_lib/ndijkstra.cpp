@@ -148,7 +148,9 @@ RouteIterator::RouteIterator(NormalDijkstra* dijkstra, NodePos from, NodePos to,
     , to(to)
     , heap(BiggerCost(dijkstra->usedConfig))
 {
-  heap.emplace(RouteWithCount(), to);
+  RouteWithCount route;
+  route.pathCount = dijkstra->pathCount;
+  heap.emplace(route, to);
 }
 
 bool RouteIterator::finished() { return outputCount >= dijkstra->pathCount || outputCount >= 150; }

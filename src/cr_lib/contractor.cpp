@@ -120,7 +120,8 @@ bool addConstraint(const RouteWithCount& route, const Cost& c1, LinearProgram& l
 {
   Cost c2 = route.costs;
 
-  if (c2.length <= c1.length && c2.height <= c1.height && c2.unsuitability <= c1.unsuitability) {
+  if (c2.length <= c1.length && c2.height <= c1.height && c2.unsuitability <= c1.unsuitability
+      && route.pathCount == 1) {
     return false;
   }
 
