@@ -116,20 +116,22 @@ Edge Contractor::createShortcut(const Edge& e1, const Edge& e2)
   return shortcut;
 }
 
-void addConstraint(const RouteWithCount& route, const Cost& c1, LinearProgram& lp)
+bool addConstraint(const RouteWithCount& route, const Cost& c1, LinearProgram& lp)
 {
-  Cost c2{};
-  for (const auto& edgeId : route.edges) {
-    const auto& edge = Edge::getEdge(edgeId);
-    c2 = c2 + edge.getCost();
+  Cost c2 = route.costs;
+
+  if (c2.length <= c1.length && c2.height <= c1.height && c2.unsuitability <= c1.unsuitability) {
+    return false;
   }
+
   Cost newCost = c1 - c2;
   lp.addConstraint({ newCost.length, static_cast<double>(newCost.height),
                        static_cast<double>(newCost.unsuitability) },
       0.0);
+  return true;
 }
 
-void extractRoutesAndAddConstraints(RouteIterator& routes, const Cost& shortcutCost,
+bool extractRoutesAndAddConstraints(RouteIterator& routes, const Cost& shortcutCost,
     LinearProgram& lp, const HalfEdge& out, const HalfEdge& in)
 {
   for (auto optRoute = routes.next(); optRoute; optRoute = routes.next()) {
@@ -137,9 +139,12 @@ void extractRoutesAndAddConstraints(RouteIterator& routes, const Cost& shortcutC
     if (route.edges.size() == 2 && route.edges[0] == in.id && route.edges[1] == out.id) {
       continue;
     }
-    addConstraint(route, shortcutCost, lp);
+    if (!addConstraint(route, shortcutCost, lp)) {
+      return false;
+    }
     optRoute = routes.next();
   }
+  return true;
 }
 
 void Contractor::contract(MultiQueue& queue, Graph& g)
@@ -193,7 +198,10 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
           }
           auto routes = d.routeIter(in.end, out.end);
           while (!routes.finished()) {
-            extractRoutesAndAddConstraints(routes, shortcutCost, lp, out, in);
+            if (!extractRoutesAndAddConstraints(routes, shortcutCost, lp, out, in)) {
+              finished = true;
+              break;
+            }
 
             if (lp.constraintCount() > 150) {
               storeShortcut(StatisticsCollector::CountType::toManyConstraints);
