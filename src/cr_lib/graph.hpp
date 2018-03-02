@@ -253,6 +253,8 @@ class Graph {
   std::unordered_map<NodeId, const Node*> getNodePosByIds(
       const std::unordered_set<NodeId>& ids) const;
 
+  NodePos getNodePos(const Node* n) const;
+
   private:
   friend class boost::serialization::access;
 
