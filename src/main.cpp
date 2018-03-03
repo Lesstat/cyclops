@@ -348,7 +348,7 @@ int testGraph(Graph& g)
     if (dRoute && nRoute) {
       ++route;
       if (std::abs(dRoute->costs * c - nRoute->costs * c) > 0.01) {
-        std::cout << "cost differ in route from " << from << " to " << to << '\n';
+        std::cout << '\n' << "cost differ in route from " << from << " to " << to << '\n';
         std::cout << "dLength: " << dRoute->costs.length << ", nLength: " << nRoute->costs.length
                   << '\n';
         std::cout << "dHeight: " << dRoute->costs.height << ", nHeight: " << nRoute->costs.height
@@ -437,6 +437,8 @@ int testGraph(Graph& g)
 
         return 1;
       }
+      std::cout << '+';
+      std::cout.flush();
     } else if (nRoute && !dRoute) {
       std::cout << "Only Normal dijkstra found route form " << from << " to " << to << "!" << '\n';
       return 1;
@@ -444,6 +446,7 @@ int testGraph(Graph& g)
       ++noRoute;
     }
   }
+  std::cout << '\n';
   std::cout << "Compared " << route << " routes" << '\n';
   std::cout << "Did not find a route in " << noRoute << " cases" << '\n';
   return 0;
