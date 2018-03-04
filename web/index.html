@@ -12,7 +12,7 @@
      }
     </style>
   </head>
-  <body>
+  <body onload="initializeCanvas()">
     <div class="row" >
       <div class="col-sm-3">
 	<div class="contaier">
@@ -33,9 +33,10 @@
 	    <div class="card-block">
 	      <div class="card-header">Routing Options</div>
 	      <div class="card-text container">
-		Length: <input type="range" name="length" min="0" max="100" value="100"><br />
-		Height: <input type="range" name="height" min="0" max="100" value="0"><br />
-		Road Types:<input type="range" name="unsuitability" min="0" max="100" value="0"><br />
+		<canvas id="triangleSelector" width="200px" height="200px" ></canvas><br />
+		Length: <span id="length_percent">33</span>% <br />
+		Height: <span id="height_percent">33</span>% <br />
+		Road Types: <span id="road_percent">33</span>% <br />
 		</div>
 	      </div>
 	    </div>
