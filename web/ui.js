@@ -17,18 +17,12 @@ L.tileLayer("http://{s}.tile.openstreetmap.org/{id}/{z}/{x}/{y}.png", {
   id: ""
 }).addTo(map);
 
-$("input").change(function() {
-  calcDistWithCurrentSelection();
-});
-
 // panOutMap();
 
 function calcDistWithCurrentSelection() {
-  let length = document.querySelector('input[name="length"]').value;
-  let height = document.querySelector('input[name="height"]').value;
-  let unsuitability = document.querySelector('input[name="unsuitability"]')
-    .value;
-  geoJson.clearLayers();
+  let length = document.getElementById("length_percent").innerHTML;
+  let height = document.getElementById("height_percent").innerHTML;
+  let unsuitability = document.getElementById("road_percent").innerHTML;
   calcDist(length, height, unsuitability);
 }
 
@@ -88,6 +82,7 @@ function calcDist(length, height, unsuitability) {
         xmlhttp.response.height;
       document.getElementById("route_unsuitability").innerHTML =
         xmlhttp.response.unsuitability;
+      geoJson.clearLayers();
       geoJson.addLayer(
         L.geoJSON(xmlhttp.response.route.geometry, { style: myStyle })
       );
@@ -221,5 +216,45 @@ function moveDot(event) {
   if (clicked && event) {
     drawTriangle();
     drawDot(event.offsetX, event.offsetY);
+    let point = { x: event.offsetX, y: event.offsetY };
+    let lengthArea = triangleArea(point, heightCorner, unsuitabilityCorner);
+    let heightArea = triangleArea(point, lengthCorner, unsuitabilityCorner);
+    let unsuitabilityArea = triangleArea(point, lengthCorner, heightCorner);
+
+    let areaSum = lengthArea + heightArea + unsuitabilityArea;
+
+    let lengthPercent = Math.round(lengthArea / areaSum * 100);
+    let heightPercent = Math.round(heightArea / areaSum * 100);
+
+    let unsuitabilityPercent = Math.round(unsuitabilityArea / areaSum * 100);
+
+    let lengthSpan = document.getElementById("length_percent");
+    let heightSpan = document.getElementById("height_percent");
+    let unsuitabilitySpan = document.getElementById("road_percent");
+
+    if (
+      Math.abs(lengthSpan.innerHTML - lengthPercent) > 2 ||
+      Math.abs(heightSpan.innerHTML - heightPercent) > 2 ||
+      Math.abs(unsuitabilitySpan.innerHTML - unsuitabilityPercent) > 2
+    ) {
+      lengthSpan.innerHTML = lengthPercent;
+      heightSpan.innerHTML = heightPercent;
+      unsuitabilitySpan.innerHTML = unsuitabilityPercent;
+      calcDist(lengthPercent, heightPercent, unsuitabilityPercent);
+    }
   }
+}
+
+function triangleArea(p1, p2, p3) {
+  let dist = function(p1, p2) {
+    return Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
+  };
+
+  let a = dist(p1, p2);
+  let b = dist(p1, p3);
+  let c = dist(p2, p3);
+
+  let s = (a + b + c) / 2;
+
+  return Math.sqrt(s * (s - a) * (s - b) * (s - c));
 }
