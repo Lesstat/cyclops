@@ -306,6 +306,8 @@ void runWebServer(Graph& g)
             shared = calculateSharing(*route, *route2);
           }
 
+          double frechet = DiscreteFrechet(*route, *route2, g).calculate();
+
           result << R"({ "config1": ")" << std::round(conf1.length * 100) << "/"
                  << std::round(conf1.height * 100) << "/" << std::round(conf1.unsuitability * 100)
                  << R"(", )";
@@ -315,7 +317,8 @@ void runWebServer(Graph& g)
                  << std::round(conf2.height * 100) << "/" << std::round(conf2.unsuitability * 100)
                  << R"(", )";
           result << R"( "route2":  )" << routeToJson(*route2, g) << ", ";
-          result << R"( "shared":  )" << std::round(shared * 100) << "}";
+          result << R"( "shared":  )" << std::round(shared * 100) << ", "
+                 << R"( "frechet":  )" << frechet << "}";
 
           SimpleWeb::CaseInsensitiveMultimap header;
           header.emplace("Content-Type", "application/json");

@@ -20,20 +20,21 @@
 
 #include "dijkstra.hpp"
 
-double calculateSharing(const Route& referenceRoute, const Route& otherRoute)
-{
-  std::set<EdgeId> edges;
-  std::transform(begin(referenceRoute.edges), end(referenceRoute.edges),
-      std::inserter(edges, begin(edges)), [](const auto& edge) { return edge.getId(); });
-  size_t sharedCounter = 0;
-  for (const auto& edge : otherRoute.edges) {
-    if (edges.find(edge.getId()) != edges.end()) {
-      ++sharedCounter;
-    }
-  }
+double calculateSharing(const Route& referenceRoute, const Route& otherRoute);
 
-  size_t maxEdges = std::max(referenceRoute.edges.size(), otherRoute.edges.size());
-  return static_cast<double>(sharedCounter) / maxEdges;
-}
+class DiscreteFrechet {
+  public:
+  DiscreteFrechet(const Route& reference, const Route& other, const Graph& g);
+  virtual ~DiscreteFrechet() = default;
+
+  double calculate();
+
+  private:
+  std::vector<std::vector<double>> ca;
+  std::vector<const Node*> refNodes;
+  std::vector<const Node*> otherNodes;
+
+  double c(int i, int j);
+};
 
 #endif /* ROUTECOMPARATOR_H */
