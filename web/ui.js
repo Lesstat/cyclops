@@ -77,7 +77,7 @@ function calcDist(length, height, unsuitability) {
         opacity: 0.65
       };
       document.getElementById("route_length").innerHTML =
-        xmlhttp.response.length;
+        Math.round(xmlhttp.response.length / 100) / 10;
       document.getElementById("route_height").innerHTML =
         xmlhttp.response.height;
       document.getElementById("route_unsuitability").innerHTML =
@@ -152,6 +152,7 @@ function randomSample() {
         L.geoJSON(xmlhttp.response.route2.route.geometry, { style: myStyle2 })
       );
       document.getElementById("shared").innerHTML = xmlhttp.response.shared;
+      document.getElementById("frechet").innerHTML = xmlhttp.response.frechet;
     } else {
       document.getElementById("route_length").innerHTML = "Unknown";
       document.getElementById("route_height").innerHTML = "Unknown";
