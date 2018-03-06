@@ -174,9 +174,9 @@ function initializeCanvas() {
   drawTriangle();
   drawDot(center.x, center.y);
 }
-const lengthCorner = { x: 0, y: 200 };
-const heightCorner = { x: 200, y: 200 };
-const unsuitabilityCorner = { x: 100, y: 27 };
+const lengthCorner = { x: 5, y: 195 };
+const heightCorner = { x: 205, y: 195 };
+const unsuitabilityCorner = { x: 105, y: 22 };
 const center = { x: 100, y: 142 };
 
 function drawTriangle() {
@@ -200,6 +200,14 @@ function drawDot(x, y) {
   ctx.beginPath();
   ctx.arc(x, y, 3, 0, 2 * Math.PI);
   ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(lengthCorner.x, lengthCorner.y);
+  ctx.lineTo(x, y);
+  ctx.moveTo(heightCorner.x, heightCorner.y);
+  ctx.lineTo(x, y);
+  ctx.moveTo(unsuitabilityCorner.x, unsuitabilityCorner.y);
+  ctx.lineTo(x, y);
+  ctx.stroke();
 }
 
 var clicked = false;
