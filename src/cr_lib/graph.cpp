@@ -38,20 +38,19 @@ void Graph::connectEdgesToNodes(const std::vector<Node>& nodes, const std::vecto
 }
 
 enum class Pos { source, dest };
-void sortEdgesByNodePos(std::vector<HalfEdge>& edges, Pos p)
+void sortEdgesByNodePos(std::vector<HalfEdge>& edges, const Graph& g)
 {
-  auto sourceSort = [](const HalfEdge& a, const HalfEdge& b) { return a.begin < b.begin; };
-
-  auto destSort = [](const HalfEdge& a, const HalfEdge& b) { return a.begin < b.begin; };
-
-  if (p == Pos::source) {
-    std::sort(edges.begin(), edges.end(), sourceSort);
-  } else {
-    std::sort(edges.begin(), edges.end(), destSort);
-  }
+  auto comparator = [&g](const HalfEdge& a, const HalfEdge& b) {
+    if (a.begin == b.begin) {
+      return g.getLevelOf(a.end) > g.getLevelOf(b.end);
+    }
+    return a.begin < b.begin;
+  };
+  std::sort(edges.begin(), edges.end(), comparator);
 }
 
-void calculateOffsets(std::vector<HalfEdge>& edges, std::vector<NodeOffset>& offsets, Pos p)
+void calculateOffsets(
+    std::vector<HalfEdge>& edges, std::vector<NodeOffset>& offsets, Pos p, const Graph& g)
 {
   auto sourcePos = [&edges](size_t j) { return edges[j].begin; };
   auto destPos = [&edges](size_t j) { return edges[j].begin; };
@@ -64,7 +63,7 @@ void calculateOffsets(std::vector<HalfEdge>& edges, std::vector<NodeOffset>& off
   auto setOffset
       = [p, setOut, setIn](size_t i, size_t j) { p == Pos::source ? setOut(i, j) : setIn(i, j); };
 
-  sortEdgesByNodePos(edges, p);
+  sortEdgesByNodePos(edges, g);
 
   size_t lastNode = 0;
 
@@ -111,9 +110,9 @@ void Graph::init(std::vector<Node>&& nodes, std::vector<EdgeId>&& edges)
     offsets.emplace_back(NodeOffset{});
   }
 
-  calculateOffsets(outEdges, offsets, Pos::source);
+  calculateOffsets(outEdges, offsets, Pos::source, *this);
 
-  calculateOffsets(inEdges, offsets, Pos::dest);
+  calculateOffsets(inEdges, offsets, Pos::dest, *this);
 }
 
 std::ostream& operator<<(std::ostream& s, const Graph& g)

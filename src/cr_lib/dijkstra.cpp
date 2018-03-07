@@ -151,15 +151,16 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
       const auto& outEdges = graph->getOutgoingEdgesOf(node);
       for (const auto& edge : outEdges) {
         NodePos nextNode = edge.end;
-        if (graph->getLevelOf(nextNode) >= graph->getLevelOf(node)) {
-          double nextCost = cost + edge.costByConfiguration(config);
-          if (nextCost < costS[nextNode]) {
-            QueueElem next = std::make_pair(nextNode, nextCost);
-            costS[nextNode] = nextCost;
-            touchedS.push_back(nextNode);
-            previousEdgeS[nextNode] = edge;
-            heapS.push(next);
-          }
+        if (graph->getLevelOf(nextNode) < graph->getLevelOf(node)) {
+          break;
+        }
+        double nextCost = cost + edge.costByConfiguration(config);
+        if (nextCost < costS[nextNode]) {
+          QueueElem next = std::make_pair(nextNode, nextCost);
+          costS[nextNode] = nextCost;
+          touchedS.push_back(nextNode);
+          previousEdgeS[nextNode] = edge;
+          heapS.push(next);
         }
       }
     }
@@ -184,15 +185,16 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
       const auto& inEdges = graph->getIngoingEdgesOf(node);
       for (const auto& edge : inEdges) {
         NodePos nextNode = edge.end;
-        if (graph->getLevelOf(nextNode) >= graph->getLevelOf(node)) {
-          double nextCost = cost + edge.costByConfiguration(config);
-          if (nextCost < costT[nextNode]) {
-            QueueElem next = std::make_pair(nextNode, nextCost);
-            costT[nextNode] = nextCost;
-            touchedT.push_back(nextNode);
-            previousEdgeT[nextNode] = edge;
-            heapT.push(next);
-          }
+        if (graph->getLevelOf(nextNode) < graph->getLevelOf(node)) {
+          break;
+        }
+        double nextCost = cost + edge.costByConfiguration(config);
+        if (nextCost < costT[nextNode]) {
+          QueueElem next = std::make_pair(nextNode, nextCost);
+          costT[nextNode] = nextCost;
+          touchedT.push_back(nextNode);
+          previousEdgeT[nextNode] = edge;
+          heapT.push(next);
         }
       }
     }
