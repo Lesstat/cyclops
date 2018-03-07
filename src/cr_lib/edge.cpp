@@ -100,6 +100,7 @@ void Edge::administerEdges(const std::vector<Edge>& edges)
   }
 }
 const Edge& Edge::getEdge(EdgeId id) { return edges.at(id); }
+Edge& Edge::getMutEdge(EdgeId id) { return edges.at(id); }
 
 float Cost::operator*(const Config& conf) const
 {
@@ -114,3 +115,8 @@ float Cost::operator*(const Config& conf) const
   }
   return combinedCost + std::numeric_limits<float>::epsilon();
 }
+
+NodePos Edge::sourcePos() const { return sourcePos_; }
+NodePos Edge::destPos() const { return destPos_; }
+void Edge::sourcePos(NodePos source) { sourcePos_ = source; }
+void Edge::destPos(NodePos dest) { destPos_ = dest; }

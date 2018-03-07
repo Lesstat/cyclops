@@ -53,16 +53,15 @@ std::string routeToJson(const Route& route, const Graph& g)
     nodes.insert(edge.getSourceId());
     nodes.insert(edge.getDestId());
   }
-  auto idToNode = g.getNodePosByIds(nodes);
 
   for (const auto& edge : route.edges) {
-    auto node = idToNode[edge.getSourceId()];
-    resultJson << '[' << node->lng() << ", " << node->lat() << "],";
+    const auto& node = g.getNode(edge.sourcePos());
+    resultJson << '[' << node.lng() << ", " << node.lat() << "],";
   }
   if (!route.edges.empty()) {
     const auto& lastEdge = route.edges[route.edges.size() - 1];
-    auto endNode = idToNode[lastEdge.getDestId()];
-    resultJson << '[' << endNode->lng() << ", " << endNode->lat() << "]] } } }";
+    const auto& endNode = g.getNode(lastEdge.destPos());
+    resultJson << '[' << endNode.lng() << ", " << endNode.lat() << "]] } } }";
   }
   return resultJson.str();
 }

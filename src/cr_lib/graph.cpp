@@ -27,11 +27,13 @@ void Graph::connectEdgesToNodes(const std::vector<Node>& nodes, const std::vecto
   }
 
   std::for_each(begin(edges), end(edges), [&map, this](const auto& id) {
-    const auto& e = Edge::getEdge(id);
+    auto& e = Edge::getMutEdge(id);
     auto sourcePos = map[e.getSourceId()];
     auto destPos = map[e.getDestId()];
     inEdges.push_back(e.makeHalfEdge(destPos, sourcePos));
     outEdges.push_back(e.makeHalfEdge(sourcePos, destPos));
+    e.sourcePos(sourcePos);
+    e.destPos(destPos);
   });
 }
 

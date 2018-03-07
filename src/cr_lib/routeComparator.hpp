@@ -31,8 +31,8 @@ class DiscreteFrechet {
 
   private:
   std::vector<std::vector<double>> ca;
-  std::vector<const Node*> refNodes;
-  std::vector<const Node*> otherNodes;
+  std::vector<Node> reference;
+  std::vector<Node> other;
 
   double c(int i, int j);
 };

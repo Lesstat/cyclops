@@ -136,6 +136,11 @@ class Edge {
   const ReplacedEdge& getEdgeA() const;
   const ReplacedEdge& getEdgeB() const;
 
+  NodePos sourcePos() const;
+  NodePos destPos() const;
+  void sourcePos(NodePos source);
+  void destPos(NodePos dest);
+
   EdgeId getId() const;
   const Cost& getCost() const;
   double costByConfiguration(const Config& conf) const;
@@ -146,6 +151,7 @@ class Edge {
   static Edge createFromText(const std::string& text);
   static void administerEdges(const std::vector<Edge>& edges);
   static const Edge& getEdge(EdgeId id);
+  static Edge& getMutEdge(EdgeId id);
 
   friend void testEdgeInternals(const Edge& e, NodeId source, NodeId destination, Length length,
       Height height, Unsuitability unsuitability, const ReplacedEdge& edgeA,
@@ -160,6 +166,8 @@ class Edge {
   Cost cost;
   ReplacedEdge edgeA;
   ReplacedEdge edgeB;
+  NodePos sourcePos_;
+  NodePos destPos_;
 
   static std::atomic<size_t> lastId;
   static std::vector<Edge> edges;

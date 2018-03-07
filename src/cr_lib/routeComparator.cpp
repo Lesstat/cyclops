@@ -19,28 +19,22 @@
 
 DiscreteFrechet::DiscreteFrechet(const Route& reference, const Route& other, const Graph& g)
 {
-
-  std::unordered_set<NodeId> nodeIds;
-  std::transform(reference.edges.begin(), reference.edges.end(),
-      std::inserter(nodeIds, begin(nodeIds)), [](const auto& e) { return e.getSourceId(); });
-  std::transform(other.edges.begin(), other.edges.end(), std::inserter(nodeIds, begin(nodeIds)),
-      [](const auto& e) { return e.getDestId(); });
-
-  auto idToPos = g.getNodePosByIds(nodeIds);
-
-  refNodes.reserve(reference.edges.size());
-  for (const auto& edge : reference.edges) {
-    refNodes.push_back(idToPos[edge.getSourceId()]);
+  for (const auto& e : reference.edges) {
+    this->reference.push_back(g.getNode(e.sourcePos()));
   }
-  refNodes.push_back(idToPos[reference.edges[reference.edges.size() - 1].getDestId()]);
-
-  otherNodes.reserve(other.edges.size());
-  for (const auto& edge : other.edges) {
-    otherNodes.push_back(idToPos[edge.getSourceId()]);
+  if (!reference.edges.empty()) {
+    const auto& lastEdge = reference.edges[reference.edges.size() - 1];
+    this->reference.push_back(g.getNode(lastEdge.destPos()));
   }
-  otherNodes.push_back(idToPos[other.edges[other.edges.size() - 1].getDestId()]);
+  for (const auto& e : other.edges) {
+    this->other.push_back(g.getNode(e.sourcePos()));
+  }
+  if (!other.edges.empty()) {
+    const auto& lastEdge = other.edges[other.edges.size() - 1];
+    this->other.push_back(g.getNode(lastEdge.destPos()));
+  }
 
-  ca = std::vector(refNodes.size() - 1, std::vector<double>(otherNodes.size() - 1, -1));
+  ca = std::vector(reference.edges.size() - 1, std::vector<double>(other.edges.size() - 1, -1));
 }
 
 double DiscreteFrechet::calculate() { return c(ca.size() - 1, ca[0].size() - 1); }
@@ -68,11 +62,11 @@ double DiscreteFrechet::c(int i, int j)
     return ca[i][j];
   }
   if (i == 0 && j == 0) {
-    ca[i][j] = haversine_distance(*refNodes[i], *otherNodes[j]);
+    ca[i][j] = haversine_distance(reference[i], other[j]);
   } else if (i > 0 && j == 0) {
-    ca[i][j] = std::max(c(i - 1, 0), haversine_distance(*refNodes[i], *otherNodes[0]));
+    ca[i][j] = std::max(c(i - 1, 0), haversine_distance(reference[i], other[0]));
   } else if (i == 0 && j > 0) {
-    ca[i][j] = std::max(c(0, j - 1), haversine_distance(*refNodes[0], *otherNodes[j]));
+    ca[i][j] = std::max(c(0, j - 1), haversine_distance(reference[0], other[j]));
   } else if (i > 0 && j > 0) {
     double var1 = c(i - 1, j);
     double var2 = c(i - 1, j - 1);
@@ -81,7 +75,7 @@ double DiscreteFrechet::c(int i, int j)
     double min = std::min(var1, var2);
     min = std::min(var3, min);
 
-    ca[i][j] = std::max(min, haversine_distance(*refNodes[i], *otherNodes[j]));
+    ca[i][j] = std::max(min, haversine_distance(reference[i], other[j]));
   } else {
     ca[i][j] = std::numeric_limits<double>::max();
   }
