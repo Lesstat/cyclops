@@ -344,10 +344,18 @@ int testGraph(Graph& g)
     NodePos from{ dist(rd) };
     NodePos to{ dist(rd) };
 
+    auto dStart = std::chrono::high_resolution_clock::now();
     auto dRoute = d.findBestRoute(from, to, c);
+    auto dEnd = std::chrono::high_resolution_clock::now();
     auto nRoute = n.findBestRoute(from, to, c);
+    auto nEnd = std::chrono::high_resolution_clock::now();
 
     if (dRoute && nRoute) {
+      using ms = std::chrono::milliseconds;
+      std::cout << "ND/CH: "
+                << std::chrono::duration_cast<ms>(nEnd - dEnd).count()
+              / std::chrono::duration_cast<ms>(dEnd - dStart).count()
+                << '\n';
       ++route;
       if (std::abs(dRoute->costs * c - nRoute->costs * c) > 0.01) {
         std::cout << '\n' << "cost differ in route from " << from << " to " << to << '\n';
