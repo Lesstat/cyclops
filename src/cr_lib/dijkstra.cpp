@@ -137,6 +137,21 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
       if (cost > costS[node]) {
         continue;
       }
+      bool stalled = false;
+      const auto& inEdges = graph->getIngoingEdgesOf(node);
+      for (const auto& edge : inEdges) {
+        if (graph->getLevelOf(edge.end) < graph->getLevelOf(node)) {
+          continue;
+        }
+        if (costS[edge.end] + edge.cost * config < costS[node]) {
+          stalled = true;
+          break;
+        }
+      }
+      if (stalled) {
+        continue;
+      }
+
       if (cost > minCandidate) {
         sBigger = true;
       }
@@ -171,6 +186,22 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
       if (cost > costT[node]) {
         continue;
       }
+
+      bool stalled = false;
+      const auto& outEdges = graph->getOutgoingEdgesOf(node);
+      for (const auto& edge : outEdges) {
+        if (graph->getLevelOf(edge.end) < graph->getLevelOf(node)) {
+          continue;
+        }
+        if (costT[edge.end] + edge.cost * config < costT[node]) {
+          stalled = true;
+          break;
+        }
+      }
+      if (stalled) {
+        continue;
+      }
+
       if (cost > minCandidate) {
         tBigger = true;
       }
