@@ -20,8 +20,8 @@
 
 #include "graph.hpp"
 #include <cmath>
-#include <deque>
 #include <iostream>
+#include <queue>
 
 using LengthConfig = NamedType<double, struct LengthConfigParameter>;
 using HeightConfig = NamedType<double, struct HeightConfigParameter>;
@@ -76,15 +76,30 @@ class Dijkstra {
   std::optional<Route> findBestRoute(NodePos from, NodePos to, Config config);
 
   private:
+  using QueueElem = std::pair<NodePos, double>;
+  struct QueueComparator {
+    bool operator()(QueueElem left, QueueElem right);
+  };
+  using Queue = std::priority_queue<QueueElem, std::vector<QueueElem>, QueueComparator>;
+
   void clearState();
 
   using NodeToEdgeMap = std::unordered_map<NodePos, HalfEdge>;
   Route buildRoute(NodePos node, NodeToEdgeMap previousEdgeS, NodeToEdgeMap previousEdgeT,
       NodePos from, NodePos to);
+
+  enum class Direction { S, T };
+
+  void relaxEdges(
+      const NodePos& node, double cost, Direction dir, Queue& heap, NodeToEdgeMap& previousEdge);
+
+  bool stallOnDemand(const NodePos& node, double cost, Direction dir);
+
   std::vector<double> costS;
   std::vector<double> costT;
   std::vector<NodePos> touchedS;
   std::vector<NodePos> touchedT;
+  Config config = Config(LengthConfig(0), HeightConfig(0), UnsuitabilityConfig(0));
   Graph* graph;
 };
 

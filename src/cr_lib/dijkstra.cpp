@@ -51,7 +51,6 @@ void insertUnpackedEdge(const Edge& e, std::deque<Edge>& route, bool front)
       insertUnpackedEdge(Edge::getEdge(*edgeB), route, front);
       insertUnpackedEdge(Edge::getEdge(*edgeA), route, front);
     } else {
-
       insertUnpackedEdge(Edge::getEdge(*edgeA), route, front);
       insertUnpackedEdge(Edge::getEdge(*edgeB), route, front);
     }
@@ -88,18 +87,19 @@ Route Dijkstra::buildRoute(NodePos node, NodeToEdgeMap previousEdgeS, NodeToEdge
   return route;
 }
 
+bool Dijkstra::QueueComparator::operator()(QueueElem left, QueueElem right)
+{
+  auto leftCost = std::get<double>(left);
+  auto rightCost = std::get<double>(right);
+  return leftCost > rightCost;
+};
+
 std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config config)
 {
-  using QueueElem = std::pair<NodePos, double>;
-  auto cmp = [](QueueElem left, QueueElem right) {
-    auto leftCost = std::get<double>(left);
-    auto rightCost = std::get<double>(right);
-    return leftCost > rightCost;
-  };
-  using Queue = std::priority_queue<QueueElem, std::vector<QueueElem>, decltype(cmp)>;
 
   clearState();
-  Queue heapS{ cmp };
+  this->config = config;
+  Dijkstra::Queue heapS{ QueueComparator{} };
 
   heapS.push(std::make_pair(from, 0));
   touchedS.push_back(from);
@@ -107,7 +107,7 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
 
   NodeToEdgeMap previousEdgeS{};
 
-  Queue heapT{ cmp };
+  Queue heapT{ QueueComparator{} };
 
   heapT.push(std::make_pair(to, 0));
   touchedT.push_back(to);
@@ -137,23 +137,13 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
       if (cost > costS[node]) {
         continue;
       }
-      bool stalled = false;
-      const auto& inEdges = graph->getIngoingEdgesOf(node);
-      for (const auto& edge : inEdges) {
-        if (graph->getLevelOf(edge.end) < graph->getLevelOf(node)) {
-          continue;
-        }
-        if (costS[edge.end] + edge.cost * config < costS[node]) {
-          stalled = true;
-          break;
-        }
-      }
-      if (stalled) {
+      if (stallOnDemand(node, cost, Direction::S)) {
         continue;
       }
 
       if (cost > minCandidate) {
         sBigger = true;
+        continue;
       }
       if (costT[node] != dmax) {
         double candidate = costT[node] + costS[node];
@@ -163,21 +153,7 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
         }
       }
 
-      const auto& outEdges = graph->getOutgoingEdgesOf(node);
-      for (const auto& edge : outEdges) {
-        NodePos nextNode = edge.end;
-        if (graph->getLevelOf(nextNode) < graph->getLevelOf(node)) {
-          break;
-        }
-        double nextCost = cost + edge.costByConfiguration(config);
-        if (nextCost < costS[nextNode]) {
-          QueueElem next = std::make_pair(nextNode, nextCost);
-          costS[nextNode] = nextCost;
-          touchedS.push_back(nextNode);
-          previousEdgeS[nextNode] = edge;
-          heapS.push(next);
-        }
-      }
+      relaxEdges(node, cost, Direction::S, heapS, previousEdgeS);
     }
 
     if (!heapT.empty()) {
@@ -186,24 +162,13 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
       if (cost > costT[node]) {
         continue;
       }
-
-      bool stalled = false;
-      const auto& outEdges = graph->getOutgoingEdgesOf(node);
-      for (const auto& edge : outEdges) {
-        if (graph->getLevelOf(edge.end) < graph->getLevelOf(node)) {
-          continue;
-        }
-        if (costT[edge.end] + edge.cost * config < costT[node]) {
-          stalled = true;
-          break;
-        }
-      }
-      if (stalled) {
+      if (stallOnDemand(node, cost, Direction::T)) {
         continue;
       }
 
       if (cost > minCandidate) {
         tBigger = true;
+        continue;
       }
       if (costS[node] != dmax) {
         double candidate = costS[node] + costT[node];
@@ -212,22 +177,49 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
           minNode = node;
         }
       }
-
-      const auto& inEdges = graph->getIngoingEdgesOf(node);
-      for (const auto& edge : inEdges) {
-        NodePos nextNode = edge.end;
-        if (graph->getLevelOf(nextNode) < graph->getLevelOf(node)) {
-          break;
-        }
-        double nextCost = cost + edge.costByConfiguration(config);
-        if (nextCost < costT[nextNode]) {
-          QueueElem next = std::make_pair(nextNode, nextCost);
-          costT[nextNode] = nextCost;
-          touchedT.push_back(nextNode);
-          previousEdgeT[nextNode] = edge;
-          heapT.push(next);
-        }
-      }
+      relaxEdges(node, cost, Direction::T, heapT, previousEdgeT);
     }
   }
+}
+
+void Dijkstra::relaxEdges(
+    const NodePos& node, double cost, Direction dir, Queue& heap, NodeToEdgeMap& previousEdge)
+{
+  std::vector<double>& costs = dir == Direction::S ? costS : costT;
+  std::vector<NodePos>& touched = dir == Direction::S ? touchedS : touchedT;
+
+  auto myLevel = graph->getLevelOf(node);
+  auto edges
+      = dir == Direction::S ? graph->getOutgoingEdgesOf(node) : graph->getIngoingEdgesOf(node);
+  for (const auto& edge : edges) {
+    NodePos nextNode = edge.end;
+    if (graph->getLevelOf(nextNode) < myLevel) {
+      return;
+    }
+    double nextCost = cost + edge.costByConfiguration(config);
+    if (nextCost < costs[nextNode]) {
+      costs[nextNode] = nextCost;
+      touched.push_back(nextNode);
+      previousEdge[nextNode] = edge;
+      QueueElem next = std::make_pair(nextNode, nextCost);
+      heap.push(next);
+    }
+  }
+}
+
+bool Dijkstra::stallOnDemand(const NodePos& node, double cost, Direction dir)
+{
+  auto myLevel = graph->getLevelOf(node);
+  const auto& edges
+      = dir == Direction::S ? graph->getIngoingEdgesOf(node) : graph->getOutgoingEdgesOf(node);
+  for (const auto& edge : edges) {
+    if (graph->getLevelOf(edge.end) < myLevel) {
+      return false;
+    }
+    if (costS[edge.end] + edge.cost * config < cost) {
+      return true;
+    }
+  }
+
+  return false;
 }
