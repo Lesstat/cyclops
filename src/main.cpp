@@ -352,10 +352,9 @@ int testGraph(Graph& g)
 
     if (dRoute && nRoute) {
       using ms = std::chrono::milliseconds;
-      std::cout << "ND/CH: "
-                << std::chrono::duration_cast<ms>(nEnd - dEnd).count()
-              / std::chrono::duration_cast<ms>(dEnd - dStart).count()
-                << '\n';
+      auto normalTime = std::chrono::duration_cast<ms>(nEnd - dEnd).count();
+      auto chTime = std::chrono::duration_cast<ms>(dEnd - dStart).count();
+      std::cout << "ND/CH: " << normalTime << "/" << chTime << " = " << normalTime / chTime << '\n';
       ++route;
       if (std::abs(dRoute->costs * c - nRoute->costs * c) > 0.01) {
         std::cout << '\n' << "cost differ in route from " << from << " to " << to << '\n';
