@@ -116,7 +116,7 @@ Edge Contractor::createShortcut(const Edge& e1, const Edge& e2)
   return shortcut;
 }
 
-bool addConstraint(const RouteWithCount& route, const Cost& c1, LinearProgram& lp)
+bool addConstraint(const RouteWithCount& route, const Cost& c1, std::optional<LinearProgram>& lp)
 {
   Cost c2 = route.costs;
 
@@ -125,14 +125,19 @@ bool addConstraint(const RouteWithCount& route, const Cost& c1, LinearProgram& l
   }
 
   Cost newCost = c1 - c2;
-  lp.addConstraint({ newCost.length, static_cast<double>(newCost.height),
-                       static_cast<double>(newCost.unsuitability) },
+  if (!lp) {
+    lp = LinearProgram(3);
+    lp->objective({ 1.0, 1.0, 1.0 });
+    lp->addConstraint({ 1.0, 1.0, 1.0 }, 1.0, 1.0);
+  }
+  lp->addConstraint({ newCost.length, static_cast<double>(newCost.height),
+                        static_cast<double>(newCost.unsuitability) },
       0.0);
   return true;
 }
 
 bool extractRoutesAndAddConstraints(RouteIterator& routes, const Cost& shortcutCost,
-    LinearProgram& lp, const HalfEdge& out, const HalfEdge& in)
+    std::optional<LinearProgram>& lp, const HalfEdge& out, const HalfEdge& in)
 {
   for (auto optRoute = routes.next(); optRoute; optRoute = routes.next()) {
     auto route = *optRoute;
@@ -165,9 +170,7 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
 
         size_t lpCount = 0;
         Config config{ LengthConfig{ 0.33 }, HeightConfig{ 0.33 }, UnsuitabilityConfig{ 0.33 } };
-        LinearProgram lp{ 3 };
-        lp.objective({ 1.0, 1.0, 1.0 });
-        lp.addConstraint({ 1.0, 1.0, 1.0 }, 1.0, 1.0);
+        std::optional<LinearProgram> lp;
 
         Cost shortcutCost = in.cost + out.cost;
 
@@ -176,7 +179,7 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
                                  StatisticsCollector::CountType type) {
           finished = true;
           stats.countShortcut(type);
-          stats.recordMaxValues(lpCount, lp.constraintCount());
+          stats.recordMaxValues(lpCount, lp->constraintCount());
           shortcuts.push_back(
               Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
         };
@@ -190,7 +193,7 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
           }
 
           if (!foundRoute || foundRoute->edges.empty()) {
-            stats.recordMaxValues(lpCount, lp.constraintCount());
+            stats.recordMaxValues(lpCount, lp->constraintCount());
             break;
           }
           auto routes = d.routeIter(in.end, out.end);
@@ -200,18 +203,23 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
               break;
             }
 
-            if (lp.constraintCount() > 150) {
+            if (lp->constraintCount() > 150) {
               storeShortcut(StatisticsCollector::CountType::toManyConstraints);
               break;
             }
 
             ++lpCount;
-            if (!lp.solve()) {
-              stats.recordMaxValues(lpCount, lp.constraintCount());
+            if (!lp) {
+              lp = LinearProgram(3);
+              lp->objective({ 1.0, 1.0, 1.0 });
+              lp->addConstraint({ 1.0, 1.0, 1.0 }, 1.0, 1.0);
+            }
+            if (!lp->solve()) {
+              stats.recordMaxValues(lpCount, lp->constraintCount());
               finished = true;
               break;
             }
-            auto values = lp.variableValues();
+            auto values = lp->variableValues();
 
             Config newConfig{ LengthConfig{ values[0] }, HeightConfig{ values[1] },
               UnsuitabilityConfig{ values[2] } };
