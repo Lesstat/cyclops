@@ -219,6 +219,7 @@ function mouseDown(event) {
 
 function mouseUp(event) {
   clicked = false;
+  calcDistWithCurrentSelection();
 }
 
 function moveDot(event) {
@@ -241,16 +242,9 @@ function moveDot(event) {
     let heightSpan = document.getElementById("height_percent");
     let unsuitabilitySpan = document.getElementById("road_percent");
 
-    if (
-      Math.abs(lengthSpan.innerHTML - lengthPercent) > 2 ||
-      Math.abs(heightSpan.innerHTML - heightPercent) > 2 ||
-      Math.abs(unsuitabilitySpan.innerHTML - unsuitabilityPercent) > 2
-    ) {
-      lengthSpan.innerHTML = lengthPercent;
-      heightSpan.innerHTML = heightPercent;
-      unsuitabilitySpan.innerHTML = unsuitabilityPercent;
-      calcDist(lengthPercent, heightPercent, unsuitabilityPercent);
-    }
+    lengthSpan.innerHTML = lengthPercent;
+    heightSpan.innerHTML = heightPercent;
+    unsuitabilitySpan.innerHTML = unsuitabilityPercent;
   }
 }
 
