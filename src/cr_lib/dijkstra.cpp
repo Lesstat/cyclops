@@ -121,7 +121,9 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
   std::optional<NodePos> minNode = {};
 
   while (true) {
-    if (heapS.empty() && heapT.empty()) {
+    // Quit if both are empty or one is empty and the other is bigger than minCandidate
+    if ((heapS.empty() && heapT.empty()) || (heapS.empty() && tBigger)
+        || (heapT.empty() && sBigger)) {
       if (minNode.has_value()) {
         return buildRoute(minNode.value(), previousEdgeS, previousEdgeT, from, to);
       }
@@ -131,7 +133,7 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
       return buildRoute(minNode.value(), previousEdgeS, previousEdgeT, from, to);
     }
 
-    if (!heapS.empty()) {
+    if (!heapS.empty() && !sBigger) {
       auto[node, cost] = heapS.top();
       heapS.pop();
       if (cost > costS[node]) {
@@ -156,7 +158,7 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
       relaxEdges(node, cost, Direction::S, heapS, previousEdgeS);
     }
 
-    if (!heapT.empty()) {
+    if (!heapT.empty() && !tBigger) {
       auto[node, cost] = heapT.top();
       heapT.pop();
       if (cost > costT[node]) {
