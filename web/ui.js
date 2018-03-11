@@ -123,8 +123,15 @@ function panOutMap() {
   xmlhttp.open("GET", "/map_coords");
   xmlhttp.send();
 }
-
 function randomSample() {
+  alternativeRoutes("random");
+}
+
+function exploration() {
+  alternativeRoutes("explore");
+}
+
+function alternativeRoutes(kind) {
   geoJson.clearLayers();
   let xmlhttp = new XMLHttpRequest();
 
@@ -161,7 +168,7 @@ function randomSample() {
   };
   let s = document.getElementById("start").innerHTML;
   let t = document.getElementById("end").innerHTML;
-  xmlhttp.open("GET", "/alternative/random?s=" + s + "&t=" + t);
+  xmlhttp.open("GET", "/alternative/" + kind + "?s=" + s + "&t=" + t);
   xmlhttp.send();
 }
 
