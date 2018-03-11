@@ -214,11 +214,12 @@ bool Dijkstra::stallOnDemand(const NodePos& node, double cost, Direction dir)
   auto myLevel = graph->getLevelOf(node);
   const auto& edges
       = dir == Direction::S ? graph->getIngoingEdgesOf(node) : graph->getOutgoingEdgesOf(node);
+  auto& costs = dir == Direction::S ? costS : costT;
   for (const auto& edge : edges) {
     if (graph->getLevelOf(edge.end) < myLevel) {
       return false;
     }
-    if (costS[edge.end] + edge.cost * config < cost) {
+    if (costs[edge.end] + edge.cost * config < cost) {
       return true;
     }
   }
