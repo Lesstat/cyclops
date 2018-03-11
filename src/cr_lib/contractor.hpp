@@ -41,7 +41,7 @@ class Contractor {
   void contract(MultiQueue& queue, Graph& g);
   Graph contract(Graph& g);
   Graph mergeWithContracted(Graph& g);
-  Graph contractCompletely(Graph& g, unsigned short rest = 2);
+  Graph contractCompletely(Graph& g, double rest = 2);
 
   std::set<NodePos> independentSet(const Graph& g);
   std::set<NodePos> reduce(std::set<NodePos>& set, const Graph& g);

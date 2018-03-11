@@ -408,11 +408,12 @@ Graph Contractor::mergeWithContracted(Graph& g)
   return Graph{ std::move(nodes), std::move(edges) };
 }
 
-Graph Contractor::contractCompletely(Graph& g, unsigned short rest)
+Graph Contractor::contractCompletely(Graph& g, double rest)
 {
 
   Graph intermedG = contract(g);
-  int uncontractedNodesPercent = intermedG.getNodeCount() * 100 / g.getNodeCount();
+  double uncontractedNodesPercent
+      = std::round(intermedG.getNodeCount() * 10000.0 / g.getNodeCount()) / 100;
   std::cout << 100 - uncontractedNodesPercent << "% of the graph is contracted" << '\n'
             << std::flush;
   while (uncontractedNodesPercent > rest) {

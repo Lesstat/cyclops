@@ -469,7 +469,7 @@ int main(int argc, char* argv[])
   std::string textFileName{};
   std::string binFileName{};
   std::string saveFileName{};
-  unsigned short contractionPercent;
+  double contractionPercent;
 
   po::options_description loading{ "loading options" };
   loading.add_options()(
@@ -478,8 +478,7 @@ int main(int argc, char* argv[])
 
   po::options_description action{ "actions" };
   action.add_options()("contract,c", "contract graph");
-  action.add_options()("percent,p",
-      po::value<unsigned short>(&contractionPercent)->default_value(98),
+  action.add_options()("percent,p", po::value<double>(&contractionPercent)->default_value(98),
       "How far the graph should be contracted");
   action.add_options()("stats", "print statistics while contracting");
   action.add_options()("dijkstra,d", "start interactive dijkstra in cli");
