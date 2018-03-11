@@ -411,7 +411,8 @@ Graph Contractor::contractCompletely(Graph& g, double rest)
             << std::flush;
   while (uncontractedNodesPercent > rest) {
     intermedG = contract(intermedG);
-    uncontractedNodesPercent = intermedG.getNodeCount() * 100 / g.getNodeCount();
+    uncontractedNodesPercent
+        = std::round(intermedG.getNodeCount() * 10000.0 / g.getNodeCount()) / 100;
     std::cout << 100 - uncontractedNodesPercent << "% of the graph is contracted" << '\n'
               << std::flush;
   }
