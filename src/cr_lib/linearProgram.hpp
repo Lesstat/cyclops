@@ -43,8 +43,22 @@ class LinearProgram {
   protected:
   private:
   LinearProgram() = default;
-  ClpSimplex lp;
+  std::optional<ClpSimplex> lp;
   size_t columnCount;
+
+  struct Constraint {
+    std::vector<double> coeff;
+    double max;
+    double min;
+    Constraint(std::vector<double> coeff, double max, double min)
+        : coeff(coeff)
+        , max(max)
+        , min(min)
+    {
+    }
+  };
+  std::vector<Constraint> constraints;
+  std::optional<std::vector<double>> objective_;
 };
 
 #endif /* LINEARPROGRAM_H */

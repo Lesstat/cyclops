@@ -22,53 +22,63 @@
 LinearProgram::LinearProgram(size_t cols)
     : columnCount(cols)
 {
-  lp.setLogLevel(0);
-
-  lp.resize(0, cols);
-  for (size_t i = 0; i < cols; ++i) {
-    lp.setColLower(i, 0.0);
-  }
 }
 
 LinearProgram::~LinearProgram() noexcept = default;
 
 void LinearProgram::addConstraint(const std::vector<double>& coeff, double max, double min)
 {
-
-  std::vector<int> ind(coeff.size());
-  std::vector<double> value(coeff.size());
-
-  int i = 0;
-  for (const auto& val : coeff) {
-    ind[i] = i;
-    value[i] = val;
-    ++i;
-  }
-  lp.addRow(ind.size(), ind.data(), value.data(), min, max);
+  constraints.emplace_back(coeff, max, min);
 }
 
-void LinearProgram::objective(const std::vector<double>& coeff)
-{
-  lp.setOptimizationDirection(1);
-  for (size_t i = 0; i < coeff.size(); ++i) {
-    lp.setObjCoeff(i, coeff[i]);
-  }
-}
+void LinearProgram::objective(const std::vector<double>& coeff) { objective_ = coeff; }
 
 bool LinearProgram::solve()
 {
-  lp.primal();
-  return !lp.isProvenPrimalInfeasible();
+  if (!lp) {
+    lp = ClpSimplex();
+    lp->setLogLevel(0);
+
+    lp->resize(0, columnCount);
+    for (size_t i = 0; i < columnCount; ++i) {
+      lp->setColLower(i, 0.0);
+    }
+  }
+  if (objective_) {
+    lp->setOptimizationDirection(1);
+    for (size_t i = 0; i < objective_->size(); ++i) {
+      lp->setObjCoeff(i, (*objective_)[i]);
+    }
+    objective_ = {};
+  }
+  if (!constraints.empty()) {
+
+    for (auto& c : constraints) {
+      std::vector<int> ind(c.coeff.size());
+      std::vector<double> value(c.coeff.size());
+
+      int i = 0;
+      for (const auto& val : c.coeff) {
+        ind[i] = i;
+        value[i] = val;
+        ++i;
+      }
+      lp->addRow(ind.size(), ind.data(), value.data(), c.min, c.max);
+    }
+    constraints.clear();
+  }
+  lp->primal();
+  return !lp->isProvenPrimalInfeasible();
 }
 
-double LinearProgram::objectiveFunctionValue() { return lp.objectiveValue(); }
+double LinearProgram::objectiveFunctionValue() { return lp->objectiveValue(); }
 
 std::vector<double> LinearProgram::variableValues()
 {
-  auto cols = lp.getColSolution();
+  auto cols = lp->getColSolution();
   std::vector<double> variables(&cols[0], &cols[columnCount]);
 
   return variables;
 }
 
-size_t LinearProgram::constraintCount() const { return lp.getNumRows(); }
+size_t LinearProgram::constraintCount() const { return lp ? lp->getNumRows() : 0; }
