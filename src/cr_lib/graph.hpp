@@ -34,7 +34,7 @@ using NodePos = NamedType<size_t, struct NodePosParameter>;
 using EdgeId = NamedType<size_t, struct EdgeParameter>;
 using Lat = NamedType<double, struct LatParameter>;
 using Lng = NamedType<double, struct LngParameter>;
-using Height = NamedType<short, struct HeightParameter>;
+using Height = NamedType<double, struct HeightParameter>;
 using Length = NamedType<double, struct LengthParameter>;
 using Unsuitability = NamedType<short, struct UnsuitabilityParameter>;
 
@@ -286,6 +286,7 @@ class Graph {
     }
     ar& edges;
   }
+
   template <class Archive> void load(Archive& ar, const unsigned int /*version*/)
   {
     std::vector<Node> nodes;
