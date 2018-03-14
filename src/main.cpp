@@ -102,7 +102,7 @@ Graph loadGraphFromBinaryFile(std::string& graphPath)
   return g;
 }
 
-Graph contractGraph(Graph& g, unsigned short rest, bool printStats)
+Graph contractGraph(Graph& g, double rest, bool printStats)
 {
   Contractor c{ printStats };
   auto start = std::chrono::high_resolution_clock::now();
