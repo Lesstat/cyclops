@@ -128,7 +128,10 @@ function randomSample() {
 }
 
 function exploration() {
-  alternativeRoutes("explore");
+  alternativeRoutes("weighted");
+}
+function greatestDistance() {
+  alternativeRoutes("distance");
 }
 
 function alternativeRoutes(kind) {

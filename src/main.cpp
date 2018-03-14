@@ -326,7 +326,7 @@ void runWebServer(Graph& g)
 
         };
 
-  server.resource["^/alternative/explore"]["GET"] = [&g](Response response, Request request) {
+  server.resource["^/alternative/weighted"]["GET"] = [&g](Response response, Request request) {
     std::optional<size_t> s{}, t{};
     auto query_fields = request->parse_query_string();
     for (const auto& field : query_fields) {
@@ -342,7 +342,46 @@ void runWebServer(Graph& g)
           "Request needs to contain the parameters: s, t");
     }
     std::stringstream result;
-    auto routes = explore(g, NodePos{ *s }, NodePos{ *t });
+    auto routes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).weightedExplore();
+
+    double frechet = DiscreteFrechet(routes.route1, routes.route2, g).calculate();
+    double shared = calculateSharing(routes.route1, routes.route2);
+
+    result << R"({ "config1": ")" << std::round(routes.config1.length * 100) << "/"
+           << std::round(routes.config1.height * 100) << "/"
+           << std::round(routes.config1.unsuitability * 100) << R"(", )";
+    result << R"( "route1":  )" << routeToJson(routes.route1, g) << ", ";
+
+    result << R"( "config2": ")" << std::round(routes.config2.length * 100) << "/"
+           << std::round(routes.config2.height * 100) << "/"
+           << std::round(routes.config2.unsuitability * 100) << R"(", )";
+    result << R"( "route2":  )" << routeToJson(routes.route2, g) << ", ";
+    result << R"( "shared":  )" << std::round(shared * 100) << ", "
+           << R"( "frechet":  )" << frechet << "}";
+
+    SimpleWeb::CaseInsensitiveMultimap header;
+    header.emplace("Content-Type", "application/json");
+    response->write(SimpleWeb::StatusCode::success_ok, result, header);
+
+  };
+
+  server.resource["^/alternative/distance"]["GET"] = [&g](Response response, Request request) {
+    std::optional<size_t> s{}, t{};
+    auto query_fields = request->parse_query_string();
+    for (const auto& field : query_fields) {
+      if (field.first == "s") {
+        s = static_cast<size_t>(stoull(field.second));
+      } else if (field.first == "t") {
+        t = static_cast<size_t>(stoull(field.second));
+      }
+    }
+
+    if (!(s && t)) {
+      response->write(SimpleWeb::StatusCode::client_error_bad_request,
+          "Request needs to contain the parameters: s, t");
+    }
+    std::stringstream result;
+    auto routes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).exploreGreatestDistance();
 
     double frechet = DiscreteFrechet(routes.route1, routes.route2, g).calculate();
     double shared = calculateSharing(routes.route1, routes.route2);

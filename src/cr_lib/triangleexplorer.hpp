@@ -39,26 +39,40 @@ struct Point {
 class Triangle {
   public:
   Triangle(Point a, Point b, Point c)
-      : a(std::move(a))
-      , b(std::move(b))
-      , c(std::move(c))
+      : a_(std::move(a))
+      , b_(std::move(b))
+      , c_(std::move(c))
   {
   }
 
-  PosVector calculateMiddle() const { return (a.position + b.position + c.position) * oneThird; }
+  PosVector calculateMiddle()
+  {
+    middle = (a_.position + b_.position + c_.position) * oneThird;
+    return *middle;
+  }
   PosVector calculateWeightedMiddle(double aWeight, double bWeight, double cWeight)
   {
-    middle = (a.position * aWeight + b.position * bWeight + c.position * cWeight)
+    middle = (a_.position * aWeight + b_.position * bWeight + c_.position * cWeight)
         * (1 / (aWeight + bWeight + cWeight));
     return *middle;
   }
 
-  PosVector getMiddle() const { return *middle; }
+  PosVector getMiddle()
+  {
+    if (middle) {
+      return *middle;
+    }
+    return calculateMiddle();
+  }
+
+  Point a() const { return a_; }
+  Point b() const { return b_; }
+  Point c() const { return c_; }
 
   private:
-  Point a;
-  Point b;
-  Point c;
+  Point a_;
+  Point b_;
+  Point c_;
   std::optional<PosVector> middle;
 };
 
@@ -78,6 +92,27 @@ struct AlternativeRoutes {
   }
 };
 
-AlternativeRoutes explore(Graph& g, NodePos from, NodePos to);
+class RouteExplorer {
+  public:
+  RouteExplorer(Graph* g, NodePos from, NodePos to);
+  RouteExplorer(const RouteExplorer& other) = default;
+  RouteExplorer(RouteExplorer&& other) noexcept = default;
+  virtual ~RouteExplorer() noexcept = default;
+  RouteExplorer& operator=(const RouteExplorer& other) = default;
+  RouteExplorer& operator=(RouteExplorer&& other) noexcept = default;
+
+  AlternativeRoutes weightedExplore();
+  AlternativeRoutes exploreGreatestDistance();
+
+  protected:
+  private:
+  Point createPoint(const PosVector& pos);
+
+  Graph* g;
+  NodePos from;
+  NodePos to;
+  Dijkstra d;
+  std::vector<Route> routes;
+};
 
 #endif /* TRIANGLEEXPLORER_H */

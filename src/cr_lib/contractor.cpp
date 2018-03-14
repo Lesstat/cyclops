@@ -169,6 +169,9 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
         LinearProgram lp{ 3 };
         lp.objective({ 1.0, 1.0, 1.0 });
         lp.addConstraint({ 1.0, 1.0, 1.0 }, 1.0, 1.0);
+        lp.addConstraint({ 1.0, 0.0, 0.0 }, 1.0, 0.001);
+        lp.addConstraint({ 0.0, 1.0, 0.0 }, 1.0, 0.001);
+        lp.addConstraint({ 0.0, 0.0, 1.0 }, 1.0, 0.001);
 
         Cost shortcutCost = in.cost + out.cost;
 
