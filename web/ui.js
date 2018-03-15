@@ -146,7 +146,20 @@ function alternativeRoutes(kind) {
         weight: 5,
         opacity: 0.65
       };
+      drawTriangle();
       document.getElementById("blue_conf").innerHTML = xmlhttp.response.config1;
+      var values = xmlhttp.response.config1.split("/");
+      var x =
+        lengthCorner.x * values[0] / 100 +
+        heightCorner.x * values[1] / 100 +
+        unsuitabilityCorner.x * values[2] / 100;
+      var y =
+        lengthCorner.y * values[0] / 100 +
+        heightCorner.y * values[1] / 100 +
+        unsuitabilityCorner.y * values[2] / 100;
+
+      drawDot(x, y, "blue");
+
       geoJson.addLayer(
         L.geoJSON(xmlhttp.response.route1.route.geometry, { style: myStyle1 })
       );
@@ -158,6 +171,19 @@ function alternativeRoutes(kind) {
       };
       document.getElementById("green_conf").innerHTML =
         xmlhttp.response.config2;
+
+      values = xmlhttp.response.config2.split("/");
+      x =
+        lengthCorner.x * values[0] / 100 +
+        heightCorner.x * values[1] / 100 +
+        unsuitabilityCorner.x * values[2] / 100;
+      y =
+        lengthCorner.y * values[0] / 100 +
+        heightCorner.y * values[1] / 100 +
+        unsuitabilityCorner.y * values[2] / 100;
+
+      drawDot(x, y, "green");
+
       geoJson.addLayer(
         L.geoJSON(xmlhttp.response.route2.route.geometry, { style: myStyle2 })
       );
@@ -192,7 +218,7 @@ const center = { x: 100, y: 142 };
 function drawTriangle() {
   let canvas = document.getElementById("triangleSelector");
   let ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, 200, 200);
+  ctx.clearRect(0, 0, 210, 210);
 
   ctx.fillStyle = "lightgrey";
   ctx.beginPath();
@@ -202,22 +228,17 @@ function drawTriangle() {
   ctx.fill();
 }
 
-function drawDot(x, y) {
+function drawDot(x, y, style) {
+  if (style === undefined) {
+    style = "black";
+  }
   let canvas = document.getElementById("triangleSelector");
   let ctx = canvas.getContext("2d");
 
-  ctx.fillStyle = "black";
+  ctx.fillStyle = style;
   ctx.beginPath();
   ctx.arc(x, y, 3, 0, 2 * Math.PI);
   ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(lengthCorner.x, lengthCorner.y);
-  ctx.lineTo(x, y);
-  ctx.moveTo(heightCorner.x, heightCorner.y);
-  ctx.lineTo(x, y);
-  ctx.moveTo(unsuitabilityCorner.x, unsuitabilityCorner.y);
-  ctx.lineTo(x, y);
-  ctx.stroke();
 }
 
 var clicked = false;
