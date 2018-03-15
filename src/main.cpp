@@ -21,6 +21,7 @@
 #include "routeComparator.hpp"
 #include "server_http.hpp"
 #include "triangleexplorer.hpp"
+#include "webUtilities.hpp"
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
@@ -38,33 +39,6 @@ Config generateRandomConfig()
   UnsuitabilityConfig u(1 - l - h);
 
   return Config{ l, h, u };
-}
-
-std::string routeToJson(const Route& route, const Graph& g)
-{
-  std::stringstream resultJson;
-  resultJson << "{ \"length\": " << route.costs.length << ", \"height\": " << route.costs.height
-             << ", \"unsuitability\": " << route.costs.unsuitability
-             << R"(, "route": { "type": "Feature", "geometry": { "type": "LineString", )"
-             << "\"coordinates\":[";
-
-  std::unordered_set<NodeId> nodes;
-  nodes.reserve(route.edges.size());
-  for (const auto& edge : route.edges) {
-    nodes.insert(edge.getSourceId());
-    nodes.insert(edge.getDestId());
-  }
-
-  for (const auto& edge : route.edges) {
-    const auto& node = g.getNode(edge.sourcePos());
-    resultJson << '[' << node.lng() << ", " << node.lat() << "],";
-  }
-  if (!route.edges.empty()) {
-    const auto& lastEdge = route.edges[route.edges.size() - 1];
-    const auto& endNode = g.getNode(lastEdge.destPos());
-    resultJson << '[' << endNode.lng() << ", " << endNode.lat() << "]] } } }";
-  }
-  return resultJson.str();
 }
 
 Graph loadGraphFromTextFile(std::string& graphPath)
@@ -216,6 +190,7 @@ void runWebServer(Graph& g)
     if (lat == IMPOSSIBLE_VALUE || lng == IMPOSSIBLE_VALUE) {
       response->write(SimpleWeb::StatusCode::client_error_bad_request,
           "Request needs to contain lat and lng parameters for query");
+      return;
     }
     auto pos = grid.findNextNode(Lat{ lat }, Lng{ lng });
     response->write(SimpleWeb::StatusCode::success_ok, std::to_string(pos->get()));
@@ -224,24 +199,12 @@ void runWebServer(Graph& g)
 
   server.resource["^/route"]["GET"] = [&g, &dijkstra](Response response, Request request) {
     std::optional<size_t> s{}, t{}, length{}, height{}, unsuitability{};
-    auto query_fields = request->parse_query_string();
-    for (const auto& field : query_fields) {
-      if (field.first == "s") {
-        s = static_cast<size_t>(stoull(field.second));
-      } else if (field.first == "t") {
-        t = static_cast<size_t>(stoull(field.second));
-      } else if (field.first == "length") {
-        length = static_cast<size_t>(stoull(field.second));
-      } else if (field.first == "height") {
-        height = static_cast<size_t>(stoull(field.second));
-      } else if (field.first == "unsuitability") {
-        unsuitability = static_cast<size_t>(stoull(field.second));
-      }
-    }
+    extractQueryFields(request->parse_query_string(), s, t, length, height, unsuitability);
 
     if (!(s && t && length && height && unsuitability)) {
       response->write(SimpleWeb::StatusCode::client_error_bad_request,
           "Request needs to contain the parameters: s, t, length, height, unsuitability");
+      return;
     }
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -266,19 +229,13 @@ void runWebServer(Graph& g)
 
   server.resource["^/alternative/random"]["GET"]
       = [&g, &dijkstra](Response response, Request request) {
-          std::optional<size_t> s{}, t{};
-          auto query_fields = request->parse_query_string();
-          for (const auto& field : query_fields) {
-            if (field.first == "s") {
-              s = static_cast<size_t>(stoull(field.second));
-            } else if (field.first == "t") {
-              t = static_cast<size_t>(stoull(field.second));
-            }
-          }
+          std::optional<size_t> s{}, t{}, dummy{};
+          extractQueryFields(request->parse_query_string(), s, t, dummy, dummy, dummy);
 
           if (!(s && t)) {
             response->write(SimpleWeb::StatusCode::client_error_bad_request,
                 "Request needs to contain the parameters: s, t");
+            return;
           }
           std::stringstream result;
 
@@ -308,17 +265,8 @@ void runWebServer(Graph& g)
 
           double frechet = DiscreteFrechet(*route, *route2, g).calculate();
 
-          result << R"({ "config1": ")" << std::round(conf1.length * 100) << "/"
-                 << std::round(conf1.height * 100) << "/" << std::round(conf1.unsuitability * 100)
-                 << R"(", )";
-          result << R"( "route1":  )" << routeToJson(*route, g) << ", ";
-
-          result << R"( "config2": ")" << std::round(conf2.length * 100) << "/"
-                 << std::round(conf2.height * 100) << "/" << std::round(conf2.unsuitability * 100)
-                 << R"(", )";
-          result << R"( "route2":  )" << routeToJson(*route2, g) << ", ";
-          result << R"( "shared":  )" << std::round(shared * 100) << ", "
-                 << R"( "frechet":  )" << frechet << "}";
+          appendAlternativesToJsonStream(
+              result, AlternativeRoutes(conf1, *route, conf2, *route2), shared, frechet, g);
 
           SimpleWeb::CaseInsensitiveMultimap header;
           header.emplace("Content-Type", "application/json");
@@ -327,19 +275,13 @@ void runWebServer(Graph& g)
         };
 
   server.resource["^/alternative/weighted"]["GET"] = [&g](Response response, Request request) {
-    std::optional<size_t> s{}, t{};
-    auto query_fields = request->parse_query_string();
-    for (const auto& field : query_fields) {
-      if (field.first == "s") {
-        s = static_cast<size_t>(stoull(field.second));
-      } else if (field.first == "t") {
-        t = static_cast<size_t>(stoull(field.second));
-      }
-    }
+    std::optional<size_t> s{}, t{}, dummy{};
+    extractQueryFields(request->parse_query_string(), s, t, dummy, dummy, dummy);
 
     if (!(s && t)) {
       response->write(SimpleWeb::StatusCode::client_error_bad_request,
           "Request needs to contain the parameters: s, t");
+      return;
     }
     std::stringstream result;
     auto routes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).weightedExplore();
@@ -347,17 +289,7 @@ void runWebServer(Graph& g)
     double frechet = DiscreteFrechet(routes.route1, routes.route2, g).calculate();
     double shared = calculateSharing(routes.route1, routes.route2);
 
-    result << R"({ "config1": ")" << std::round(routes.config1.length * 100) << "/"
-           << std::round(routes.config1.height * 100) << "/"
-           << std::round(routes.config1.unsuitability * 100) << R"(", )";
-    result << R"( "route1":  )" << routeToJson(routes.route1, g) << ", ";
-
-    result << R"( "config2": ")" << std::round(routes.config2.length * 100) << "/"
-           << std::round(routes.config2.height * 100) << "/"
-           << std::round(routes.config2.unsuitability * 100) << R"(", )";
-    result << R"( "route2":  )" << routeToJson(routes.route2, g) << ", ";
-    result << R"( "shared":  )" << std::round(shared * 100) << ", "
-           << R"( "frechet":  )" << frechet << "}";
+    appendAlternativesToJsonStream(result, routes, shared, frechet, g);
 
     SimpleWeb::CaseInsensitiveMultimap header;
     header.emplace("Content-Type", "application/json");
@@ -366,19 +298,13 @@ void runWebServer(Graph& g)
   };
 
   server.resource["^/alternative/distance"]["GET"] = [&g](Response response, Request request) {
-    std::optional<size_t> s{}, t{};
-    auto query_fields = request->parse_query_string();
-    for (const auto& field : query_fields) {
-      if (field.first == "s") {
-        s = static_cast<size_t>(stoull(field.second));
-      } else if (field.first == "t") {
-        t = static_cast<size_t>(stoull(field.second));
-      }
-    }
+    std::optional<size_t> s{}, t{}, dummy{};
 
+    extractQueryFields(request->parse_query_string(), s, t, dummy, dummy, dummy);
     if (!(s && t)) {
       response->write(SimpleWeb::StatusCode::client_error_bad_request,
           "Request needs to contain the parameters: s, t");
+      return;
     }
     std::stringstream result;
     auto routes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).exploreGreatestDistance();
@@ -386,17 +312,7 @@ void runWebServer(Graph& g)
     double frechet = DiscreteFrechet(routes.route1, routes.route2, g).calculate();
     double shared = calculateSharing(routes.route1, routes.route2);
 
-    result << R"({ "config1": ")" << std::round(routes.config1.length * 100) << "/"
-           << std::round(routes.config1.height * 100) << "/"
-           << std::round(routes.config1.unsuitability * 100) << R"(", )";
-    result << R"( "route1":  )" << routeToJson(routes.route1, g) << ", ";
-
-    result << R"( "config2": ")" << std::round(routes.config2.length * 100) << "/"
-           << std::round(routes.config2.height * 100) << "/"
-           << std::round(routes.config2.unsuitability * 100) << R"(", )";
-    result << R"( "route2":  )" << routeToJson(routes.route2, g) << ", ";
-    result << R"( "shared":  )" << std::round(shared * 100) << ", "
-           << R"( "frechet":  )" << frechet << "}";
+    appendAlternativesToJsonStream(result, routes, shared, frechet, g);
 
     SimpleWeb::CaseInsensitiveMultimap header;
     header.emplace("Content-Type", "application/json");
