@@ -242,10 +242,7 @@ void runWebServer(Graph& g)
 
     auto routes = optRoutes.value();
 
-    double frechet = DiscreteFrechet(routes.route1, routes.route2, g).calculate();
-    double shared = calculateSharing(routes.route1, routes.route2);
-
-    appendAlternativesToJsonStream(result, routes, shared, frechet, g);
+    appendAlternativesToJsonStream(result, routes, g);
 
     SimpleWeb::CaseInsensitiveMultimap header;
     header.emplace("Content-Type", "application/json");

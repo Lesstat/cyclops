@@ -81,13 +81,17 @@ struct AlternativeRoutes {
   Route route1;
   Config config2;
   Route route2;
+  double shared;
+  double frechet;
 
-  AlternativeRoutes(
-      const Config& config1, const Route& route1, const Config& config2, const Route& route2)
+  AlternativeRoutes(const Config& config1, const Route& route1, const Config& config2,
+      const Route& route2, double shared, double frechet)
       : config1(config1)
       , route1(route1)
       , config2(config2)
       , route2(route2)
+      , shared(shared)
+      , frechet(frechet)
   {
   }
 };

@@ -124,10 +124,14 @@ AlternativeRoutes RouteExplorer::weightedExplore()
 
   searchAlternative(routes.size() - 1);
 
-  return AlternativeRoutes(first.position, firstRoute, triangles.back().getMiddle(), routes.back());
-}
+  auto& secondRoute = routes.back();
 
-// Point createRouteForPoint(onst PosVector& pos, std::vector<Route> & routes, Dijkstra& d){}
+  auto shared = calculateSharing(firstRoute, secondRoute);
+  auto frechet = DiscreteFrechet(firstRoute, secondRoute, *g).calculate();
+
+  return AlternativeRoutes(
+      first.position, firstRoute, triangles.back().getMiddle(), secondRoute, shared, frechet);
+}
 
 AlternativeRoutes RouteExplorer::exploreGreatestDistance()
 {
@@ -217,9 +221,13 @@ AlternativeRoutes RouteExplorer::exploreGreatestDistance()
     updateDistance(triangle.b());
     updateDistance(triangle.c());
   }
+  auto& firstRoute = routes[middle.routeIndex];
+  auto& secondRoute = routes[maxPoint->routeIndex];
+
+  auto shared = calculateSharing(firstRoute, secondRoute);
 
   return AlternativeRoutes(
-      middle.position, routes[middle.routeIndex], maxPoint->position, routes[maxPoint->routeIndex]);
+      middle.position, firstRoute, maxPoint->position, secondRoute, shared, maxDistance);
 }
 
 struct TriangleNode {
@@ -238,7 +246,8 @@ AlternativeRoutes RouteExplorer::collectAndCombine()
   std::vector<TriangleNode> triangles;
   std::vector<Point> middlePoints;
 
-  auto createChildren = [&](TriangleNode& triangle) -> std::optional<std::pair<Point, Point>> {
+  auto createChildren
+      = [&](TriangleNode& triangle) -> std::optional<std::tuple<Point, Point, double>> {
 
     auto middleVec = triangle.t.calculateMiddle();
     auto middle = createPoint(middleVec);
@@ -274,15 +283,14 @@ AlternativeRoutes RouteExplorer::collectAndCombine()
 
     if (minShared < 0.1) {
       if (minShared == sharedA) {
-        return std::make_pair(A, middle);
+        return std::make_tuple(A, middle, minShared);
       }
       if (minShared == sharedB) {
-        return std::make_pair(B, middle);
+        return std::make_tuple(B, middle, minShared);
       }
       if (minShared == sharedC) {
-        return std::make_pair(C, middle);
+        return std::make_tuple(C, middle, minShared);
       }
-      routes[123443542].edges[1234].costByConfiguration(middleVec);
     }
 
     return {};
@@ -301,9 +309,14 @@ AlternativeRoutes RouteExplorer::collectAndCombine()
   for (size_t i = 0; i < triangles.size(); ++i) {
     auto points = createChildren(triangles[i]);
     if (points && i > 1) {
-      auto[point1, point2] = *points;
-      return AlternativeRoutes(
-          point1.position, routes[point1.routeIndex], point2.position, routes[point2.routeIndex]);
+      auto[point1, point2, shared] = *points;
+
+      auto& first = routes[point1.routeIndex];
+      auto& second = routes[point2.routeIndex];
+
+      double frechet = DiscreteFrechet(first, second, *g).calculate();
+
+      return AlternativeRoutes(point1.position, first, point2.position, second, shared, frechet);
     }
     if (middlePoints.size() > 50) {
       break;
@@ -329,15 +342,24 @@ AlternativeRoutes RouteExplorer::collectAndCombine()
   }
 
   if (bestJ == 0) {
-    return AlternativeRoutes(
-        lengthVec, routes[length.routeIndex], heightVec, routes[height.routeIndex]);
+    auto& lengthRoute = routes[length.routeIndex];
+    auto& heightRoute = routes[height.routeIndex];
+
+    auto shared = calculateSharing(lengthRoute, heightRoute);
+    auto frechet = DiscreteFrechet(lengthRoute, heightRoute, *g).calculate();
+
+    return AlternativeRoutes(lengthVec, lengthRoute, heightVec, heightRoute, shared, frechet);
   }
 
   auto& middleI = middlePoints[bestI];
   auto& middleJ = middlePoints[bestJ];
 
-  return AlternativeRoutes(
-      middleI.position, routes[middleI.routeIndex], middleJ.position, routes[middleJ.routeIndex]);
+  auto& first = routes[middleI.routeIndex];
+  auto& second = routes[middleJ.routeIndex];
+
+  auto frechet = DiscreteFrechet(first, second, *g).calculate();
+
+  return AlternativeRoutes(middleI.position, first, middleJ.position, second, bestShared, frechet);
 }
 
 Config generateRandomConfig()
@@ -374,5 +396,7 @@ AlternativeRoutes RouteExplorer::randomAlternatives()
     shared = calculateSharing(route, route2);
   }
 
-  return AlternativeRoutes(conf1, route, conf2, route2);
+  auto frechet = DiscreteFrechet(route, route2, *g).calculate();
+
+  return AlternativeRoutes(conf1, route, conf2, route2, shared, frechet);
 }

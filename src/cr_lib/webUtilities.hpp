@@ -63,8 +63,8 @@ void extractQueryFields(const SimpleWeb::CaseInsensitiveMultimap& queryFields,
   }
 }
 
-void appendAlternativesToJsonStream(std::stringstream& result, const AlternativeRoutes& routes,
-    double shared, double frechet, const Graph& g)
+void appendAlternativesToJsonStream(
+    std::stringstream& result, const AlternativeRoutes& routes, const Graph& g)
 {
 
   result << R"({ "config1": ")" << std::round(routes.config1.length * 100) << "/"
@@ -76,8 +76,8 @@ void appendAlternativesToJsonStream(std::stringstream& result, const Alternative
          << std::round(routes.config2.height * 100) << "/"
          << std::round(routes.config2.unsuitability * 100) << R"(", )";
   result << R"( "route2":  )" << routeToJson(routes.route2, g) << ", ";
-  result << R"( "shared":  )" << std::round(shared * 100) << ", "
-         << R"( "frechet":  )" << frechet << "}";
+  result << R"( "shared":  )" << std::round(routes.shared * 100) << ", "
+         << R"( "frechet":  )" << routes.frechet << "}";
 }
 
 #endif /* WEBUTILITIES_H */
