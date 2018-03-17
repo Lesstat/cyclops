@@ -103,6 +103,7 @@ class RouteExplorer {
 
   AlternativeRoutes weightedExplore();
   AlternativeRoutes exploreGreatestDistance();
+  AlternativeRoutes collectAndCombine();
 
   protected:
   private:

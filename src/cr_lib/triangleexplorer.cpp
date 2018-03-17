@@ -220,3 +220,121 @@ AlternativeRoutes RouteExplorer::exploreGreatestDistance()
   return AlternativeRoutes(
       middle.position, routes[middle.routeIndex], maxPoint->position, routes[maxPoint->routeIndex]);
 }
+
+struct TriangleNode {
+  Triangle t;
+  std::vector<size_t> children;
+  TriangleNode(Triangle t)
+      : t(std::move(t))
+  {
+    children.reserve(3);
+  }
+};
+
+AlternativeRoutes RouteExplorer::collectAndCombine()
+{
+  routes.clear();
+  std::vector<TriangleNode> triangles;
+  std::vector<Point> middlePoints;
+
+  auto createChildren = [&](TriangleNode& triangle) -> std::optional<std::pair<Point, Point>> {
+
+    auto middleVec = triangle.t.calculateMiddle();
+    auto middle = createPoint(middleVec);
+
+    auto A = triangle.t.a();
+    auto B = triangle.t.b();
+    auto C = triangle.t.c();
+
+    auto& routeA = routes[A.routeIndex];
+    auto& routeB = routes[B.routeIndex];
+    auto& routeC = routes[C.routeIndex];
+    auto& routeM = routes[middle.routeIndex];
+
+    auto sharedA = calculateSharing(routeA, routeM);
+    auto sharedB = calculateSharing(routeB, routeM);
+    auto sharedC = calculateSharing(routeC, routeM);
+
+    auto minShared = std::min({ sharedA, sharedB, sharedC });
+    std::cout << "smallest sharing value: " << minShared << '\n';
+    if (minShared > 0.3) {
+      middlePoints.push_back(middle);
+      return {};
+    }
+
+    triangles.emplace_back(Triangle(middle, B, C));
+    triangle.children.push_back(triangles.size() - 1);
+
+    triangles.emplace_back(Triangle(A, middle, C));
+    triangle.children.push_back(triangles.size() - 1);
+
+    triangles.emplace_back(Triangle(A, B, middle));
+    triangle.children.push_back(triangles.size() - 1);
+
+    if (minShared < 0.1) {
+      if (minShared == sharedA) {
+        return std::make_pair(A, middle);
+      }
+      if (minShared == sharedB) {
+        return std::make_pair(B, middle);
+      }
+      if (minShared == sharedC) {
+        return std::make_pair(C, middle);
+      }
+      routes[123443542].edges[1234].costByConfiguration(middleVec);
+    }
+
+    return {};
+  };
+
+  PosVector lengthVec{ { 1, 0, 0 } };
+  PosVector heightVec{ { 0, 1, 0 } };
+  PosVector unsuitVec{ { 0, 0, 1 } };
+
+  auto length = createPoint(lengthVec);
+  auto height = createPoint(heightVec);
+  auto unsuit = createPoint(unsuitVec);
+
+  triangles.emplace_back(Triangle(length, height, unsuit));
+
+  for (size_t i = 0; i < triangles.size(); ++i) {
+    auto points = createChildren(triangles[i]);
+    if (points && i > 1) {
+      auto[point1, point2] = *points;
+      return AlternativeRoutes(
+          point1.position, routes[point1.routeIndex], point2.position, routes[point2.routeIndex]);
+    }
+    if (middlePoints.size() > 50) {
+      break;
+    }
+  }
+
+  double bestShared = 1;
+  size_t bestI = 0;
+  size_t bestJ = 0;
+
+  std::cout << "evaluating triangles" << '\n';
+  for (size_t i = 0; i < middlePoints.size(); ++i) {
+    auto& routeI = routes[middlePoints[i].routeIndex];
+    for (size_t j = i + 1; j < middlePoints.size(); ++j) {
+      auto& routeJ = routes[middlePoints[j].routeIndex];
+      auto shared = calculateSharing(routeI, routeJ);
+      if (shared < bestShared) {
+        bestShared = shared;
+        bestI = i;
+        bestJ = j;
+      }
+    }
+  }
+
+  if (bestJ == 0) {
+    return AlternativeRoutes(
+        lengthVec, routes[length.routeIndex], heightVec, routes[height.routeIndex]);
+  }
+
+  auto& middleI = middlePoints[bestI];
+  auto& middleJ = middlePoints[bestJ];
+
+  return AlternativeRoutes(
+      middleI.position, routes[middleI.routeIndex], middleJ.position, routes[middleJ.routeIndex]);
+}
