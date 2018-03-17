@@ -104,8 +104,8 @@ class RouteExplorer {
   AlternativeRoutes weightedExplore();
   AlternativeRoutes exploreGreatestDistance();
   AlternativeRoutes collectAndCombine();
+  AlternativeRoutes randomAlternatives();
 
-  protected:
   private:
   Point createPoint(const PosVector& pos);
 

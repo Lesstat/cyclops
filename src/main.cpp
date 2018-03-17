@@ -29,18 +29,6 @@
 #include <fstream>
 #include <random>
 
-Config generateRandomConfig()
-{
-  std::random_device rd{};
-  std::uniform_real_distribution lenDist(0.0, 1.0);
-  LengthConfig l(lenDist(rd));
-  std::uniform_real_distribution heightDist(0.0, 1.0 - l.get());
-  HeightConfig h(heightDist(rd));
-  UnsuitabilityConfig u(1 - l - h);
-
-  return Config{ l, h, u };
-}
-
 Graph loadGraphFromTextFile(std::string& graphPath)
 {
   const size_t N = 256 * 1024;
@@ -227,77 +215,7 @@ void runWebServer(Graph& g)
 
   };
 
-  server.resource["^/alternative/random"]["GET"]
-      = [&g, &dijkstra](Response response, Request request) {
-          std::optional<size_t> s{}, t{}, dummy{};
-          extractQueryFields(request->parse_query_string(), s, t, dummy, dummy, dummy);
-
-          if (!(s && t)) {
-            response->write(SimpleWeb::StatusCode::client_error_bad_request,
-                "Request needs to contain the parameters: s, t");
-            return;
-          }
-          std::stringstream result;
-
-          std::optional<Route> route = {};
-          std::optional<Route> route2 = {};
-          Config conf1{ LengthConfig{ 0 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } };
-          Config conf2{ LengthConfig{ 0 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } };
-          double shared = 1.0;
-          double threshold = 0.3;
-
-          size_t counter = 0;
-          while (shared > threshold) {
-            if (++counter % 100 == 0) {
-              threshold += 0.1;
-            }
-            conf1 = generateRandomConfig();
-            route = dijkstra.findBestRoute(NodePos{ *s }, NodePos{ *t }, conf1);
-            if (!route) {
-              response->write(SimpleWeb::StatusCode::client_error_not_found, "Did not find route");
-              return;
-            }
-
-            conf2 = generateRandomConfig();
-            route2 = dijkstra.findBestRoute(NodePos{ *s }, NodePos{ *t }, conf2);
-            shared = calculateSharing(*route, *route2);
-          }
-
-          double frechet = DiscreteFrechet(*route, *route2, g).calculate();
-
-          appendAlternativesToJsonStream(
-              result, AlternativeRoutes(conf1, *route, conf2, *route2), shared, frechet, g);
-
-          SimpleWeb::CaseInsensitiveMultimap header;
-          header.emplace("Content-Type", "application/json");
-          response->write(SimpleWeb::StatusCode::success_ok, result, header);
-
-        };
-
-  server.resource["^/alternative/weighted"]["GET"] = [&g](Response response, Request request) {
-    std::optional<size_t> s{}, t{}, dummy{};
-    extractQueryFields(request->parse_query_string(), s, t, dummy, dummy, dummy);
-
-    if (!(s && t)) {
-      response->write(SimpleWeb::StatusCode::client_error_bad_request,
-          "Request needs to contain the parameters: s, t");
-      return;
-    }
-    std::stringstream result;
-    auto routes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).weightedExplore();
-
-    double frechet = DiscreteFrechet(routes.route1, routes.route2, g).calculate();
-    double shared = calculateSharing(routes.route1, routes.route2);
-
-    appendAlternativesToJsonStream(result, routes, shared, frechet, g);
-
-    SimpleWeb::CaseInsensitiveMultimap header;
-    header.emplace("Content-Type", "application/json");
-    response->write(SimpleWeb::StatusCode::success_ok, result, header);
-
-  };
-
-  server.resource["^/alternative/distance"]["GET"] = [&g](Response response, Request request) {
+  server.resource["^/alternative/.*"]["GET"] = [&g](Response response, Request request) {
     std::optional<size_t> s{}, t{}, dummy{};
 
     extractQueryFields(request->parse_query_string(), s, t, dummy, dummy, dummy);
@@ -307,7 +225,22 @@ void runWebServer(Graph& g)
       return;
     }
     std::stringstream result;
-    auto routes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).exploreGreatestDistance();
+    std::optional<AlternativeRoutes> optRoutes;
+    if (request->path.find("weighted") != std::string::npos) {
+      optRoutes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).weightedExplore();
+    } else if (request->path.find("distance") != std::string::npos) {
+      optRoutes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).exploreGreatestDistance();
+    } else if (request->path.find("collect") != std::string::npos) {
+      optRoutes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).collectAndCombine();
+    } else if (request->path.find("random") != std::string::npos) {
+      optRoutes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).randomAlternatives();
+    } else {
+      response->write(SimpleWeb::StatusCode::client_error_bad_request,
+          "no handler for this kind of alternative route");
+      return;
+    }
+
+    auto routes = optRoutes.value();
 
     double frechet = DiscreteFrechet(routes.route1, routes.route2, g).calculate();
     double shared = calculateSharing(routes.route1, routes.route2);
@@ -330,12 +263,13 @@ int testGraph(Graph& g)
   NormalDijkstra n = g.createNormalDijkstra(true);
   std::random_device rd{};
   std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
-  Config c{ LengthConfig{ 0.33 }, HeightConfig{ 0.33 }, UnsuitabilityConfig{ 0.33 } };
+  Config c{ LengthConfig{ 1.0 / 3.0 }, HeightConfig{ 1.0 / 3.0 },
+    UnsuitabilityConfig{ 1.0 / 3.0 } };
 
   size_t route = 0;
   size_t noRoute = 0;
 
-  for (int i = 0; i < 100; ++i) {
+  for (int i = 0; i < 1000; ++i) {
     NodePos from{ dist(rd) };
     NodePos to{ dist(rd) };
 
@@ -351,7 +285,7 @@ int testGraph(Graph& g)
       auto chTime = std::chrono::duration_cast<ms>(dEnd - dStart).count();
       std::cout << "ND/CH: " << normalTime << "/" << chTime << " = " << normalTime / chTime << '\n';
       ++route;
-      if (std::abs(dRoute->costs * c - nRoute->costs * c) > 0.01) {
+      if (std::abs(dRoute->costs * c - nRoute->costs * c) > 0.1) {
         std::cout << '\n' << "cost differ in route from " << from << " to " << to << '\n';
         std::cout << "dLength: " << dRoute->costs.length << ", nLength: " << nRoute->costs.length
                   << '\n';

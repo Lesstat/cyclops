@@ -43,9 +43,10 @@
 	    <div class="card-block">
 	      <div class="card-header">Alternative Routes</div>
 	      <div class="card-text container">
-		<button type="button" onclick="randomSample()" >Random Sampling</button> <br />
-		<button type="button" onclick="exploration()" >Explore Value Space</button> <br />
-		<button type="button" onclick="greatestDistance()" >Greatest Distance</button> <br />
+		<button type="button" onclick="alternativeRoutes('random')" >Random Sampling</button> <br />
+		<button type="button" onclick="alternativeRoutes('weighted')" >Explore Value Space</button> <br />
+		<button type="button" onclick="alternativeRoutes('distance')" >Greatest Distance</button> <br />
+		<button type="button" onclick="alternativeRoutes('collect')" >Collect and Combine</button> <br />
 		Blue  Config: <span id="blue_conf" ></span> <br />
 		Green Config: <span id="green_conf" ></span> <br />
 		Shared Part: <span id="shared">0</span>% <br />

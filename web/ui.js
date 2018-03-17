@@ -123,16 +123,6 @@ function panOutMap() {
   xmlhttp.open("GET", "/map_coords");
   xmlhttp.send();
 }
-function randomSample() {
-  alternativeRoutes("random");
-}
-
-function exploration() {
-  alternativeRoutes("weighted");
-}
-function greatestDistance() {
-  alternativeRoutes("distance");
-}
 
 function alternativeRoutes(kind) {
   geoJson.clearLayers();

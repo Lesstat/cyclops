@@ -17,6 +17,7 @@
 */
 
 #include "triangleexplorer.hpp"
+#include <random>
 
 RouteExplorer::RouteExplorer(Graph* g, NodePos from, NodePos to)
     : g(g)
@@ -337,4 +338,41 @@ AlternativeRoutes RouteExplorer::collectAndCombine()
 
   return AlternativeRoutes(
       middleI.position, routes[middleI.routeIndex], middleJ.position, routes[middleJ.routeIndex]);
+}
+
+Config generateRandomConfig()
+{
+  std::random_device rd{};
+  std::uniform_real_distribution lenDist(0.0, 1.0);
+  LengthConfig l(lenDist(rd));
+  std::uniform_real_distribution heightDist(0.0, 1.0 - l.get());
+  HeightConfig h(heightDist(rd));
+  UnsuitabilityConfig u(1 - l - h);
+
+  return Config{ l, h, u };
+}
+
+AlternativeRoutes RouteExplorer::randomAlternatives()
+{
+  Route route = {};
+  Route route2 = {};
+  Config conf1{ LengthConfig{ 0 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } };
+  Config conf2{ LengthConfig{ 0 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } };
+  double shared = 1.0;
+  double threshold = 0.3;
+
+  size_t counter = 0;
+  while (shared > threshold) {
+    if (++counter % 100 == 0) {
+      threshold += 0.1;
+    }
+    conf1 = generateRandomConfig();
+    route = d.findBestRoute(from, to, conf1).value();
+
+    conf2 = generateRandomConfig();
+    route2 = d.findBestRoute(from, to, conf2).value();
+    shared = calculateSharing(route, route2);
+  }
+
+  return AlternativeRoutes(conf1, route, conf2, route2);
 }
