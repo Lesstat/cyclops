@@ -87,13 +87,13 @@ double calculateSharing(const Route& referenceRoute, const Route& otherRoute)
   std::set<EdgeId> edges;
   std::transform(begin(referenceRoute.edges), end(referenceRoute.edges),
       std::inserter(edges, begin(edges)), [](const auto& edge) { return edge.getId(); });
-  size_t sharedCounter = 0;
+  double sharedLength = 0;
   for (const auto& edge : otherRoute.edges) {
     if (edges.find(edge.getId()) != edges.end()) {
-      ++sharedCounter;
+      sharedLength += edge.getCost().length;
     }
   }
 
-  size_t maxEdges = std::max(referenceRoute.edges.size(), otherRoute.edges.size());
-  return static_cast<double>(sharedCounter) / maxEdges;
+  size_t maxLength = std::max(referenceRoute.costs.length, otherRoute.costs.length);
+  return sharedLength / maxLength;
 }
