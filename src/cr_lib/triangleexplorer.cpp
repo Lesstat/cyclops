@@ -230,7 +230,7 @@ AlternativeRoutes RouteExplorer::exploreGreatestDistance()
       middle.position, firstRoute, maxPoint->position, secondRoute, shared, maxDistance);
 }
 
-AlternativeRoutes RouteExplorer::collectAndCombine()
+AlternativeRoutes RouteExplorer::optimizeSharing()
 {
   routes.clear();
   std::vector<Triangle> triangles;
@@ -378,6 +378,20 @@ AlternativeRoutes RouteExplorer::randomAlternatives()
     route2 = d.findBestRoute(from, to, conf2).value();
     shared = calculateSharing(route, route2);
   }
+
+  auto frechet = DiscreteFrechet(route, route2, *g).calculate();
+
+  return AlternativeRoutes(conf1, route, conf2, route2, shared, frechet);
+}
+
+AlternativeRoutes RouteExplorer::trulyRandomAlternatives()
+{
+  auto conf1 = generateRandomConfig();
+  auto route = d.findBestRoute(from, to, conf1).value();
+
+  auto conf2 = generateRandomConfig();
+  auto route2 = d.findBestRoute(from, to, conf2).value();
+  auto shared = calculateSharing(route, route2);
 
   auto frechet = DiscreteFrechet(route, route2, *g).calculate();
 

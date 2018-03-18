@@ -230,10 +230,12 @@ void runWebServer(Graph& g)
       optRoutes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).weightedExplore();
     } else if (request->path.find("distance") != std::string::npos) {
       optRoutes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).exploreGreatestDistance();
-    } else if (request->path.find("collect") != std::string::npos) {
-      optRoutes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).collectAndCombine();
+    } else if (request->path.find("sharing") != std::string::npos) {
+      optRoutes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).optimizeSharing();
     } else if (request->path.find("random") != std::string::npos) {
       optRoutes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).randomAlternatives();
+    } else if (request->path.find("trulyRandom") != std::string::npos) {
+      optRoutes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).trulyRandomAlternatives();
     } else {
       response->write(SimpleWeb::StatusCode::client_error_bad_request,
           "no handler for this kind of alternative route");
@@ -278,32 +280,26 @@ void runWebServer(Graph& g)
       counter++;
       RouteExplorer explorer{ &g, from, to };
       auto start = std::chrono::high_resolution_clock::now();
-      auto altRoutes = explorer.randomAlternatives();
+      auto altRoutes = explorer.trulyRandomAlternatives();
       auto end = std::chrono::high_resolution_clock::now();
       auto duration = std::chrono::duration_cast<ms>(end - start).count();
 
       appendCsvLine(result, "random", from, to, altRoutes, duration, shortest->costs.length);
 
       start = std::chrono::high_resolution_clock::now();
-      altRoutes = explorer.weightedExplore();
+      altRoutes = explorer.randomAlternatives();
       end = std::chrono::high_resolution_clock::now();
       duration = std::chrono::duration_cast<ms>(end - start).count();
 
-      appendCsvLine(result, "weighted", from, to, altRoutes, duration, shortest->costs.length);
+      appendCsvLine(
+          result, "enhancedRandom", from, to, altRoutes, duration, shortest->costs.length);
 
       start = std::chrono::high_resolution_clock::now();
-      altRoutes = explorer.exploreGreatestDistance();
+      altRoutes = explorer.optimizeSharing();
       end = std::chrono::high_resolution_clock::now();
       duration = std::chrono::duration_cast<ms>(end - start).count();
 
-      appendCsvLine(result, "distance", from, to, altRoutes, duration, shortest->costs.length);
-
-      start = std::chrono::high_resolution_clock::now();
-      altRoutes = explorer.collectAndCombine();
-      end = std::chrono::high_resolution_clock::now();
-      duration = std::chrono::duration_cast<ms>(end - start).count();
-
-      appendCsvLine(result, "collect", from, to, altRoutes, duration, shortest->costs.length);
+      appendCsvLine(result, "sharing", from, to, altRoutes, duration, shortest->costs.length);
     }
 
     response->write(SimpleWeb::StatusCode::success_ok, result);
