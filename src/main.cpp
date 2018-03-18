@@ -250,6 +250,58 @@ void runWebServer(Graph& g)
 
   };
 
+  server.resource["^/csv"]["GET"] = [&g, &dijkstra](Response response, Request /*request*/) {
+
+    using ms = std::chrono::milliseconds;
+    std::stringstream result;
+    result
+        << "from, to, method, shared, ferchet, time, config1, length1, config2, length2, shortest"
+        << '\n';
+    Config lengthOnly{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } };
+    std::random_device rd{};
+    std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
+    size_t counter = 0;
+    while (counter < 10) {
+      NodePos from{ dist(rd) };
+      NodePos to{ dist(rd) };
+      auto shortest = dijkstra.findBestRoute(from, to, lengthOnly);
+      if (!shortest) {
+        continue;
+      }
+      counter++;
+      RouteExplorer explorer{ &g, from, to };
+      auto start = std::chrono::high_resolution_clock::now();
+      auto altRoutes = explorer.randomAlternatives();
+      auto end = std::chrono::high_resolution_clock::now();
+      auto duration = std::chrono::duration_cast<ms>(end - start).count();
+
+      appendCsvLine(result, "random", from, to, altRoutes, duration, shortest->costs.length);
+
+      start = std::chrono::high_resolution_clock::now();
+      altRoutes = explorer.weightedExplore();
+      end = std::chrono::high_resolution_clock::now();
+      duration = std::chrono::duration_cast<ms>(end - start).count();
+
+      appendCsvLine(result, "weighted", from, to, altRoutes, duration, shortest->costs.length);
+
+      start = std::chrono::high_resolution_clock::now();
+      altRoutes = explorer.exploreGreatestDistance();
+      end = std::chrono::high_resolution_clock::now();
+      duration = std::chrono::duration_cast<ms>(end - start).count();
+
+      appendCsvLine(result, "distance", from, to, altRoutes, duration, shortest->costs.length);
+
+      start = std::chrono::high_resolution_clock::now();
+      altRoutes = explorer.collectAndCombine();
+      end = std::chrono::high_resolution_clock::now();
+      duration = std::chrono::duration_cast<ms>(end - start).count();
+
+      appendCsvLine(result, "collect", from, to, altRoutes, duration, shortest->costs.length);
+    }
+
+    response->write(SimpleWeb::StatusCode::success_ok, result);
+  };
+
   std::cout << "Starting web server at http://localhost:" << server.config.port << '\n';
   server.start();
 }

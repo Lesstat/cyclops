@@ -80,4 +80,15 @@ void appendAlternativesToJsonStream(
          << R"( "frechet":  )" << routes.frechet << "}";
 }
 
+void appendCsvLine(std::stringstream& result, const std::string& method, NodePos from, NodePos to,
+    const AlternativeRoutes& altRoutes, long duration, const Length& shortestLength)
+{
+  result << from << ", " << to << ", " << method << ", " << altRoutes.shared << ", "
+         << altRoutes.frechet << ", " << duration << ", " << altRoutes.config1.length << "/"
+         << altRoutes.config1.height << "/" << altRoutes.config1.unsuitability << ", "
+         << altRoutes.route1.costs.length << ", " << altRoutes.config2.length << "/"
+         << altRoutes.config2.height << "/" << altRoutes.config2.unsuitability << ", "
+         << altRoutes.route2.costs.length << ", " << shortestLength << '\n';
+}
+
 #endif /* WEBUTILITIES_H */
