@@ -262,7 +262,7 @@ void runWebServer(Graph& g)
     using ms = std::chrono::milliseconds;
     std::stringstream result;
     result
-        << "from, to, method, shared, ferchet, time, config1, length1, config2, length2, shortest"
+        << "from, to, method, shared, frechet, time, config1, length1, config2, length2, shortest"
         << '\n';
     Config lengthOnly{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } };
     std::random_device rd{};

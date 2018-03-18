@@ -113,7 +113,7 @@ float Cost::operator*(const Config& conf) const
               << "unsuit " << this->unsuitability << " * " << conf.unsuitability << '\n';
     assert(false);
   }
-  return combinedCost + std::numeric_limits<float>::epsilon();
+  return combinedCost;
 }
 
 NodePos Edge::sourcePos() const { return sourcePos_; }
