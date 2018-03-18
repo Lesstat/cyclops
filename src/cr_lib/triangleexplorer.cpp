@@ -364,7 +364,7 @@ AlternativeRoutes RouteExplorer::randomAlternatives()
   Config conf1{ LengthConfig{ 0 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } };
   Config conf2{ LengthConfig{ 0 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } };
   double shared = 1.0;
-  double threshold = 0.3;
+  double threshold = 0.1;
 
   size_t counter = 0;
   while (shared > threshold) {
