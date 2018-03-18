@@ -255,7 +255,6 @@ AlternativeRoutes RouteExplorer::optimizeSharing()
     auto sharedC = calculateSharing(routeC, routeM);
 
     auto minShared = std::min({ sharedA, sharedB, sharedC });
-    std::cout << "smallest sharing value: " << minShared << '\n';
     if (minShared > 0.3) {
       middlePoints.push_back(middle);
       return {};
@@ -310,7 +309,6 @@ AlternativeRoutes RouteExplorer::optimizeSharing()
   size_t bestI = 0;
   size_t bestJ = 0;
 
-  std::cout << "evaluating triangles" << '\n';
   for (size_t i = 0; i < middlePoints.size(); ++i) {
     auto& routeI = routes[middlePoints[i].routeIndex];
     for (size_t j = i + 1; j < middlePoints.size(); ++j) {
