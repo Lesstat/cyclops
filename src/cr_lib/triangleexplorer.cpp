@@ -230,31 +230,20 @@ AlternativeRoutes RouteExplorer::exploreGreatestDistance()
       middle.position, firstRoute, maxPoint->position, secondRoute, shared, maxDistance);
 }
 
-struct TriangleNode {
-  Triangle t;
-  std::vector<size_t> children;
-  TriangleNode(Triangle t)
-      : t(std::move(t))
-  {
-    children.reserve(3);
-  }
-};
-
 AlternativeRoutes RouteExplorer::collectAndCombine()
 {
   routes.clear();
-  std::vector<TriangleNode> triangles;
+  std::vector<Triangle> triangles;
   std::vector<Point> middlePoints;
 
-  auto createChildren
-      = [&](TriangleNode& triangle) -> std::optional<std::tuple<Point, Point, double>> {
+  auto createChildren = [&](Triangle& triangle) -> std::optional<std::tuple<Point, Point, double>> {
 
-    auto middleVec = triangle.t.calculateMiddle();
+    auto middleVec = triangle.calculateMiddle();
     auto middle = createPoint(middleVec);
 
-    auto A = triangle.t.a();
-    auto B = triangle.t.b();
-    auto C = triangle.t.c();
+    auto A = triangle.a();
+    auto B = triangle.b();
+    auto C = triangle.c();
 
     auto& routeA = routes[A.routeIndex];
     auto& routeB = routes[B.routeIndex];
@@ -272,15 +261,9 @@ AlternativeRoutes RouteExplorer::collectAndCombine()
       return {};
     }
 
-    triangles.emplace_back(Triangle(middle, B, C));
-    triangle.children.push_back(triangles.size() - 1);
-
-    triangles.emplace_back(Triangle(A, middle, C));
-    triangle.children.push_back(triangles.size() - 1);
-
-    triangles.emplace_back(Triangle(A, B, middle));
-    triangle.children.push_back(triangles.size() - 1);
-
+    triangles.emplace_back(middle, B, C);
+    triangles.emplace_back(A, middle, C);
+    triangles.emplace_back(A, B, middle);
     if (minShared < 0.1) {
       if (minShared == sharedA) {
         return std::make_tuple(A, middle, minShared);
@@ -304,7 +287,7 @@ AlternativeRoutes RouteExplorer::collectAndCombine()
   auto height = createPoint(heightVec);
   auto unsuit = createPoint(unsuitVec);
 
-  triangles.emplace_back(Triangle(length, height, unsuit));
+  triangles.emplace_back(length, height, unsuit);
 
   for (size_t i = 0; i < triangles.size(); ++i) {
     auto points = createChildren(triangles[i]);
