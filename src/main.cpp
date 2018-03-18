@@ -250,7 +250,14 @@ void runWebServer(Graph& g)
 
   };
 
-  server.resource["^/csv"]["GET"] = [&g, &dijkstra](Response response, Request /*request*/) {
+  server.resource["^/csv"]["GET"] = [&g, &dijkstra](Response response, Request request) {
+
+    size_t sampleSize = 10;
+    for (const auto& field : request->parse_query_string()) {
+      if (field.first == "samplesize") {
+        sampleSize = stoull(field.second);
+      }
+    }
 
     using ms = std::chrono::milliseconds;
     std::stringstream result;
@@ -261,7 +268,7 @@ void runWebServer(Graph& g)
     std::random_device rd{};
     std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
     size_t counter = 0;
-    while (counter < 10) {
+    while (counter < sampleSize) {
       NodePos from{ dist(rd) };
       NodePos to{ dist(rd) };
       auto shortest = dijkstra.findBestRoute(from, to, lengthOnly);
