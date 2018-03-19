@@ -290,7 +290,7 @@ AlternativeRoutes RouteExplorer::optimizeSharing()
 
   for (size_t i = 0; i < triangles.size(); ++i) {
     auto points = createChildren(triangles[i]);
-    if (points && i > 1) {
+    if (points) {
       auto[point1, point2, shared] = *points;
 
       auto& first = routes[point1.routeIndex];
@@ -300,7 +300,7 @@ AlternativeRoutes RouteExplorer::optimizeSharing()
 
       return AlternativeRoutes(point1.position, first, point2.position, second, shared, frechet);
     }
-    if (middlePoints.size() > 50) {
+    if (middlePoints.size() > 25) {
       break;
     }
   }

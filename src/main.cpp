@@ -300,6 +300,10 @@ void runWebServer(Graph& g)
       duration = std::chrono::duration_cast<ms>(end - start).count();
 
       appendCsvLine(result, "sharing", from, to, altRoutes, duration, shortest->costs.length);
+
+      if (counter % 10 == 0) {
+        std::cout << "Finished " << counter << " s-t combinations" << '\n';
+      }
     }
 
     response->write(SimpleWeb::StatusCode::success_ok, result);
