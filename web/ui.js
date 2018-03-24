@@ -190,6 +190,84 @@ function alternativeRoutes(kind) {
   xmlhttp.open("GET", "/alternative/" + kind + "?s=" + s + "&t=" + t);
   xmlhttp.send();
 }
+function rainbow(number) {
+  let colors = [
+    "#8dd3c7",
+    "#ffffb3",
+    "#bebada",
+    "#fb8072",
+    "#80b1d3",
+    "#fdb462",
+    "#b3de69",
+    "#fccde5",
+    "#d9d9d9",
+    "#bc80bd",
+    "#ccebc5",
+    "#ffed6f",
+    "#a6cee3",
+    "#1f78b4",
+    "#b2df8a",
+    "#33a02c",
+    "#fb9a99",
+    "#e31a1c",
+    "#fdbf6f",
+    "#ff7f00",
+    "#cab2d6",
+    "#6a3d9a",
+    "#ffff99",
+    "#b15928"
+  ];
+  return colors[number % colors.length];
+}
+function triangleSplitting() {
+  geoJson.clearLayers();
+  let xmlhttp = new XMLHttpRequest();
+
+  xmlhttp.responseType = "json";
+  xmlhttp.onload = function() {
+    if (xmlhttp.status == 200) {
+      drawTriangle();
+
+      let routes = xmlhttp.response;
+      for (var rc in routes) {
+        let col = rainbow(rc);
+
+        let myStyle = {
+          color: col,
+          weight: 8,
+          opacity: 1
+        };
+
+        let values = routes[rc].config.split("/");
+        let x =
+          lengthCorner.x * values[0] +
+          heightCorner.x * values[1] +
+          unsuitabilityCorner.x * values[2];
+        let y =
+          lengthCorner.y * values[0] +
+          heightCorner.y * values[1] +
+          unsuitabilityCorner.y * values[2];
+
+        drawDot(x, y, col);
+
+        geoJson.addLayer(
+          L.geoJSON(routes[rc].route.route.geometry, { style: myStyle })
+        );
+      }
+
+      document.getElementById("shared").innerHTML = "Unknown";
+      document.getElementById("frechet").innerHTML = "Unknown";
+    } else {
+      document.getElementById("route_length").innerHTML = "Unknown";
+      document.getElementById("route_height").innerHTML = "Unknown";
+      document.getElementById("route_unsuitability").innerHTML = "Unknown";
+    }
+  };
+  let s = document.getElementById("start").innerHTML;
+  let t = document.getElementById("end").innerHTML;
+  xmlhttp.open("GET", "/splitting" + "?s=" + s + "&t=" + t);
+  xmlhttp.send();
+}
 
 function initializeCanvas() {
   let canvas = document.getElementById("triangleSelector");
