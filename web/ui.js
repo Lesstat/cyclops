@@ -192,30 +192,28 @@ function alternativeRoutes(kind) {
 }
 function rainbow(number) {
   let colors = [
-    "#8dd3c7",
-    "#ffffb3",
-    "#bebada",
-    "#fb8072",
-    "#80b1d3",
-    "#fdb462",
-    "#b3de69",
-    "#fccde5",
-    "#d9d9d9",
-    "#bc80bd",
-    "#ccebc5",
-    "#ffed6f",
-    "#a6cee3",
-    "#1f78b4",
-    "#b2df8a",
-    "#33a02c",
-    "#fb9a99",
-    "#e31a1c",
-    "#fdbf6f",
-    "#ff7f00",
-    "#cab2d6",
-    "#6a3d9a",
-    "#ffff99",
-    "#b15928"
+    "#543005",
+    "#8c510a",
+    "#bf812d",
+    "#dfc27d",
+    "#f6e8c3",
+    "#000000",
+    "#c7eae5",
+    "#80cdc1",
+    "#35978f",
+    "#01665e",
+    "#003c30",
+    "#a50026",
+    "#d73027",
+    "#f46d43",
+    "#fdae61",
+    "#fee08b",
+    "#333333",
+    "#d9ef8b",
+    "#a6d96a",
+    "#66bd63",
+    "#1a9850",
+    "#006837"
   ];
   return colors[number % colors.length];
 }
@@ -234,7 +232,7 @@ function triangleSplitting() {
 
         let myStyle = {
           color: col,
-          weight: 8,
+          weight: 4,
           opacity: 1
         };
 
