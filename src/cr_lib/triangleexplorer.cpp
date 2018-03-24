@@ -17,6 +17,7 @@
 */
 
 #include "triangleexplorer.hpp"
+#include <queue>
 #include <random>
 
 RouteExplorer::RouteExplorer(Graph* g, NodePos from, NodePos to)
@@ -394,4 +395,133 @@ AlternativeRoutes RouteExplorer::trulyRandomAlternatives()
   auto frechet = DiscreteFrechet(route, route2, *g).calculate();
 
   return AlternativeRoutes(conf1, route, conf2, route2, shared, frechet);
+}
+
+std::vector<std::tuple<Config, Route>> RouteExplorer::triangleSplitting()
+{
+  using QueueElem = std::tuple<Triangle, double>;
+  auto cmp = [](const QueueElem& a, const QueueElem& b) {
+    return std::get<double>(a) > std::get<double>(b);
+  };
+  using Queue = std::priority_queue<QueueElem, std::vector<QueueElem>, decltype(cmp)>;
+
+  const double SHARING_THRESHOLD = 0.3;
+
+  Queue triangles{ cmp };
+
+  routes.clear();
+  std::vector<Point> points;
+
+  PosVector lengthVec{ { 1, 0, 0 } };
+  PosVector heightVec{ { 0, 1, 0 } };
+  PosVector unsuitVec{ { 0, 0, 1 } };
+
+  auto length = createPoint(lengthVec);
+  auto height = createPoint(heightVec);
+  auto unsuit = createPoint(unsuitVec);
+
+  points.push_back(length);
+  points.push_back(height);
+  points.push_back(unsuit);
+
+  triangles.emplace(Triangle{ length, height, unsuit }, 0.0);
+
+  auto isPointOnLine = [](const PosVector& point, const PosVector& a, const PosVector& b) {
+    return std::abs(point.distance(a) + point.distance(b) - a.distance(b)) < 0.0001;
+  };
+
+  auto createChildren = [&](Triangle& triangle) {
+
+    auto middleVec = triangle.calculateMiddle();
+    auto middle = createPoint(middleVec);
+    points.push_back(middle);
+
+    auto A = triangle.a();
+    auto B = triangle.b();
+    auto C = triangle.c();
+
+    auto& routeA = routes[A.routeIndex];
+    auto& routeB = routes[B.routeIndex];
+    auto& routeC = routes[C.routeIndex];
+    auto& routeM = routes[middle.routeIndex];
+
+    auto sharedA = calculateSharing(routeA, routeM);
+    auto sharedB = calculateSharing(routeB, routeM);
+    auto sharedC = calculateSharing(routeC, routeM);
+
+    auto minShared = std::min({ sharedA, sharedB, sharedC });
+    if (minShared > SHARING_THRESHOLD) {
+      return;
+    }
+
+    Point* outerPoint1 = nullptr;
+    Point* outerPoint2 = nullptr;
+    Point* innerPoint = nullptr;
+    double innerShared = 0;
+
+    auto checkSideSplit = [&](const PosVector& corner1, const PosVector& corner2) {
+      if (isPointOnLine(A.position, corner1, corner2)) {
+        outerPoint1 = &A;
+      } else {
+        innerPoint = &A;
+        innerShared = sharedA;
+      }
+      if (isPointOnLine(B.position, corner1, corner2)) {
+        if (outerPoint1 == nullptr) {
+          outerPoint1 = &B;
+        } else {
+          outerPoint2 = &B;
+        }
+      } else {
+        if (innerPoint == nullptr) {
+          innerPoint = &B;
+          innerShared = sharedB;
+        } else {
+          return false;
+        }
+      }
+      if (isPointOnLine(C.position, corner1, corner2)) {
+        if (outerPoint1 == nullptr) {
+          return false;
+        }
+        outerPoint2 = &C;
+      } else {
+        innerPoint = &C;
+        innerShared = sharedC;
+      }
+      return outerPoint1 != nullptr && outerPoint2 != nullptr && innerPoint != nullptr;
+    };
+
+    if ((checkSideSplit(lengthVec, heightVec) || checkSideSplit(lengthVec, unsuitVec)
+            || checkSideSplit(heightVec, unsuitVec))
+        && (innerShared > SHARING_THRESHOLD)) {
+      std::cout << "Alternative split" << '\n';
+      auto sideCenterVec = (outerPoint1->position + outerPoint2->position) * 0.5;
+      auto sideCenter = createPoint(sideCenterVec);
+      triangles.emplace(Triangle{ *outerPoint1, sideCenter, *innerPoint }, minShared);
+      triangles.emplace(Triangle{ *outerPoint2, sideCenter, *innerPoint }, minShared);
+    } else {
+      triangles.emplace(Triangle{ middle, B, C }, minShared);
+      triangles.emplace(Triangle{ A, middle, C }, minShared);
+      triangles.emplace(Triangle{ A, B, middle }, minShared);
+    }
+
+  };
+
+  while (!triangles.empty()) {
+    auto triangle = triangles.top();
+    triangles.pop();
+    createChildren(std::get<Triangle>(triangle));
+    if (points.size() > 23) {
+      std::cout << "reached point limit" << '\n';
+      break;
+    }
+  }
+  std::vector<std::tuple<Config, Route>> result;
+  result.reserve(routes.size());
+  for (const auto& point : points) {
+    result.emplace_back(point.position, routes[point.routeIndex]);
+  }
+  std::cout << "Returning " << result.size() << " routes." << '\n';
+  return result;
 }

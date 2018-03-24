@@ -309,6 +309,36 @@ void runWebServer(Graph& g)
     response->write(SimpleWeb::StatusCode::success_ok, result);
   };
 
+  server.resource["^/splitting"]["GET"] = [&g](Response response, Request request) {
+    std::optional<size_t> s{}, t{}, dummy{};
+
+    extractQueryFields(request->parse_query_string(), s, t, dummy, dummy, dummy);
+    if (!(s && t)) {
+      response->write(SimpleWeb::StatusCode::client_error_bad_request,
+          "Request needs to contain the parameters: s, t");
+      return;
+    }
+    auto routes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).triangleSplitting();
+    std::stringstream result;
+
+    result << "[";
+
+    for (const auto& r : routes) {
+      const auto & [ conf, route ] = r;
+      result << "{ \"config\": \"" << conf.length << "/" << conf.height << "/" << conf.unsuitability
+             << "\", ";
+      result << "\"route\": " << routeToJson(route, g) << "},";
+    }
+    auto stringResult = result.str();
+    stringResult.pop_back();
+    stringResult.push_back(']');
+
+    SimpleWeb::CaseInsensitiveMultimap header;
+    header.emplace("Content-Type", "application/json");
+    response->write(SimpleWeb::StatusCode::success_ok, stringResult, header);
+
+  };
+
   std::cout << "Starting web server at http://localhost:" << server.config.port << '\n';
   server.start();
 }

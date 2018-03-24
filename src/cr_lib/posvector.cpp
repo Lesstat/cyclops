@@ -17,6 +17,7 @@
 */
 
 #include "posvector.hpp"
+#include <cmath>
 
 PosVector::PosVector(const std::vector<double>&& values)
     : values(std::move(values))
@@ -67,4 +68,15 @@ PosVector::operator Config() const
   checkSizes(3);
   return Config(
       LengthConfig{ values[0] }, HeightConfig{ values[1] }, UnsuitabilityConfig{ values[2] });
+}
+
+double PosVector::distance(const PosVector& other) const
+{
+  checkSizes(other.values.size());
+
+  double sum = 0;
+  for (size_t i = 0; i < values.size(); ++i) {
+    sum += std::pow(values[i] - other.values[i], 2);
+  }
+  return std::sqrt(sum);
 }

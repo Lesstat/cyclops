@@ -35,6 +35,8 @@ class PosVector {
   PosVector& operator*=(double n);
   PosVector operator*(double n) const;
 
+  double distance(const PosVector& other) const;
+
   operator Config() const;
 
   protected:
