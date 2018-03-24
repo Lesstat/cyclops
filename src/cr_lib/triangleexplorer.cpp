@@ -427,7 +427,7 @@ std::vector<std::tuple<Config, Route>> RouteExplorer::triangleSplitting()
   triangles.emplace(Triangle{ length, height, unsuit }, 0.0);
 
   auto isPointOnLine = [](const PosVector& point, const PosVector& a, const PosVector& b) {
-    return std::abs(point.distance(a) + point.distance(b) - a.distance(b)) < 0.0001;
+    return std::abs(point.distance(a) + point.distance(b) - a.distance(b)) < 0.000001;
   };
 
   auto createChildren = [&](Triangle& triangle) {
@@ -498,6 +498,8 @@ std::vector<std::tuple<Config, Route>> RouteExplorer::triangleSplitting()
       std::cout << "Alternative split" << '\n';
       auto sideCenterVec = (outerPoint1->position + outerPoint2->position) * 0.5;
       auto sideCenter = createPoint(sideCenterVec);
+      points.push_back(sideCenter);
+
       triangles.emplace(Triangle{ *outerPoint1, sideCenter, *innerPoint }, minShared);
       triangles.emplace(Triangle{ *outerPoint2, sideCenter, *innerPoint }, minShared);
     } else {
@@ -512,7 +514,7 @@ std::vector<std::tuple<Config, Route>> RouteExplorer::triangleSplitting()
     auto triangle = triangles.top();
     triangles.pop();
     createChildren(std::get<Triangle>(triangle));
-    if (points.size() > 23) {
+    if (points.size() > 12) {
       std::cout << "reached point limit" << '\n';
       break;
     }
