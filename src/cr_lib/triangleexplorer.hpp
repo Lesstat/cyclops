@@ -110,7 +110,8 @@ class RouteExplorer {
   AlternativeRoutes optimizeSharing();
   AlternativeRoutes randomAlternatives();
   AlternativeRoutes trulyRandomAlternatives();
-  std::vector<std::tuple<Config, Route>> triangleSplitting();
+  std::vector<std::tuple<Config, Route, bool>> triangleSplitting(
+      size_t threshold, size_t maxSplits);
 
   private:
   Point createPoint(const PosVector& pos);

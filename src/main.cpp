@@ -160,7 +160,6 @@ void runWebServer(Graph& g)
     std::string buffer(length, '\0');
     ifs.read(&buffer[0], length);
     response->write(buffer);
-
   };
   server.resource["^/node_at"]["GET"] = [&grid](Response response, Request request) {
     const double IMPOSSIBLE_VALUE = -1000;
@@ -182,7 +181,6 @@ void runWebServer(Graph& g)
     }
     auto pos = grid.findNextNode(Lat{ lat }, Lng{ lng });
     response->write(SimpleWeb::StatusCode::success_ok, std::to_string(pos->get()));
-
   };
 
   server.resource["^/route"]["GET"] = [&g, &dijkstra](Response response, Request request) {
@@ -212,7 +210,6 @@ void runWebServer(Graph& g)
       response->write(SimpleWeb::StatusCode::success_ok, json, header);
     }
     response->write(SimpleWeb::StatusCode::client_error_not_found, "Did not find route");
-
   };
 
   server.resource["^/alternative/.*"]["GET"] = [&g](Response response, Request request) {
@@ -249,11 +246,9 @@ void runWebServer(Graph& g)
     SimpleWeb::CaseInsensitiveMultimap header;
     header.emplace("Content-Type", "application/json");
     response->write(SimpleWeb::StatusCode::success_ok, result, header);
-
   };
 
   server.resource["^/csv"]["GET"] = [&g, &dijkstra](Response response, Request request) {
-
     size_t sampleSize = 10;
     for (const auto& field : request->parse_query_string()) {
       if (field.first == "samplesize") {
@@ -310,24 +305,35 @@ void runWebServer(Graph& g)
   };
 
   server.resource["^/splitting"]["GET"] = [&g](Response response, Request request) {
-    std::optional<size_t> s{}, t{}, dummy{};
+    std::optional<size_t> s{}, t{}, threshold{}, maxSplits{}, dummy{};
 
-    extractQueryFields(request->parse_query_string(), s, t, dummy, dummy, dummy);
+    auto queryParams = request->parse_query_string();
+    extractQueryFields(queryParams, s, t, dummy, dummy, dummy);
     if (!(s && t)) {
       response->write(SimpleWeb::StatusCode::client_error_bad_request,
           "Request needs to contain the parameters: s, t");
       return;
     }
-    auto routes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).triangleSplitting();
+    for (const auto& param : queryParams) {
+      if (param.first == "threshold") {
+        threshold = stoull(param.second);
+      } else if (param.first == "maxSplits") {
+        maxSplits = stoull(param.second);
+      }
+    }
+
+    auto routes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t })
+                      .triangleSplitting(threshold.value_or(30), maxSplits.value_or(15));
     std::stringstream result;
 
     result << "[";
 
     for (const auto& r : routes) {
-      const auto & [ conf, route ] = r;
+      const auto& [conf, route, selected] = r;
       result << "{ \"config\": \"" << conf.length << "/" << conf.height << "/" << conf.unsuitability
              << "\", ";
-      result << "\"route\": " << routeToJson(route, g) << "},";
+      result << "\"route\": " << routeToJson(route, g) << ", ";
+      result << "\"selected\": " << (selected ? "true" : "false") << "},";
     }
     auto stringResult = result.str();
     stringResult.pop_back();
@@ -336,7 +342,6 @@ void runWebServer(Graph& g)
     SimpleWeb::CaseInsensitiveMultimap header;
     header.emplace("Content-Type", "application/json");
     response->write(SimpleWeb::StatusCode::success_ok, stringResult, header);
-
   };
 
   std::cout << "Starting web server at http://localhost:" << server.config.port << '\n';

@@ -238,7 +238,6 @@ AlternativeRoutes RouteExplorer::optimizeSharing()
   std::vector<Point> middlePoints;
 
   auto createChildren = [&](Triangle& triangle) -> std::optional<std::tuple<Point, Point, double>> {
-
     auto middleVec = triangle.calculateMiddle();
     auto middle = createPoint(middleVec);
 
@@ -292,7 +291,7 @@ AlternativeRoutes RouteExplorer::optimizeSharing()
   for (size_t i = 0; i < triangles.size(); ++i) {
     auto points = createChildren(triangles[i]);
     if (points) {
-      auto[point1, point2, shared] = *points;
+      auto [point1, point2, shared] = *points;
 
       auto& first = routes[point1.routeIndex];
       auto& second = routes[point2.routeIndex];
@@ -397,7 +396,8 @@ AlternativeRoutes RouteExplorer::trulyRandomAlternatives()
   return AlternativeRoutes(conf1, route, conf2, route2, shared, frechet);
 }
 
-std::vector<std::tuple<Config, Route>> RouteExplorer::triangleSplitting()
+std::vector<std::tuple<Config, Route, bool>> RouteExplorer::triangleSplitting(
+    size_t threshold, size_t maxSplits)
 {
   using QueueElem = std::tuple<Triangle, double>;
   auto cmp = [](const QueueElem& a, const QueueElem& b) {
@@ -405,7 +405,7 @@ std::vector<std::tuple<Config, Route>> RouteExplorer::triangleSplitting()
   };
   using Queue = std::priority_queue<QueueElem, std::vector<QueueElem>, decltype(cmp)>;
 
-  const double SHARING_THRESHOLD = 0.3;
+  double sharingThreshold = threshold / 100.0;
 
   Queue triangles{ cmp };
 
@@ -431,7 +431,6 @@ std::vector<std::tuple<Config, Route>> RouteExplorer::triangleSplitting()
   };
 
   auto createChildren = [&](Triangle& triangle) {
-
     auto middleVec = triangle.calculateMiddle();
     auto middle = createPoint(middleVec);
     points.push_back(middle);
@@ -450,7 +449,7 @@ std::vector<std::tuple<Config, Route>> RouteExplorer::triangleSplitting()
     auto sharedC = calculateSharing(routeC, routeM);
 
     auto minShared = std::min({ sharedA, sharedB, sharedC });
-    if (minShared > SHARING_THRESHOLD) {
+    if (minShared > sharingThreshold) {
       return;
     }
 
@@ -494,7 +493,7 @@ std::vector<std::tuple<Config, Route>> RouteExplorer::triangleSplitting()
 
     if ((checkSideSplit(lengthVec, heightVec) || checkSideSplit(lengthVec, unsuitVec)
             || checkSideSplit(heightVec, unsuitVec))
-        && (innerShared > SHARING_THRESHOLD)) {
+        && (innerShared > sharingThreshold)) {
       std::cout << "Alternative split" << '\n';
       auto sideCenterVec = (outerPoint1->position + outerPoint2->position) * 0.5;
       auto sideCenter = createPoint(sideCenterVec);
@@ -507,23 +506,41 @@ std::vector<std::tuple<Config, Route>> RouteExplorer::triangleSplitting()
       triangles.emplace(Triangle{ A, middle, C }, minShared);
       triangles.emplace(Triangle{ A, B, middle }, minShared);
     }
-
   };
 
   while (!triangles.empty()) {
     auto triangle = triangles.top();
     triangles.pop();
     createChildren(std::get<Triangle>(triangle));
-    if (points.size() > 12) {
+    if (points.size() > maxSplits) {
       std::cout << "reached point limit" << '\n';
       break;
     }
   }
-  std::vector<std::tuple<Config, Route>> result;
+
+  std::vector<bool> filter(routes.size(), true);
+  for (size_t i = 0; i < routes.size(); ++i) {
+    for (size_t j = i + 1; j < routes.size(); ++j) {
+      if (filter[j]) {
+        if (calculateSharing(routes[i], routes[j]) > sharingThreshold) {
+          filter[j] = false;
+        }
+      }
+    }
+  }
+
+  size_t trueCount = 0;
+
+  std::vector<std::tuple<Config, Route, bool>> result;
   result.reserve(routes.size());
   for (const auto& point : points) {
-    result.emplace_back(point.position, routes[point.routeIndex]);
+    result.emplace_back(point.position, routes[point.routeIndex], filter[point.routeIndex]);
+    if (filter[point.routeIndex]) {
+      trueCount++;
+    }
   }
+
   std::cout << "Returning " << result.size() << " routes." << '\n';
+  std::cout << trueCount << " different routes." << '\n';
   return result;
 }

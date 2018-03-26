@@ -196,9 +196,9 @@ function rainbow(number) {
     "#8c510a",
     "#bf812d",
     "#dfc27d",
-    "#f6e8c3",
+    "#f628c3",
     "#000000",
-    "#c7eae5",
+    "#c7ea25",
     "#80cdc1",
     "#35978f",
     "#01665e",
@@ -224,6 +224,7 @@ function triangleSplitting() {
   xmlhttp.responseType = "json";
   xmlhttp.onload = function() {
     if (xmlhttp.status == 200) {
+      let filter = document.getElementById("filter").checked;
       drawTriangle();
 
       let routes = xmlhttp.response;
@@ -248,9 +249,10 @@ function triangleSplitting() {
 
         drawDot(x, y, col);
 
-        geoJson.addLayer(
-          L.geoJSON(routes[rc].route.route.geometry, { style: myStyle })
-        );
+        if (!filter || (filter && routes[rc].selected))
+          geoJson.addLayer(
+            L.geoJSON(routes[rc].route.route.geometry, { style: myStyle })
+          );
       }
 
       document.getElementById("shared").innerHTML = "Unknown";
@@ -263,7 +265,20 @@ function triangleSplitting() {
   };
   let s = document.getElementById("start").innerHTML;
   let t = document.getElementById("end").innerHTML;
-  xmlhttp.open("GET", "/splitting" + "?s=" + s + "&t=" + t);
+  let threshold = document.getElementById("sharingThreshold").value;
+  let maxSplits = document.getElementById("maxSplits").value;
+  xmlhttp.open(
+    "GET",
+    "/splitting" +
+      "?s=" +
+      s +
+      "&t=" +
+      t +
+      "&threshold=" +
+      threshold +
+      "&maxSplits=" +
+      maxSplits
+  );
   xmlhttp.send();
 }
 
@@ -357,4 +372,8 @@ function triangleArea(p1, p2, p3) {
   let s = (a + b + c) / 2;
 
   return Math.sqrt(s * (s - a) * (s - b) * (s - c));
+}
+
+function uncheck() {
+  document.getElementById("filter").checked = false;
 }

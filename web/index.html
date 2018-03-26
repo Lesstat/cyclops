@@ -45,10 +45,13 @@
 	      <div class="card-text container">
 		<button type="button" onclick="alternativeRoutes('random')" >Random Sampling</button> <br />
 		<button type="button" onclick="alternativeRoutes('trulyRandom')" >Truly Random Sampling</button> <br />
-		<button type="button" onclick="alternativeRoutes('weighted')" >Explore Value Space</button> <br />
-		<button type="button" onclick="alternativeRoutes('distance')" >Greatest Distance</button> <br />
+		<!-- <button type="button" onclick="alternativeRoutes('weighted')" >Explore Value Space</button> <br />
+		     <button type="button" onclick="alternativeRoutes('distance')" >Greatest Distance</button> <br /> -->
 		<button type="button" onclick="alternativeRoutes('sharing')" >Minimize Sharing</button> <br />
 		<button type="button" onclick="triangleSplitting()" >TriangleSplitting</button> <br />
+		<input type="checkbox" id="filter" onload="uncheck()" onchange="triangleSplitting()" /> Filter triangle splitting routes <br />
+		Sharing threshold: <input type="input" id="sharingThreshold" value="30" /> <br />
+		Maximum Splits: <input type="input" id="maxSplits" value="15" /> <br />
 		Blue  Config: <span id="blue_conf" ></span> <br />
 		Green Config: <span id="green_conf" ></span> <br />
 		Shared Part: <span id="shared">0</span>% <br />
