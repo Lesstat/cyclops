@@ -430,7 +430,7 @@ std::vector<TriangulationPoint> RouteExplorer::triangleSplitting(size_t threshol
     return std::abs(point.distance(a) + point.distance(b) - a.distance(b)) < 0.000001;
   };
 
-  auto createChildren = [&](Triangle& triangle) {
+  auto createChildren = [&](Triangle& triangle, bool allowSideSplit) {
     auto A = triangle.a();
     auto B = triangle.b();
     auto C = triangle.c();
@@ -496,9 +496,13 @@ std::vector<TriangulationPoint> RouteExplorer::triangleSplitting(size_t threshol
       return outerPoint1 != nullptr && outerPoint2 != nullptr && innerPoint != nullptr;
     };
 
-    if ((checkSideSplit(lengthVec, heightVec) || checkSideSplit(lengthVec, unsuitVec)
-            || checkSideSplit(heightVec, unsuitVec))
+    if (allowSideSplit
+        && (checkSideSplit(lengthVec, heightVec) || checkSideSplit(lengthVec, unsuitVec)
+               || checkSideSplit(heightVec, unsuitVec))
         && (innerShared > sharingThreshold)) {
+
+      points.pop_back();
+
       std::cout << "Alternative split" << '\n';
       auto sideCenterVec = (outerPoint1->position + outerPoint2->position) * 0.5;
       auto sideCenter = createPoint(sideCenterVec);
@@ -515,10 +519,12 @@ std::vector<TriangulationPoint> RouteExplorer::triangleSplitting(size_t threshol
     }
   };
 
+  bool allowSideSplit = false;
   while (!triangles.empty()) {
     auto triangle = triangles.top();
     triangles.pop();
-    createChildren(std::get<Triangle>(triangle));
+    createChildren(std::get<Triangle>(triangle), allowSideSplit);
+    allowSideSplit = true;
     if (points.size() > maxSplits) {
       std::cout << "reached point limit" << '\n';
       break;
