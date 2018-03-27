@@ -203,6 +203,9 @@ function rainbow(number) {
   ];
   return colors[number % colors.length];
 }
+
+var listOfRoutes = [];
+
 function triangleSplitting() {
   geoJson.clearLayers();
   let xmlhttp = new XMLHttpRequest();
@@ -210,6 +213,7 @@ function triangleSplitting() {
   xmlhttp.responseType = "json";
   xmlhttp.onload = function() {
     if (xmlhttp.status == 200) {
+      listOfRoutes = [];
       let filter = document.getElementById("filter").checked;
       drawTriangle();
 
@@ -240,10 +244,13 @@ function triangleSplitting() {
           ctx.stroke();
         }
 
-        if (!filter || (filter && routes[rc].selected))
-          geoJson.addLayer(
-            L.geoJSON(routes[rc].route.route.geometry, { style: myStyle })
-          );
+        if (!filter || (filter && routes[rc].selected)) {
+          let geoRoute = L.geoJSON(routes[rc].route.route.geometry, {
+            style: myStyle
+          });
+          geoJson.addLayer(geoRoute);
+          listOfRoutes.push({ point: coord, route: geoRoute });
+        }
       }
 
       document.getElementById("shared").innerHTML = "Unknown";
@@ -348,14 +355,29 @@ function moveDot(event) {
     lengthSpan.innerHTML = lengthPercent;
     heightSpan.innerHTML = heightPercent;
     unsuitabilitySpan.innerHTML = unsuitabilityPercent;
+  } else if (event && listOfRoutes.length) {
+    let point = { x: event.offsetX, y: event.offsetY };
+    let minDist = 1000;
+    let minIndex;
+    for (let index in listOfRoutes) {
+      listOfRoutes[index].route.setStyle({ weight: 4 });
+      let dis = dist(listOfRoutes[index].point, point);
+      if (minDist > dis) {
+        minDist = dis;
+        minIndex = index;
+      }
+    }
+    if (minDist <= 5) {
+      listOfRoutes[minIndex].route.setStyle({ weight: 10 });
+    }
   }
 }
 
-function triangleArea(p1, p2, p3) {
-  let dist = function(p1, p2) {
-    return Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
-  };
+function dist(p1, p2) {
+  return Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
+}
 
+function triangleArea(p1, p2, p3) {
   let a = dist(p1, p2);
   let b = dist(p1, p3);
   let c = dist(p2, p3);
