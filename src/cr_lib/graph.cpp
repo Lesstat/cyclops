@@ -251,4 +251,7 @@ std::unordered_map<NodeId, const Node*> Graph::getNodePosByIds(
   return result;
 }
 
-NodePos Graph::getNodePos(const Node* n) const { return NodePos{ n - nodes.data() }; }
+NodePos Graph::getNodePos(const Node* n) const
+{
+  return NodePos{ static_cast<size_t>(n - nodes.data()) };
+}

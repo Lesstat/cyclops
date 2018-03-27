@@ -139,16 +139,9 @@ function alternativeRoutes(kind) {
       drawTriangle();
       document.getElementById("blue_conf").innerHTML = xmlhttp.response.config1;
       var values = xmlhttp.response.config1.split("/");
-      var x =
-        lengthCorner.x * values[0] / 100 +
-        heightCorner.x * values[1] / 100 +
-        unsuitabilityCorner.x * values[2] / 100;
-      var y =
-        lengthCorner.y * values[0] / 100 +
-        heightCorner.y * values[1] / 100 +
-        unsuitabilityCorner.y * values[2] / 100;
+      let coord = configToCoords(values.map(val => val / 100));
 
-      drawDot(x, y, "blue");
+      drawDot(coord.x, coord.y, "blue");
 
       geoJson.addLayer(
         L.geoJSON(xmlhttp.response.route1.route.geometry, { style: myStyle1 })
@@ -163,16 +156,9 @@ function alternativeRoutes(kind) {
         xmlhttp.response.config2;
 
       values = xmlhttp.response.config2.split("/");
-      x =
-        lengthCorner.x * values[0] / 100 +
-        heightCorner.x * values[1] / 100 +
-        unsuitabilityCorner.x * values[2] / 100;
-      y =
-        lengthCorner.y * values[0] / 100 +
-        heightCorner.y * values[1] / 100 +
-        unsuitabilityCorner.y * values[2] / 100;
+      coord = configToCoords(values.map(val => val / 100));
 
-      drawDot(x, y, "green");
+      drawDot(coord.x, coord.y, "green");
 
       geoJson.addLayer(
         L.geoJSON(xmlhttp.response.route2.route.geometry, { style: myStyle2 })
@@ -227,6 +213,9 @@ function triangleSplitting() {
       let filter = document.getElementById("filter").checked;
       drawTriangle();
 
+      let canvas = document.getElementById("triangleSelector");
+      let ctx = canvas.getContext("2d");
+
       let routes = xmlhttp.response;
       for (var rc in routes) {
         let col = rainbow(rc);
@@ -238,16 +227,18 @@ function triangleSplitting() {
         };
 
         let values = routes[rc].config.split("/");
-        let x =
-          lengthCorner.x * values[0] +
-          heightCorner.x * values[1] +
-          unsuitabilityCorner.x * values[2];
-        let y =
-          lengthCorner.y * values[0] +
-          heightCorner.y * values[1] +
-          unsuitabilityCorner.y * values[2];
+        let coord = configToCoords(values);
 
-        drawDot(x, y, col);
+        drawDot(coord.x, coord.y, col);
+
+        for (let par in routes[rc].parents) {
+          let parConfig = routes[rc].parents[par].split("/");
+          let parCoord = configToCoords(parConfig);
+          ctx.beginPath();
+          ctx.moveTo(coord.x, coord.y);
+          ctx.lineTo(parCoord.x, parCoord.y);
+          ctx.stroke();
+        }
 
         if (!filter || (filter && routes[rc].selected))
           geoJson.addLayer(
@@ -376,4 +367,17 @@ function triangleArea(p1, p2, p3) {
 
 function uncheck() {
   document.getElementById("filter").checked = false;
+}
+
+function configToCoords(values) {
+  return {
+    x:
+      lengthCorner.x * values[0] +
+      heightCorner.x * values[1] +
+      unsuitabilityCorner.x * values[2],
+    y:
+      lengthCorner.y * values[0] +
+      heightCorner.y * values[1] +
+      unsuitabilityCorner.y * values[2]
+  };
 }

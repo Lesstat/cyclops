@@ -92,7 +92,7 @@ bool Dijkstra::QueueComparator::operator()(QueueElem left, QueueElem right)
   auto leftCost = std::get<double>(left);
   auto rightCost = std::get<double>(right);
   return leftCost > rightCost;
-};
+}
 
 std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config config)
 {
@@ -134,7 +134,7 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
     }
 
     if (!heapS.empty() && !sBigger) {
-      auto[node, cost] = heapS.top();
+      auto [node, cost] = heapS.top();
       heapS.pop();
       if (cost > costS[node]) {
         continue;
@@ -159,7 +159,7 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
     }
 
     if (!heapT.empty() && !tBigger) {
-      auto[node, cost] = heapT.top();
+      auto [node, cost] = heapT.top();
       heapT.pop();
       if (cost > costT[node]) {
         continue;
@@ -225,4 +225,10 @@ bool Dijkstra::stallOnDemand(const NodePos& node, double cost, Direction dir)
   }
 
   return false;
+}
+
+std::ostream& operator<<(std::ostream& stream, const Config& c)
+{
+  stream << c.length << "/" << c.height << "/" << c.unsuitability;
+  return stream;
 }

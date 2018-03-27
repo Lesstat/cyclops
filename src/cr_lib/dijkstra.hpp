@@ -57,7 +57,16 @@ struct Config {
   {
     return length == other.length && height == other.height && unsuitability == other.unsuitability;
   }
+
+  Config integerValues() const
+  {
+    return Config{ LengthConfig{ std::round(length * 100) },
+      HeightConfig{ std::round(height * 100) },
+      UnsuitabilityConfig{ std::round(unsuitability * 100) } };
+  }
 };
+
+std::ostream& operator<<(std::ostream& stream, const Config& c);
 
 struct Route {
   Cost costs;

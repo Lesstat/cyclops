@@ -396,9 +396,9 @@ AlternativeRoutes RouteExplorer::trulyRandomAlternatives()
   return AlternativeRoutes(conf1, route, conf2, route2, shared, frechet);
 }
 
-std::vector<std::tuple<Config, Route, bool>> RouteExplorer::triangleSplitting(
-    size_t threshold, size_t maxSplits)
+std::vector<TriangulationPoint> RouteExplorer::triangleSplitting(size_t threshold, size_t maxSplits)
 {
+
   using QueueElem = std::tuple<Triangle, double>;
   auto cmp = [](const QueueElem& a, const QueueElem& b) {
     return std::get<double>(a) > std::get<double>(b);
@@ -431,13 +431,18 @@ std::vector<std::tuple<Config, Route, bool>> RouteExplorer::triangleSplitting(
   };
 
   auto createChildren = [&](Triangle& triangle) {
-    auto middleVec = triangle.calculateMiddle();
-    auto middle = createPoint(middleVec);
-    points.push_back(middle);
-
     auto A = triangle.a();
     auto B = triangle.b();
     auto C = triangle.c();
+
+    auto middleVec = triangle.calculateMiddle();
+    auto middle = createPoint(middleVec);
+
+    middle.parents.push_back(A.position);
+    middle.parents.push_back(B.position);
+    middle.parents.push_back(C.position);
+
+    points.push_back(middle);
 
     auto& routeA = routes[A.routeIndex];
     auto& routeB = routes[B.routeIndex];
@@ -497,6 +502,8 @@ std::vector<std::tuple<Config, Route, bool>> RouteExplorer::triangleSplitting(
       std::cout << "Alternative split" << '\n';
       auto sideCenterVec = (outerPoint1->position + outerPoint2->position) * 0.5;
       auto sideCenter = createPoint(sideCenterVec);
+
+      sideCenter.parents.push_back(innerPoint->position);
       points.push_back(sideCenter);
 
       triangles.emplace(Triangle{ *outerPoint1, sideCenter, *innerPoint }, minShared);
@@ -531,10 +538,11 @@ std::vector<std::tuple<Config, Route, bool>> RouteExplorer::triangleSplitting(
 
   size_t trueCount = 0;
 
-  std::vector<std::tuple<Config, Route, bool>> result;
+  std::vector<TriangulationPoint> result;
   result.reserve(routes.size());
   for (const auto& point : points) {
-    result.emplace_back(point.position, routes[point.routeIndex], filter[point.routeIndex]);
+    result.emplace_back(
+        point.position, routes[point.routeIndex], filter[point.routeIndex], point.parents);
     if (filter[point.routeIndex]) {
       trueCount++;
     }

@@ -329,11 +329,20 @@ void runWebServer(Graph& g)
     result << "[";
 
     for (const auto& r : routes) {
-      const auto& [conf, route, selected] = r;
-      result << "{ \"config\": \"" << conf.length << "/" << conf.height << "/" << conf.unsuitability
-             << "\", ";
+      const auto& [conf, route, selected, parents] = r;
+      result << "{ \"config\": \"" << conf << "\", ";
       result << "\"route\": " << routeToJson(route, g) << ", ";
-      result << "\"selected\": " << (selected ? "true" : "false") << "},";
+      result << "\"selected\": " << (selected ? "true" : "false") << ",";
+      result << "\"parents\": [";
+      bool first = true;
+      for (const auto& p : parents) {
+        if (!first) {
+          result << ",";
+        }
+        result << '"' << p << '"';
+        first = false;
+      }
+      result << "]},";
     }
     auto stringResult = result.str();
     stringResult.pop_back();

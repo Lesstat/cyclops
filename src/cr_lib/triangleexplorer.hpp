@@ -28,6 +28,7 @@ const double oneThird = 1.0 / 3.0;
 struct Point {
   PosVector position;
   size_t routeIndex;
+  std::vector<PosVector> parents;
 
   Point(PosVector pos, size_t routeIndex)
       : position(std::move(pos))
@@ -96,6 +97,21 @@ struct AlternativeRoutes {
   }
 };
 
+struct TriangulationPoint {
+  Config conf;
+  Route route;
+  bool selected;
+  std::vector<PosVector> parents;
+
+  TriangulationPoint(Config conf, Route route, bool selected, std::vector<PosVector> parents)
+      : conf(std::move(conf))
+      , route(std::move(route))
+      , selected(std::move(selected))
+      , parents(std::move(parents))
+  {
+  }
+};
+
 class RouteExplorer {
   public:
   RouteExplorer(Graph* g, NodePos from, NodePos to);
@@ -110,8 +126,7 @@ class RouteExplorer {
   AlternativeRoutes optimizeSharing();
   AlternativeRoutes randomAlternatives();
   AlternativeRoutes trulyRandomAlternatives();
-  std::vector<std::tuple<Config, Route, bool>> triangleSplitting(
-      size_t threshold, size_t maxSplits);
+  std::vector<TriangulationPoint> triangleSplitting(size_t threshold, size_t maxSplits);
 
   private:
   Point createPoint(const PosVector& pos);
