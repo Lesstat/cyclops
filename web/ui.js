@@ -289,15 +289,15 @@ function initializeCanvas() {
   drawTriangle();
   drawDot(center.x, center.y);
 }
-const lengthCorner = { x: 5, y: 195 };
-const heightCorner = { x: 205, y: 195 };
-const unsuitabilityCorner = { x: 105, y: 22 };
-const center = { x: 100, y: 142 };
+const lengthCorner = { x: 5, y: 505 };
+const heightCorner = { x: 505, y: 505 };
+const unsuitabilityCorner = { x: 252, y: 22 };
+const center = configToCoords([1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]);
 
 function drawTriangle() {
   let canvas = document.getElementById("triangleSelector");
   let ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, 210, 210);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   ctx.fillStyle = "lightgrey";
   ctx.beginPath();
