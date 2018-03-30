@@ -249,7 +249,16 @@ function triangleSplitting() {
             style: myStyle
           });
           geoJson.addLayer(geoRoute);
-          listOfRoutes.push({ point: coord, route: geoRoute });
+          listOfRoutes.push({
+            point: coord,
+            route: geoRoute,
+            config: values,
+            cost: {
+              length: routes[rc].route.length,
+              height: routes[rc].route.height,
+              unsuitability: routes[rc].route.unsuitability
+            }
+          });
         }
       }
 
@@ -333,6 +342,10 @@ function mouseUp(event) {
 }
 
 function moveDot(event) {
+  let lengthSpan = document.getElementById("length_percent");
+  let heightSpan = document.getElementById("height_percent");
+  let unsuitabilitySpan = document.getElementById("road_percent");
+
   if (clicked && event) {
     drawTriangle();
     drawDot(event.offsetX, event.offsetY);
@@ -347,10 +360,6 @@ function moveDot(event) {
     let heightPercent = Math.round(heightArea / areaSum * 100);
 
     let unsuitabilityPercent = Math.round(unsuitabilityArea / areaSum * 100);
-
-    let lengthSpan = document.getElementById("length_percent");
-    let heightSpan = document.getElementById("height_percent");
-    let unsuitabilitySpan = document.getElementById("road_percent");
 
     lengthSpan.innerHTML = lengthPercent;
     heightSpan.innerHTML = heightPercent;
@@ -368,7 +377,19 @@ function moveDot(event) {
       }
     }
     if (minDist <= 5) {
-      listOfRoutes[minIndex].route.setStyle({ weight: 10 });
+      let bestRoute = listOfRoutes[minIndex];
+      bestRoute.route.setStyle({ weight: 10 });
+      let conf = bestRoute.config;
+      lengthSpan.innerHTML = conf[0] * 100;
+      heightSpan.innerHTML = conf[1] * 100;
+      unsuitabilitySpan.innerHTML = conf[2] * 100;
+
+      let cost = bestRoute.cost;
+
+      document.getElementById("route_length").innerHTML = cost.length;
+      document.getElementById("route_height").innerHTML = cost.height;
+      document.getElementById("route_unsuitability").innerHTML =
+        cost.unsuitability;
     }
   }
 }
