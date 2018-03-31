@@ -79,7 +79,7 @@ function calcDist(length, height, unsuitability) {
       document.getElementById("route_length").innerHTML =
         Math.round(xmlhttp.response.length / 100) / 10;
       document.getElementById("route_height").innerHTML =
-        xmlhttp.response.height;
+        xmlhttp.response.height / 10;
       document.getElementById("route_unsuitability").innerHTML =
         xmlhttp.response.unsuitability;
       geoJson.clearLayers();
@@ -387,7 +387,7 @@ function moveDot(event) {
       let cost = bestRoute.cost;
 
       document.getElementById("route_length").innerHTML = cost.length;
-      document.getElementById("route_height").innerHTML = cost.height;
+      document.getElementById("route_height").innerHTML = cost.height / 10;
       document.getElementById("route_unsuitability").innerHTML =
         cost.unsuitability;
     }
