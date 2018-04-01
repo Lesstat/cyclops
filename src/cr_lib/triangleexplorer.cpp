@@ -396,9 +396,27 @@ AlternativeRoutes RouteExplorer::trulyRandomAlternatives()
   return AlternativeRoutes(conf1, route, conf2, route2, shared, frechet);
 }
 
+double calcMinAngle(const PosVector& a, const PosVector& b, const PosVector& c)
+{
+  double alpha = a.internalAngle(b, c);
+  double beta = b.internalAngle(a, c);
+  double gamma = 180.0 - alpha - beta;
+  return std::min({ alpha, beta, gamma });
+}
+
+double calcMinDist(
+    const PosVector& a, const PosVector& b, const PosVector& c, const PosVector& center)
+{
+  double aDist = a.distance(center);
+  double bDist = b.distance(center);
+  double cDist = c.distance(center);
+  return std::min({ aDist, bDist, cDist });
+}
+
 std::vector<TriangulationPoint> RouteExplorer::triangleSplitting(size_t threshold, size_t maxSplits)
 {
 
+  std::cout << "Start triangle splitting" << '\n';
   using QueueElem = std::tuple<Triangle, double>;
   auto cmp = [](const QueueElem& a, const QueueElem& b) {
     return std::get<double>(a) > std::get<double>(b);
@@ -408,6 +426,9 @@ std::vector<TriangulationPoint> RouteExplorer::triangleSplitting(size_t threshol
   double sharingThreshold = threshold / 100.0;
 
   Queue triangles{ cmp };
+
+  auto innerSplits = 0;
+  auto outerSplits = 0;
 
   routes.clear();
   std::vector<Point> points;
@@ -435,14 +456,16 @@ std::vector<TriangulationPoint> RouteExplorer::triangleSplitting(size_t threshol
     auto B = triangle.b();
     auto C = triangle.c();
 
+    if (calcMinAngle(A.position, B.position, C.position) < 10.0) {
+      return;
+    }
+
     auto middleVec = triangle.calculateMiddle();
     auto middle = createPoint(middleVec);
 
     middle.parents.push_back(A.position);
     middle.parents.push_back(B.position);
     middle.parents.push_back(C.position);
-
-    points.push_back(middle);
 
     auto& routeA = routes[A.routeIndex];
     auto& routeB = routes[B.routeIndex];
@@ -455,6 +478,12 @@ std::vector<TriangulationPoint> RouteExplorer::triangleSplitting(size_t threshol
 
     auto minShared = std::min({ sharedA, sharedB, sharedC });
     if (minShared > sharingThreshold) {
+      return;
+    }
+
+    const double minDistThreshold = std::sqrt(2) / 100.0;
+    double minDist = calcMinDist(A.position, B.position, C.position, middleVec);
+    if (minDist < minDistThreshold) {
       return;
     }
 
@@ -496,26 +525,41 @@ std::vector<TriangulationPoint> RouteExplorer::triangleSplitting(size_t threshol
       return outerPoint1 != nullptr && outerPoint2 != nullptr && innerPoint != nullptr;
     };
 
+    std::optional<Point> sideCenter;
+    double sideSharingMin = 0.0;
+
     if (allowSideSplit
         && (checkSideSplit(lengthVec, heightVec) || checkSideSplit(lengthVec, unsuitVec)
-               || checkSideSplit(heightVec, unsuitVec))
-        && (innerShared > sharingThreshold)) {
-
-      points.pop_back();
-
-      std::cout << "Alternative split" << '\n';
+               || checkSideSplit(heightVec, unsuitVec))) {
       auto sideCenterVec = (outerPoint1->position + outerPoint2->position) * 0.5;
-      auto sideCenter = createPoint(sideCenterVec);
+      sideCenter = createPoint(sideCenterVec);
 
-      sideCenter.parents.push_back(innerPoint->position);
-      points.push_back(sideCenter);
+      auto& routeSide = routes[sideCenter->routeIndex];
 
-      triangles.emplace(Triangle{ *outerPoint1, sideCenter, *innerPoint }, minShared);
-      triangles.emplace(Triangle{ *outerPoint2, sideCenter, *innerPoint }, minShared);
-    } else {
+      auto& routeA = routes[A.routeIndex];
+      auto& routeB = routes[B.routeIndex];
+      auto& routeC = routes[C.routeIndex];
+
+      auto sharedA = calculateSharing(routeA, routeSide);
+      auto sharedB = calculateSharing(routeB, routeSide);
+      auto sharedC = calculateSharing(routeC, routeSide);
+
+      sideSharingMin = std::min({ sharedA, sharedB, sharedC });
+
+      sideCenter->parents.push_back(innerPoint->position);
+    }
+
+    if (!sideCenter || minShared > sideSharingMin) {
+      innerSplits++;
+      points.push_back(middle);
       triangles.emplace(Triangle{ middle, B, C }, minShared);
       triangles.emplace(Triangle{ A, middle, C }, minShared);
       triangles.emplace(Triangle{ A, B, middle }, minShared);
+    } else {
+      outerSplits++;
+      points.push_back(*sideCenter);
+      triangles.emplace(Triangle{ *outerPoint1, *sideCenter, *innerPoint }, sideSharingMin);
+      triangles.emplace(Triangle{ *outerPoint2, *sideCenter, *innerPoint }, sideSharingMin);
     }
   };
 
@@ -531,11 +575,19 @@ std::vector<TriangulationPoint> RouteExplorer::triangleSplitting(size_t threshol
     }
   }
 
-  std::vector<bool> filter(routes.size(), true);
-  for (size_t i = 0; i < routes.size(); ++i) {
-    for (size_t j = i + 1; j < routes.size(); ++j) {
+  size_t differentCount = 0;
+  std::vector<bool> filter(points.size(), true);
+  for (size_t i = 0; i < points.size(); ++i) {
+    differentCount++;
+    bool isDuplicate = false;
+    for (size_t j = i + 1; j < points.size(); ++j) {
+      auto sharing = calculateSharing(routes[points[i].routeIndex], routes[points[j].routeIndex]);
+      if (sharing > 0.98 && !isDuplicate) {
+        differentCount--;
+        isDuplicate = true;
+      }
       if (filter[j]) {
-        if (calculateSharing(routes[i], routes[j]) > sharingThreshold) {
+        if (sharing > sharingThreshold) {
           filter[j] = false;
         }
       }
@@ -543,18 +595,24 @@ std::vector<TriangulationPoint> RouteExplorer::triangleSplitting(size_t threshol
   }
 
   size_t trueCount = 0;
+  size_t lastSelectedIndex = 0;
 
   std::vector<TriangulationPoint> result;
   result.reserve(routes.size());
-  for (const auto& point : points) {
-    result.emplace_back(
-        point.position, routes[point.routeIndex], filter[point.routeIndex], point.parents);
-    if (filter[point.routeIndex]) {
+  for (size_t i = 0; i < points.size(); ++i) {
+    const auto point = points[i];
+    result.emplace_back(point.position, routes[point.routeIndex], filter[i], point.parents);
+    if (filter[i]) {
       trueCount++;
+      lastSelectedIndex = point.routeIndex;
     }
   }
 
-  std::cout << "Returning " << result.size() << " routes." << '\n';
+  std::cout << "minimum number of routes needed " << lastSelectedIndex << '\n';
+  std::cout << "inner splits: " << innerSplits << " outer splits: " << outerSplits << '\n';
+  std::cout << "calculated " << routes.size() << " routes." << '\n';
+  std::cout << "returning " << result.size() << " routes" << '\n';
+  std::cout << differentCount << " non-identical routes" << '\n';
   std::cout << trueCount << " different routes." << '\n';
   return result;
 }
