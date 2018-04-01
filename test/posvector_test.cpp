@@ -43,3 +43,15 @@ TEST_CASE("Differently sized PosVectors throw")
 
   REQUIRE_THROWS(b + a);
 }
+
+TEST_CASE("Determine internal angle of three points")
+{
+  PosVector a{ { 1, 0, 0 } };
+  PosVector b{ { 0, 1, 0 } };
+  PosVector c{ { 0, 0, 1 } };
+
+  auto angle = b.internalAngle(a, c);
+  REQUIRE(angle == Approx(60.0));
+  REQUIRE(a.internalAngle(b, c) == c.internalAngle(a, b));
+  REQUIRE(angle == c.internalAngle(a, b));
+}

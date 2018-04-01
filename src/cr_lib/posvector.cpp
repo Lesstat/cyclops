@@ -19,7 +19,7 @@
 #include "posvector.hpp"
 #include <cmath>
 
-PosVector::PosVector(const std::vector<double>&& values)
+PosVector::PosVector(std::vector<double>&& values)
     : values(std::move(values))
 {
 }
@@ -79,4 +79,33 @@ double PosVector::distance(const PosVector& other) const
     sum += std::pow(values[i] - other.values[i], 2);
   }
   return std::sqrt(sum);
+}
+
+double PosVector::internalAngle(const PosVector& first, const PosVector& second) const
+{
+  PosVector firstSlope = *this + (first * -1);
+  PosVector secondSlope = *this + (second * -1);
+  auto res = std::acos((firstSlope * secondSlope) / (firstSlope.length() * secondSlope.length()));
+  return res * 180.0 / M_PI;
+}
+
+double PosVector::length() const
+{
+  double sum = 0.0;
+
+  for (const auto& value : values) {
+    sum += value * value;
+  }
+  return std::sqrt(sum);
+}
+
+double PosVector::operator*(PosVector other) const
+{
+  checkSizes(other.values.size());
+  double result = 0.0;
+
+  for (size_t i = 0; i < values.size(); ++i) {
+    result += values[i] * other.values[i];
+  }
+  return result;
 }

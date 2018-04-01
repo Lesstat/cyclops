@@ -22,7 +22,7 @@
 
 class PosVector {
   public:
-  PosVector(const std::vector<double>&& values);
+  PosVector(std::vector<double>&& values);
   PosVector(const PosVector& other) = default;
   PosVector(PosVector&& other) noexcept = default;
   virtual ~PosVector() noexcept = default;
@@ -34,8 +34,11 @@ class PosVector {
   bool operator==(const PosVector& other) const;
   PosVector& operator*=(double n);
   PosVector operator*(double n) const;
+  double operator*(PosVector other) const;
 
   double distance(const PosVector& other) const;
+  double internalAngle(const PosVector& first, const PosVector& second) const;
+  double length() const;
 
   operator Config() const;
 
