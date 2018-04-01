@@ -66,6 +66,7 @@ function getNode(id, latlng) {
 }
 
 function calcDist(length, height, unsuitability) {
+  listOfRoutes = [];
   let xmlhttp = new XMLHttpRequest();
 
   xmlhttp.responseType = "json";
@@ -125,6 +126,7 @@ function panOutMap() {
 }
 
 function alternativeRoutes(kind) {
+  listOfRoutes = [];
   geoJson.clearLayers();
   let xmlhttp = new XMLHttpRequest();
 
