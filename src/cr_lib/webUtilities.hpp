@@ -18,6 +18,8 @@
 #ifndef WEBUTILITIES_H
 #define WEBUTILITIES_H
 
+#include "routeComparator.hpp"
+
 std::string routeToJson(const Route& route, const Graph& g)
 {
   std::stringstream resultJson;
@@ -81,14 +83,31 @@ void appendAlternativesToJsonStream(
 }
 
 void appendCsvLine(std::stringstream& result, const std::string& method, NodePos from, NodePos to,
-    const AlternativeRoutes& altRoutes, long duration, const Length& shortestLength)
+    size_t threshold, size_t maxSplits, const std::vector<TriangulationPoint>& routes,
+    size_t routeCount, size_t time)
 {
-  result << from << ", " << to << ", " << method << ", " << altRoutes.shared << ", "
-         << altRoutes.frechet << ", " << duration << ", " << altRoutes.config1.length << "/"
-         << altRoutes.config1.height << "/" << altRoutes.config1.unsuitability << ", "
-         << altRoutes.route1.costs.length << ", " << altRoutes.config2.length << "/"
-         << altRoutes.config2.height << "/" << altRoutes.config2.unsuitability << ", "
-         << altRoutes.route2.costs.length << ", " << shortestLength << '\n';
+
+  size_t lastInterestingRoute = 0;
+  size_t setSize = 0;
+  size_t nonIdenticalRoutes = 0;
+  for (size_t i = 0; i < routes.size(); ++i) {
+    const auto& route = routes[i];
+    if (route.selected) {
+      setSize++;
+      lastInterestingRoute = i;
+    }
+    nonIdenticalRoutes++;
+    for (size_t j = i + 1; j < routes.size(); ++j) {
+      if (calculateSharing(route.route, routes[j].route) > 0.95) {
+        nonIdenticalRoutes--;
+        break;
+      }
+    }
+  }
+
+  result << from << "," << to << "," << method << "," << threshold << "," << maxSplits << ","
+         << setSize << "," << nonIdenticalRoutes << "," << routeCount << "," << lastInterestingRoute
+         << "," << time << '\n';
 }
 
 #endif /* WEBUTILITIES_H */

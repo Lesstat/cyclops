@@ -413,10 +413,10 @@ double calcMinDist(
   return std::min({ aDist, bDist, cDist });
 }
 
-std::vector<TriangulationPoint> RouteExplorer::triangleSplitting(size_t threshold, size_t maxSplits)
+std::tuple<std::vector<TriangulationPoint>, size_t> RouteExplorer::triangleSplitting(
+    size_t threshold, size_t maxSplits)
 {
 
-  std::cout << "Start triangle splitting" << '\n';
   using QueueElem = std::tuple<Triangle, double>;
   auto cmp = [](const QueueElem& a, const QueueElem& b) {
     return std::get<double>(a) > std::get<double>(b);
@@ -461,6 +461,13 @@ std::vector<TriangulationPoint> RouteExplorer::triangleSplitting(size_t threshol
     }
 
     auto middleVec = triangle.calculateMiddle();
+
+    const double minDistThreshold = std::sqrt(2) / 50.0;
+    double minDist = calcMinDist(A.position, B.position, C.position, middleVec);
+    if (minDist < minDistThreshold) {
+      return;
+    }
+
     auto middle = createPoint(middleVec);
 
     middle.parents.push_back(A.position);
@@ -478,12 +485,6 @@ std::vector<TriangulationPoint> RouteExplorer::triangleSplitting(size_t threshol
 
     auto minShared = std::min({ sharedA, sharedB, sharedC });
     if (minShared > sharingThreshold) {
-      return;
-    }
-
-    const double minDistThreshold = std::sqrt(2) / 100.0;
-    double minDist = calcMinDist(A.position, B.position, C.position, middleVec);
-    if (minDist < minDistThreshold) {
       return;
     }
 
@@ -570,23 +571,15 @@ std::vector<TriangulationPoint> RouteExplorer::triangleSplitting(size_t threshol
     createChildren(std::get<Triangle>(triangle), allowSideSplit);
     allowSideSplit = true;
     if (points.size() > maxSplits) {
-      std::cout << "reached point limit" << '\n';
       break;
     }
   }
 
-  size_t differentCount = 0;
   std::vector<bool> filter(points.size(), true);
   for (size_t i = 0; i < points.size(); ++i) {
-    differentCount++;
-    bool isDuplicate = false;
     for (size_t j = i + 1; j < points.size(); ++j) {
-      auto sharing = calculateSharing(routes[points[i].routeIndex], routes[points[j].routeIndex]);
-      if (sharing > 0.98 && !isDuplicate) {
-        differentCount--;
-        isDuplicate = true;
-      }
       if (filter[j]) {
+        auto sharing = calculateSharing(routes[points[i].routeIndex], routes[points[j].routeIndex]);
         if (sharing > sharingThreshold) {
           filter[j] = false;
         }
@@ -594,25 +587,38 @@ std::vector<TriangulationPoint> RouteExplorer::triangleSplitting(size_t threshol
     }
   }
 
-  size_t trueCount = 0;
-  size_t lastSelectedIndex = 0;
-
   std::vector<TriangulationPoint> result;
   result.reserve(routes.size());
   for (size_t i = 0; i < points.size(); ++i) {
     const auto point = points[i];
     result.emplace_back(point.position, routes[point.routeIndex], filter[i], point.parents);
-    if (filter[i]) {
-      trueCount++;
-      lastSelectedIndex = point.routeIndex;
+  }
+
+  return { result, routes.size() };
+}
+
+std::tuple<std::vector<TriangulationPoint>, size_t> RouteExplorer::randomWithCount(
+    size_t threshold, size_t routeCount)
+{
+  std::vector<TriangulationPoint> result;
+  result.reserve(routeCount);
+  for (size_t i = 0; i < routeCount; ++i) {
+    Config conf = generateRandomConfig();
+    Route route = d.findBestRoute(from, to, conf).value();
+    result.emplace_back(conf, route, true, std::vector<PosVector>());
+  }
+
+  const double sharingThreshold = threshold / 100.0;
+  for (size_t i = 0; i < result.size(); ++i) {
+    for (size_t j = i + 1; j < result.size(); ++j) {
+      if (result[j].selected) {
+        auto sharing = calculateSharing(result[i].route, result[j].route);
+        if (sharing > sharingThreshold) {
+          result[j].selected = false;
+        }
+      }
     }
   }
 
-  std::cout << "minimum number of routes needed " << lastSelectedIndex << '\n';
-  std::cout << "inner splits: " << innerSplits << " outer splits: " << outerSplits << '\n';
-  std::cout << "calculated " << routes.size() << " routes." << '\n';
-  std::cout << "returning " << result.size() << " routes" << '\n';
-  std::cout << differentCount << " non-identical routes" << '\n';
-  std::cout << trueCount << " different routes." << '\n';
-  return result;
+  return { result, routeCount };
 }
