@@ -36,7 +36,7 @@ using Lat = NamedType<double, struct LatParameter>;
 using Lng = NamedType<double, struct LngParameter>;
 using Height = NamedType<double, struct HeightParameter>;
 using Length = NamedType<double, struct LengthParameter>;
-using Unsuitability = NamedType<unsigned int, struct UnsuitabilityParameter>;
+using Unsuitability = NamedType<double, struct UnsuitabilityParameter>;
 
 class Dijkstra;
 class NormalDijkstra;

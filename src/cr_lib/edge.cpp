@@ -45,11 +45,10 @@ Edge Edge::createFromText(const std::string& text)
 {
 
   size_t source, dest;
-  double length, height;
-  short unsuitability;
+  double length, height, unsuitability;
   long edgeA, edgeB;
 
-  std::sscanf(text.c_str(), "%lu%lu%lf%lf%hd%li%li", &source, &dest, &length, &height, // NOLINT
+  std::sscanf(text.c_str(), "%lu%lu%lf%lf%lf%li%li", &source, &dest, &length, &height, // NOLINT
       &unsuitability, &edgeA, &edgeB); // NOLINT
 
   Edge e{ NodeId(source), NodeId(dest) };
