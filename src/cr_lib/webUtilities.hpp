@@ -83,8 +83,8 @@ void appendAlternativesToJsonStream(
 }
 
 void appendCsvLine(std::stringstream& result, const std::string& method, NodePos from, NodePos to,
-    size_t threshold, size_t maxSplits, const std::vector<TriangulationPoint>& routes,
-    size_t routeCount, size_t time)
+    size_t threshold, size_t maxSplits, size_t maxLevel, size_t maxRepeating,
+    const std::vector<TriangulationPoint>& routes, size_t routeCount, size_t time)
 {
 
   size_t lastInterestingRoute = 0;
@@ -106,8 +106,8 @@ void appendCsvLine(std::stringstream& result, const std::string& method, NodePos
   }
 
   result << from << "," << to << "," << method << "," << threshold << "," << maxSplits << ","
-         << setSize << "," << nonIdenticalRoutes << "," << routeCount << "," << lastInterestingRoute
-         << "," << time << '\n';
+         << maxLevel << "," << maxRepeating << "," << setSize << "," << nonIdenticalRoutes << ","
+         << routeCount << "," << lastInterestingRoute << "," << time << '\n';
 }
 
 #endif /* WEBUTILITIES_H */

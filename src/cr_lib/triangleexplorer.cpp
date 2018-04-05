@@ -17,6 +17,7 @@
 */
 
 #include "triangleexplorer.hpp"
+#include "namedType.hpp"
 #include <queue>
 #include <random>
 
@@ -28,10 +29,24 @@ RouteExplorer::RouteExplorer(Graph* g, NodePos from, NodePos to)
 {
 }
 
-Point RouteExplorer::createPoint(const PosVector& pos)
+std::pair<Point, bool> RouteExplorer::createPoint(const PosVector& pos)
 {
-  routes.push_back(d.findBestRoute(from, to, pos).value());
-  return Point(pos, routes.size() - 1);
+  bool filtered = true;
+  auto route = d.findBestRoute(from, to, pos).value();
+  for (size_t i = 0; i < routes.size(); ++i) {
+    auto sharing = calculateSharing(route, routes[i]);
+    if (sharing > sharingThreshold) {
+      filtered = false;
+    }
+    if (sharing >= 0.99) {
+      filter.push_back(filtered);
+      return { Point(pos, i), false };
+    }
+  }
+
+  filter.push_back(filtered);
+  routes.push_back(route);
+  return { Point(pos, routes.size() - 1), true };
 }
 
 AlternativeRoutes RouteExplorer::weightedExplore()
@@ -44,9 +59,9 @@ AlternativeRoutes RouteExplorer::weightedExplore()
 
   std::vector<Triangle> triangles;
 
-  auto length = createPoint(lengthVec);
-  auto height = createPoint(heightVec);
-  auto unsuit = createPoint(unsuitVec);
+  auto length = createPoint(lengthVec).first;
+  auto height = createPoint(heightVec).first;
+  auto unsuit = createPoint(unsuitVec).first;
 
   double lengthUnsuit
       = DiscreteFrechet(routes[length.routeIndex], routes[unsuit.routeIndex], *g).calculate();
@@ -83,7 +98,7 @@ AlternativeRoutes RouteExplorer::weightedExplore()
       Config c = middleVec;
       std::cout << "middle = " << c.length << " / " << c.height << " / " << c.unsuitability << '\n';
 
-      auto middle = createPoint(middleVec);
+      auto middle = createPoint(middleVec).first;
 
       lengthFrechet = DiscreteFrechet(routes[length.routeIndex], routes[index], *g).calculate();
       heightFrechet = DiscreteFrechet(routes[height.routeIndex], routes[index], *g).calculate();
@@ -144,17 +159,17 @@ AlternativeRoutes RouteExplorer::exploreGreatestDistance()
 
   routes.clear();
 
-  auto length = createPoint(lengthVec);
-  auto height = createPoint(heightVec);
-  auto unsuit = createPoint(unsuitVec);
+  auto length = createPoint(lengthVec).first;
+  auto height = createPoint(heightVec).first;
+  auto unsuit = createPoint(unsuitVec).first;
 
   auto main = triangles.emplace_back(length, height, unsuit);
   PosVector middleVec = main.calculateMiddle();
-  auto middle = createPoint(middleVec);
+  auto middle = createPoint(middleVec).first;
   std::cout << "Exploring" << '\n';
   while (true) {
     middleVec = main.calculateMiddle();
-    middle = createPoint(middleVec);
+    middle = createPoint(middleVec).first;
 
     Triangle noLength(middle, main.b(), main.c());
     Triangle noHeight(main.a(), middle, main.c());
@@ -164,9 +179,9 @@ AlternativeRoutes RouteExplorer::exploreGreatestDistance()
     auto noHeightVec = noHeight.calculateMiddle();
     auto noUnsuitVec = noUnsuit.calculateMiddle();
 
-    auto noLengthMiddle = createPoint(noLengthVec);
-    auto noHeightMiddle = createPoint(noHeightVec);
-    auto noUnsuitMiddle = createPoint(noUnsuitVec);
+    auto noLengthMiddle = createPoint(noLengthVec).first;
+    auto noHeightMiddle = createPoint(noHeightVec).first;
+    auto noUnsuitMiddle = createPoint(noUnsuitVec).first;
 
     double noLengthFrechet
         = DiscreteFrechet(routes[noLengthMiddle.routeIndex], routes[middle.routeIndex], *g)
@@ -239,7 +254,7 @@ AlternativeRoutes RouteExplorer::optimizeSharing()
 
   auto createChildren = [&](Triangle& triangle) -> std::optional<std::tuple<Point, Point, double>> {
     auto middleVec = triangle.calculateMiddle();
-    auto middle = createPoint(middleVec);
+    auto middle = createPoint(middleVec).first;
 
     auto A = triangle.a();
     auto B = triangle.b();
@@ -282,9 +297,9 @@ AlternativeRoutes RouteExplorer::optimizeSharing()
   PosVector heightVec{ { 0, 1, 0 } };
   PosVector unsuitVec{ { 0, 0, 1 } };
 
-  auto length = createPoint(lengthVec);
-  auto height = createPoint(heightVec);
-  auto unsuit = createPoint(unsuitVec);
+  auto length = createPoint(lengthVec).first;
+  auto height = createPoint(heightVec).first;
+  auto unsuit = createPoint(unsuitVec).first;
 
   triangles.emplace_back(length, height, unsuit);
 
@@ -414,16 +429,19 @@ double calcMinDist(
 }
 
 std::tuple<std::vector<TriangulationPoint>, size_t> RouteExplorer::triangleSplitting(
-    size_t threshold, size_t maxSplits)
+    size_t threshold, size_t maxSplits, size_t maxLevel, size_t maxOldRouteCount)
 {
 
-  using QueueElem = std::tuple<Triangle, double>;
+  using Level = NamedType<size_t, struct LevelType>;
+  using OldRouteCount = NamedType<size_t, struct OldRouteCountType>;
+
+  using QueueElem = std::tuple<Triangle, double, Level, OldRouteCount>;
   auto cmp = [](const QueueElem& a, const QueueElem& b) {
     return std::get<double>(a) > std::get<double>(b);
   };
   using Queue = std::priority_queue<QueueElem, std::vector<QueueElem>, decltype(cmp)>;
 
-  double sharingThreshold = threshold / 100.0;
+  sharingThreshold = threshold / 100.0;
 
   Queue triangles{ cmp };
 
@@ -431,44 +449,39 @@ std::tuple<std::vector<TriangulationPoint>, size_t> RouteExplorer::triangleSplit
   auto outerSplits = 0;
 
   routes.clear();
+  filter.clear();
   std::vector<Point> points;
 
   PosVector lengthVec{ { 1, 0, 0 } };
   PosVector heightVec{ { 0, 1, 0 } };
   PosVector unsuitVec{ { 0, 0, 1 } };
 
-  auto length = createPoint(lengthVec);
-  auto height = createPoint(heightVec);
-  auto unsuit = createPoint(unsuitVec);
+  auto length = createPoint(lengthVec).first;
+  auto height = createPoint(heightVec).first;
+  auto unsuit = createPoint(unsuitVec).first;
 
   points.push_back(length);
   points.push_back(height);
   points.push_back(unsuit);
 
-  triangles.emplace(Triangle{ length, height, unsuit }, 0.0);
+  triangles.emplace(Triangle{ length, height, unsuit }, 0.0, Level{ 0 }, OldRouteCount{ 0 });
 
   auto isPointOnLine = [](const PosVector& point, const PosVector& a, const PosVector& b) {
     return std::abs(point.distance(a) + point.distance(b) - a.distance(b)) < 0.000001;
   };
 
-  auto createChildren = [&](Triangle& triangle, bool allowSideSplit) {
+  auto createChildren = [&](Triangle& triangle, bool allowSideSplit, Level level,
+                            OldRouteCount oldRouteCount) {
     auto A = triangle.a();
     auto B = triangle.b();
     auto C = triangle.c();
 
-    if (calcMinAngle(A.position, B.position, C.position) < 10.0) {
+    if (level >= maxLevel || oldRouteCount >= maxOldRouteCount) {
       return;
     }
 
     auto middleVec = triangle.calculateMiddle();
-
-    const double minDistThreshold = std::sqrt(2) / 50.0;
-    double minDist = calcMinDist(A.position, B.position, C.position, middleVec);
-    if (minDist < minDistThreshold) {
-      return;
-    }
-
-    auto middle = createPoint(middleVec);
+    auto [middle, newRoute] = createPoint(middleVec);
 
     middle.parents.push_back(A.position);
     middle.parents.push_back(B.position);
@@ -527,25 +540,31 @@ std::tuple<std::vector<TriangulationPoint>, size_t> RouteExplorer::triangleSplit
     };
 
     std::optional<Point> sideCenter;
+    bool newRouteSide = false;
     double sideSharingMin = 0.0;
+    auto sharedOuter1 = 1.0;
+    auto sharedOuter2 = 1.0;
+    auto sharedInner = 1.0;
 
     if (allowSideSplit
         && (checkSideSplit(lengthVec, heightVec) || checkSideSplit(lengthVec, unsuitVec)
                || checkSideSplit(heightVec, unsuitVec))) {
       auto sideCenterVec = (outerPoint1->position + outerPoint2->position) * 0.5;
-      sideCenter = createPoint(sideCenterVec);
+      auto sideCenterPair = createPoint(sideCenterVec);
+      sideCenter = sideCenterPair.first;
+      newRouteSide = sideCenterPair.second;
 
       auto& routeSide = routes[sideCenter->routeIndex];
 
-      auto& routeA = routes[A.routeIndex];
-      auto& routeB = routes[B.routeIndex];
-      auto& routeC = routes[C.routeIndex];
+      auto& routeOuter1 = routes[outerPoint1->routeIndex];
+      auto& routeOuter2 = routes[outerPoint2->routeIndex];
+      auto& routeInner = routes[innerPoint->routeIndex];
 
-      auto sharedA = calculateSharing(routeA, routeSide);
-      auto sharedB = calculateSharing(routeB, routeSide);
-      auto sharedC = calculateSharing(routeC, routeSide);
+      sharedOuter1 = calculateSharing(routeOuter1, routeSide);
+      sharedOuter2 = calculateSharing(routeOuter2, routeSide);
+      sharedInner = calculateSharing(routeInner, routeSide);
 
-      sideSharingMin = std::min({ sharedA, sharedB, sharedC });
+      sideSharingMin = std::min({ sharedOuter1, sharedOuter2, sharedInner });
 
       sideCenter->parents.push_back(innerPoint->position);
     }
@@ -553,14 +572,20 @@ std::tuple<std::vector<TriangulationPoint>, size_t> RouteExplorer::triangleSplit
     if (!sideCenter || minShared > sideSharingMin) {
       innerSplits++;
       points.push_back(middle);
-      triangles.emplace(Triangle{ middle, B, C }, minShared);
-      triangles.emplace(Triangle{ A, middle, C }, minShared);
-      triangles.emplace(Triangle{ A, B, middle }, minShared);
+      triangles.emplace(Triangle{ middle, B, C }, (sharedB + sharedC) / 2, level + 1,
+          oldRouteCount + (newRoute ? 0 : 1));
+      triangles.emplace(Triangle{ A, middle, C }, (sharedA + sharedC) / 2, level + 1,
+          oldRouteCount + (newRoute ? 0 : 1));
+      triangles.emplace(Triangle{ A, B, middle }, (sharedA + sharedB) / 2, level + 1,
+          oldRouteCount + (newRoute ? 0 : 1));
     } else {
       outerSplits++;
       points.push_back(*sideCenter);
-      triangles.emplace(Triangle{ *outerPoint1, *sideCenter, *innerPoint }, sideSharingMin);
-      triangles.emplace(Triangle{ *outerPoint2, *sideCenter, *innerPoint }, sideSharingMin);
+
+      triangles.emplace(Triangle{ *outerPoint1, *sideCenter, *innerPoint },
+          (sharedOuter1 + sharedInner) / 2, level + 1, oldRouteCount + (newRouteSide ? 0 : 1));
+      triangles.emplace(Triangle{ *outerPoint2, *sideCenter, *innerPoint },
+          (sharedOuter2 + sharedInner) / 2, level + 1, oldRouteCount + (newRouteSide ? 0 : 1));
     }
   };
 
@@ -568,22 +593,12 @@ std::tuple<std::vector<TriangulationPoint>, size_t> RouteExplorer::triangleSplit
   while (!triangles.empty()) {
     auto triangle = triangles.top();
     triangles.pop();
-    createChildren(std::get<Triangle>(triangle), allowSideSplit);
+    createChildren(std::get<Triangle>(triangle), allowSideSplit, std::get<Level>(triangle),
+        std::get<OldRouteCount>(triangle));
     allowSideSplit = true;
-    if (points.size() > maxSplits) {
+    // The first 3 points do not belong to splits
+    if (points.size() - 3 > maxSplits) {
       break;
-    }
-  }
-
-  std::vector<bool> filter(points.size(), true);
-  for (size_t i = 0; i < points.size(); ++i) {
-    for (size_t j = i + 1; j < points.size(); ++j) {
-      if (filter[j]) {
-        auto sharing = calculateSharing(routes[points[i].routeIndex], routes[points[j].routeIndex]);
-        if (sharing > sharingThreshold) {
-          filter[j] = false;
-        }
-      }
     }
   }
 
@@ -608,7 +623,7 @@ std::tuple<std::vector<TriangulationPoint>, size_t> RouteExplorer::randomWithCou
     result.emplace_back(conf, route, true, std::vector<PosVector>());
   }
 
-  const double sharingThreshold = threshold / 100.0;
+  sharingThreshold = threshold / 100.0;
   for (size_t i = 0; i < result.size(); ++i) {
     for (size_t j = i + 1; j < result.size(); ++j) {
       if (result[j].selected) {

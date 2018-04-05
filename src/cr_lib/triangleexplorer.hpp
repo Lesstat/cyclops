@@ -127,18 +127,20 @@ class RouteExplorer {
   AlternativeRoutes randomAlternatives();
   AlternativeRoutes trulyRandomAlternatives();
   std::tuple<std::vector<TriangulationPoint>, size_t> triangleSplitting(
-      size_t threshold, size_t maxSplits);
+      size_t threshold, size_t maxSplits, size_t maxLevel, size_t maxOldRouteCount);
   std::tuple<std::vector<TriangulationPoint>, size_t> randomWithCount(
       size_t threshold, size_t routeCount);
 
   private:
-  Point createPoint(const PosVector& pos);
+  std::pair<Point, bool> createPoint(const PosVector& pos);
 
   Graph* g;
   NodePos from;
   NodePos to;
   Dijkstra d;
+  double sharingThreshold = 1.0;
   std::vector<Route> routes;
+  std::vector<bool> filter;
 };
 
 #endif /* TRIANGLEEXPLORER_H */

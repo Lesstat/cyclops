@@ -252,6 +252,8 @@ void runWebServer(Graph& g)
     size_t sampleSize = 10;
     size_t threshold = 30;
     size_t maxSplits = 15;
+    size_t maxLevel = 5;
+    size_t maxOldRoutes = 2;
     for (const auto& field : request->parse_query_string()) {
       if (field.first == "samplesize") {
         sampleSize = stoull(field.second);
@@ -259,12 +261,17 @@ void runWebServer(Graph& g)
         threshold = stoull(field.second);
       } else if (field.first == "maxSplits") {
         maxSplits = stoull(field.second);
+      } else if (field.first == "maxLevel") {
+        maxLevel = stoull(field.second);
+      } else if (field.first == "maxRepeating") {
+        maxOldRoutes = stoull(field.second);
       }
     }
 
     using ms = std::chrono::milliseconds;
     std::stringstream result;
-    result << "from, to, method, threshold, maxSplits, setSize, nonidenticalRoutes, routeCount, "
+    result << "from, to, method, threshold, maxSplits,maxLevel,maxRepeating, setSize, "
+              "nonidenticalRoutes, routeCount, "
               "lastInterestingRoute, time"
            << '\n';
     Config lengthOnly{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } };
@@ -281,18 +288,21 @@ void runWebServer(Graph& g)
       counter++;
       RouteExplorer explorer{ &g, from, to };
       auto start = std::chrono::high_resolution_clock::now();
-      auto [routes, count] = explorer.triangleSplitting(threshold, maxSplits);
+      auto [routes, count]
+          = explorer.triangleSplitting(threshold, maxSplits, maxLevel, maxOldRoutes);
       auto end = std::chrono::high_resolution_clock::now();
       auto duration = std::chrono::duration_cast<ms>(end - start).count();
 
-      appendCsvLine(result, "splitting", from, to, threshold, maxSplits, routes, count, duration);
+      appendCsvLine(result, "splitting", from, to, threshold, maxSplits, maxLevel, maxOldRoutes,
+          routes, count, duration);
 
       start = std::chrono::high_resolution_clock::now();
       routes = std::get<0>(explorer.randomWithCount(threshold, count));
       end = std::chrono::high_resolution_clock::now();
       duration = std::chrono::duration_cast<ms>(end - start).count();
 
-      appendCsvLine(result, "random", from, to, threshold, maxSplits, routes, count, duration);
+      appendCsvLine(result, "random", from, to, threshold, maxSplits, maxLevel, maxOldRoutes,
+          routes, count, duration);
 
       if (counter % 10 == 0) {
         std::cout << "Finished " << counter << " s-t combinations" << '\n';
@@ -320,8 +330,9 @@ void runWebServer(Graph& g)
       }
     }
 
-    auto [routes, count] = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t })
-                               .triangleSplitting(threshold.value_or(30), maxSplits.value_or(15));
+    auto [routes, count]
+        = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t })
+              .triangleSplitting(threshold.value_or(30), maxSplits.value_or(15), 5, 2);
     std::stringstream result;
 
     result << "[";
