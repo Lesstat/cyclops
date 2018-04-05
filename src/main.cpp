@@ -120,10 +120,11 @@ void runWebServer(Graph& g)
   using Request = std::shared_ptr<HttpServer::Request>;
 
   Grid grid = g.createGrid();
-  Dijkstra dijkstra = g.createDijkstra();
 
   HttpServer server;
   server.config.port = 8080;
+  server.config.thread_pool_size
+      = std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1;
 
   server.default_resource["GET"] = [](Response response, Request /*request*/) {
     response->write(SimpleWeb::StatusCode::client_error_not_found, "No matching handler found");
@@ -183,7 +184,7 @@ void runWebServer(Graph& g)
     response->write(SimpleWeb::StatusCode::success_ok, std::to_string(pos->get()));
   };
 
-  server.resource["^/route"]["GET"] = [&g, &dijkstra](Response response, Request request) {
+  server.resource["^/route"]["GET"] = [&g](Response response, Request request) {
     std::optional<size_t> s{}, t{}, length{}, height{}, unsuitability{};
     extractQueryFields(request->parse_query_string(), s, t, length, height, unsuitability);
 
@@ -192,6 +193,8 @@ void runWebServer(Graph& g)
           "Request needs to contain the parameters: s, t, length, height, unsuitability");
       return;
     }
+
+    auto dijkstra = g.createDijkstra();
 
     auto start = std::chrono::high_resolution_clock::now();
     auto route = dijkstra.findBestRoute(NodePos{ *s }, NodePos{ *t },
@@ -248,7 +251,7 @@ void runWebServer(Graph& g)
     response->write(SimpleWeb::StatusCode::success_ok, result, header);
   };
 
-  server.resource["^/csv"]["GET"] = [&g, &dijkstra](Response response, Request request) {
+  server.resource["^/csv"]["GET"] = [&g](Response response, Request request) {
     size_t sampleSize = 10;
     size_t threshold = 30;
     size_t maxSplits = 15;
@@ -267,6 +270,8 @@ void runWebServer(Graph& g)
         maxOldRoutes = stoull(field.second);
       }
     }
+
+    auto dijkstra = g.createDijkstra();
 
     using ms = std::chrono::milliseconds;
     std::stringstream result;
