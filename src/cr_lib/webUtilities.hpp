@@ -90,6 +90,7 @@ void appendCsvLine(std::stringstream& result, const std::string& method, NodePos
   size_t lastInterestingRoute = 0;
   size_t setSize = 0;
   size_t nonIdenticalRoutes = 0;
+  double lowestSharing = 1;
   for (size_t i = 0; i < routes.size(); ++i) {
     const auto& route = routes[i];
     if (route.selected) {
@@ -98,7 +99,11 @@ void appendCsvLine(std::stringstream& result, const std::string& method, NodePos
     }
     nonIdenticalRoutes++;
     for (size_t j = i + 1; j < routes.size(); ++j) {
-      if (calculateSharing(route.route, routes[j].route) > 0.95) {
+      double sharing = calculateSharing(route.route, routes[j].route);
+      if (sharing < lowestSharing) {
+        lowestSharing = sharing;
+      }
+      if (sharing > 0.99) {
         nonIdenticalRoutes--;
         break;
       }
@@ -107,7 +112,8 @@ void appendCsvLine(std::stringstream& result, const std::string& method, NodePos
 
   result << from << "," << to << "," << method << "," << threshold << "," << maxSplits << ","
          << maxLevel << "," << maxRepeating << "," << setSize << "," << nonIdenticalRoutes << ","
-         << routeCount << "," << lastInterestingRoute << "," << time << '\n';
+         << routeCount << "," << lastInterestingRoute << "," << lowestSharing << "," << time
+         << '\n';
 }
 
 #endif /* WEBUTILITIES_H */

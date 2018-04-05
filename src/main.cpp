@@ -276,8 +276,7 @@ void runWebServer(Graph& g)
     using ms = std::chrono::milliseconds;
     std::stringstream result;
     result << "from, to, method, threshold, maxSplits,maxLevel,maxRepeating, setSize, "
-              "nonidenticalRoutes, routeCount, "
-              "lastInterestingRoute, time"
+              "nonidenticalRoutes, routeCount, lastInterestingRoute, lowestSharing, time"
            << '\n';
     Config lengthOnly{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } };
     std::random_device rd{};
