@@ -192,8 +192,6 @@ public:
       auto tIndex = q.top();
       q.pop();
       auto& t = triangles[tIndex];
-      std::cout << "sim: " << t.bestSimilarity << '\n';
-
       for (auto child : t.split()) {
         q.push(child);
       }
