@@ -87,9 +87,9 @@ public:
           auto sim = tri->compare(pointVec[i], pointVec[j]);
           if (sim < tri->threshold) {
             noMoreRoutes = false;
-            if (sim < bestSimilarity) {
-              bestSimilarity = sim;
-            }
+          }
+          if (sim < bestSimilarity) {
+            bestSimilarity = sim;
           }
         }
       }
@@ -248,7 +248,7 @@ public:
     std::transform(
         triangles.begin(), triangles.end(), std::back_inserter(triTriangles), [](auto& t) {
           auto points = t.points();
-          return TriTriangle{ points[0], points[1], points[2], t.bestSimilarity == 1 };
+          return TriTriangle{ points[0], points[1], points[2], t.bestSimilarity == 1.0 };
         });
 
     return { triPoints, triTriangles };
