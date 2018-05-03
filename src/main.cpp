@@ -368,7 +368,7 @@ void runWebServer(Graph& g)
   };
 
   server.resource["^/scaled"]["GET"] = [&g](Response response, Request request) {
-    std::optional<size_t> s{}, t{}, threshold{}, dummy{};
+    std::optional<size_t> s{}, t{}, threshold{}, maxSplits{}, dummy{};
 
     auto queryParams = request->parse_query_string();
     extractQueryFields(queryParams, s, t, dummy, dummy, dummy);
@@ -380,11 +380,13 @@ void runWebServer(Graph& g)
     for (const auto& param : queryParams) {
       if (param.first == "threshold") {
         threshold = stoull(param.second);
+      } else if (param.first == "maxSplits") {
+        maxSplits = stoull(param.second);
       }
     }
     auto d = g.createDijkstra();
-    auto [points, triangles]
-        = scaledTriangulation(d, NodePos{ *s }, NodePos{ *t }, threshold.value_or(60) / 100.0);
+    auto [points, triangles] = scaledTriangulation(
+        d, NodePos{ *s }, NodePos{ *t }, threshold.value_or(60) / 100.0, maxSplits.value_or(10));
     std::stringstream result;
 
     result << "{ \"points\": [";

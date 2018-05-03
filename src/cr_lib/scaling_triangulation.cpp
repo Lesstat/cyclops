@@ -69,16 +69,30 @@ private:
     size_t edge2;
     size_t edge3;
     Triangulation* tri;
-
     bool noMoreRoutes = false;
 
 public:
+    double bestSimilarity = 1;
+
     Triangle(size_t e1, size_t e2, size_t e3, Triangulation* tri)
         : edge1(e1)
         , edge2(e2)
         , edge3(e3)
         , tri(tri)
     {
+      auto pointVec = points();
+      noMoreRoutes = true;
+      for (size_t i = 0; i < pointVec.size(); ++i) {
+        for (size_t j = i + 1; j < pointVec.size(); ++j) {
+          auto sim = tri->compare(pointVec[i], pointVec[j]);
+          if (sim < tri->threshold) {
+            noMoreRoutes = false;
+            if (sim < bestSimilarity) {
+              bestSimilarity = sim;
+            }
+          }
+        }
+      }
     }
 
     std::vector<size_t> points()
@@ -97,20 +111,9 @@ public:
     std::vector<size_t> split()
     {
       std::vector<size_t> result{};
-      result.reserve(4);
-      auto pointVec = points();
-
-      noMoreRoutes = true;
-      for (size_t i = 0; i < pointVec.size(); ++i) {
-        for (size_t j = i + 1; j < pointVec.size(); ++j) {
-          auto sim = tri->compare(pointVec[i], pointVec[j]);
-          if (sim < tri->threshold) {
-            noMoreRoutes = false;
-          }
-        }
-      }
 
       if (!noMoreRoutes) {
+        result.reserve(4);
         auto edgePair1 = tri->edges[edge1].split();
         auto edgePair2 = tri->edges[edge2].split();
         auto edgePair3 = tri->edges[edge3].split();
@@ -162,7 +165,7 @@ public:
   {
   }
 
-  void triangulate()
+  void triangulate(size_t maxSplits)
   {
     auto p1 = createPoint(PosVector({ 1, 0, 0 }));
     auto p2 = createPoint(PosVector({ 0, 1, 0 }));
@@ -174,15 +177,21 @@ public:
 
     auto t1 = createTriangle(e1, e2, e3);
 
-    std::queue<size_t> q{};
+    auto simComparator = [this](size_t left, size_t right) {
+      return triangles[left].bestSimilarity > triangles[right].bestSimilarity;
+    };
+
+    std::priority_queue<size_t, std::vector<size_t>, decltype(simComparator)> q{ simComparator };
     q.push(t1);
+    triangles.reserve(maxSplits * 4);
 
     size_t count = 0;
-    while (!q.empty() && count < 200) {
+    while (!q.empty() && count < maxSplits) {
       count++;
-      auto tIndex = q.front();
+      auto tIndex = q.top();
       q.pop();
       auto& t = triangles[tIndex];
+      std::cout << "sim: " << t.bestSimilarity << '\n';
 
       for (auto child : t.split()) {
         q.push(child);
@@ -209,7 +218,7 @@ public:
     return triangles.size() - 1;
   }
 
-  size_t compare(size_t a, size_t b)
+  double compare(size_t a, size_t b)
   {
     if (a > b) {
       std::swap(a, b);
@@ -248,10 +257,10 @@ public:
 };
 
 std::tuple<std::vector<TriPoint>, std::vector<TriTriangle>> scaledTriangulation(
-    Dijkstra& d, NodePos from, NodePos to, double threshold)
+    Dijkstra& d, NodePos from, NodePos to, double threshold, size_t maxSplits)
 {
   Triangulation tri(d, from, to, threshold);
-  tri.triangulate();
+  tri.triangulate(maxSplits);
 
   return tri.output();
 }

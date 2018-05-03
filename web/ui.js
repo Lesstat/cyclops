@@ -426,3 +426,91 @@ function configToCoords(values) {
       unsuitabilityCorner.y * values[2]
   };
 }
+function scalingTriangulation() {
+  geoJson.clearLayers();
+  let xmlhttp = new XMLHttpRequest();
+
+  xmlhttp.responseType = "json";
+  xmlhttp.onload = function() {
+    if (xmlhttp.status == 200) {
+      listOfRoutes = [];
+      drawTriangle();
+
+      let canvas = document.getElementById("triangleSelector");
+      let ctx = canvas.getContext("2d");
+      ctx.fillStyle = "black";
+
+      let points = xmlhttp.response.points;
+      let triangles = xmlhttp.response.triangles;
+
+      for (let t in triangles) {
+        let point1 = configToCoords(
+          points[triangles[t].point1].conf.split("/")
+        );
+        let point2 = configToCoords(
+          points[triangles[t].point2].conf.split("/")
+        );
+        let point3 = configToCoords(
+          points[triangles[t].point3].conf.split("/")
+        );
+        ctx.beginPath();
+        ctx.moveTo(point1.x, point1.y);
+        ctx.lineTo(point2.x, point2.y);
+        ctx.lineTo(point3.x, point3.y);
+        if (triangles[t].filled) {
+          ctx.fill();
+        } else {
+          ctx.stroke();
+        }
+      }
+      for (let p in points) {
+        let col = rainbow(p);
+
+        let myStyle = {
+          color: col,
+          weight: 4,
+          opacity: 1
+        };
+
+        let values = points[p].conf.split("/");
+        let coord = configToCoords(values);
+        drawDot(coord.x, coord.y, col);
+
+        let geoRoute = L.geoJSON(points[p].route.route.geometry, {
+          style: myStyle
+        });
+
+        geoJson.addLayer(geoRoute);
+        listOfRoutes.push({
+          point: coord,
+          route: geoRoute,
+          config: values,
+          cost: {
+            length: points[p].route.length,
+            height: points[p].route.height,
+            unsuitability: points[p].route.unsuitability
+          }
+        });
+      }
+    }
+  };
+
+  let s = document.getElementById("start").innerHTML;
+  let t = document.getElementById("end").innerHTML;
+  let threshold = document.getElementById("sharingThreshold").value;
+  let maxSplits = document.getElementById("maxSplits").value;
+
+  xmlhttp.open(
+    "GET",
+    "/scaled" +
+      "?s=" +
+      s +
+      "&t=" +
+      t +
+      "&threshold=" +
+      threshold +
+      "&maxSplits=" +
+      maxSplits
+  );
+  xmlhttp.send();
+}
