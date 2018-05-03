@@ -101,7 +101,8 @@ public:
       auto& e2 = tri->edges[edge2];
       auto& e3 = tri->edges[edge3];
 
-      std::vector points{ { e1.point1, e2.point1, e3.point1, e1.point2, e2.point2, e3.point2 } };
+      std::vector<size_t> points{ { e1.point1, e2.point1, e3.point1, e1.point2, e2.point2,
+          e3.point2 } };
       std::sort(points.begin(), points.end());
       points.erase(std::unique(points.begin(), points.end()), points.end());
       return points;
