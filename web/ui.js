@@ -438,12 +438,12 @@ function scalingTriangulation() {
 
       let canvas = document.getElementById("triangleSelector");
       let ctx = canvas.getContext("2d");
-      ctx.fillStyle = "black";
 
       let points = xmlhttp.response.points;
       let triangles = xmlhttp.response.triangles;
 
       for (let t in triangles) {
+        ctx.fillStyle = "black";
         let point1 = configToCoords(
           points[triangles[t].point1].conf.split("/")
         );
@@ -458,6 +458,7 @@ function scalingTriangulation() {
         ctx.lineTo(point2.x, point2.y);
         ctx.lineTo(point3.x, point3.y);
         if (triangles[t].filled) {
+          ctx.fillStyle = rainbow(triangles[t].point1);
           ctx.fill();
         } else {
           ctx.stroke();
