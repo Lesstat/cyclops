@@ -18,6 +18,9 @@
 
 #include "scaling_triangulation.hpp"
 #include "routeComparator.hpp"
+#include <iostream>
+
+using ms = std::chrono::milliseconds;
 
 class Triangulation {
 
@@ -111,6 +114,8 @@ public:
 
     std::vector<size_t> split()
     {
+      auto start = std::chrono::high_resolution_clock::now();
+
       std::vector<size_t> result{};
 
       if (!noMoreRoutes) {
@@ -143,6 +148,9 @@ public:
         result.push_back(tri->createTriangle(newEdge1, newEdge2, newEdge3));
       }
 
+      auto end = std::chrono::high_resolution_clock::now();
+      std::cerr << "splitting the triangle took "
+                << std::chrono::duration_cast<ms>(end - start).count() << "ms" << '\n';
       return result;
     }
   };
@@ -200,8 +208,14 @@ public:
 
   size_t createPoint(const PosVector& p)
   {
+    auto start = std::chrono::high_resolution_clock::now();
+
     Route r = *d.findBestRoute(from, to, p);
     points.emplace_back(p, r, this);
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::cerr << "creating the point/route took "
+              << std::chrono::duration_cast<ms>(end - start).count() << "ms" << '\n';
     return points.size() - 1;
   }
 
@@ -258,8 +272,15 @@ public:
 std::tuple<std::vector<TriPoint>, std::vector<TriTriangle>> scaledTriangulation(
     Dijkstra& d, NodePos from, NodePos to, double threshold, size_t maxSplits)
 {
+
+  auto start = std::chrono::high_resolution_clock::now();
+
   Triangulation tri(d, from, to, threshold);
   tri.triangulate(maxSplits);
+  auto result = tri.output();
 
-  return tri.output();
+  auto end = std::chrono::high_resolution_clock::now();
+  std::cerr << "creating the triangulation took "
+            << std::chrono::duration_cast<ms>(end - start).count() << "ms" << '\n';
+  return result;
 }
