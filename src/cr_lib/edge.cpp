@@ -112,6 +112,9 @@ float Cost::operator*(const Config& conf) const
               << "unsuit " << this->unsuitability << " * " << conf.unsuitability << '\n';
     assert(false);
   }
+  if (combinedCost == 0) {
+    return std::numeric_limits<float>::epsilon();
+  }
   return combinedCost;
 }
 
