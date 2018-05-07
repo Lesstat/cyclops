@@ -133,11 +133,12 @@ bool addConstraint(const RouteWithCount& route, const Cost& c1, LinearProgram& l
 }
 
 bool extractRoutesAndAddConstraints(RouteIterator& routes, const Cost& shortcutCost,
-    LinearProgram& lp, const HalfEdge& out, const HalfEdge& in)
+    LinearProgram& lp, const HalfEdge& out, const HalfEdge& in, bool& routeIncluded)
 {
   for (auto optRoute = routes.next(); optRoute; optRoute = routes.next()) {
     auto route = *optRoute;
     if (route.edges.size() == 2 && route.edges[0] == in.id && route.edges[1] == out.id) {
+      routeIncluded = true;
       continue;
     }
     if (!addConstraint(route, shortcutCost, lp)) {
@@ -184,8 +185,10 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
           shortcuts.push_back(
               Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
         };
+
+        bool routeIncluded = false;
         while (!finished) {
-          auto[isShortest, foundRoute] = isShortestPath(d, in, out, config);
+          auto [isShortest, foundRoute] = isShortestPath(d, in, out, config);
           if (isShortest) {
             if (foundRoute->pathCount == 1) {
               storeShortcut(StatisticsCollector::CountType::shortestPath);
@@ -199,7 +202,7 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
           }
           auto routes = d.routeIter(in.end, out.end);
           while (!routes.finished()) {
-            if (!extractRoutesAndAddConstraints(routes, shortcutCost, lp, out, in)) {
+            if (!extractRoutesAndAddConstraints(routes, shortcutCost, lp, out, in, routeIncluded)) {
               finished = true;
               break;
             }
@@ -221,7 +224,11 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
               UnsuitabilityConfig{ values[2] } };
             if (config == newConfig) {
               if (routes.finished()) {
-                storeShortcut(StatisticsCollector::CountType::repeatingConfig);
+                if (routeIncluded) {
+                  storeShortcut(StatisticsCollector::CountType::repeatingConfig);
+                } else {
+                  finished = true;
+                }
                 break;
               }
               routes.doubleHeapsize();
