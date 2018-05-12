@@ -164,6 +164,10 @@ public:
   NodePos from;
   NodePos to;
   double threshold;
+  std::optional<double> optLength;
+  std::optional<double> optHeight;
+  std::optional<double> optUnsuitability;
+  std::optional<double> maxOpt;
 
   public:
   Triangulation(Dijkstra& d, NodePos from, NodePos to, double threshold)
@@ -179,6 +183,11 @@ public:
     auto p1 = createPoint(PosVector({ 1, 0, 0 }));
     auto p2 = createPoint(PosVector({ 0, 1, 0 }));
     auto p3 = createPoint(PosVector({ 0, 0, 1 }));
+
+    optLength = points[p1].r.costs.length;
+    optHeight = points[p1].r.costs.height;
+    optUnsuitability = points[p1].r.costs.unsuitability;
+    maxOpt = std::max({ *optLength, *optHeight, *optUnsuitability });
 
     auto e1 = createEdge(p1, p2);
     auto e2 = createEdge(p1, p3);
@@ -209,8 +218,16 @@ public:
   size_t createPoint(const PosVector& p)
   {
     auto start = std::chrono::high_resolution_clock::now();
-
-    Route r = *d.findBestRoute(from, to, p);
+    Route r;
+    if (maxOpt) {
+      Config c = p;
+      c.length = LengthConfig{ c.length * (*maxOpt / *optLength) };
+      c.height = HeightConfig{ c.height * (*maxOpt / *optHeight) };
+      c.unsuitability = UnsuitabilityConfig{ c.unsuitability * (*maxOpt / *optUnsuitability) };
+      r = *d.findBestRoute(from, to, c);
+    } else {
+      r = *d.findBestRoute(from, to, p);
+    }
     points.emplace_back(p, r, this);
 
     auto end = std::chrono::high_resolution_clock::now();
