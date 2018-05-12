@@ -42,7 +42,12 @@ void sortEdgesByNodePos(std::vector<HalfEdge>& edges, const Graph& g)
 {
   auto comparator = [&g](const HalfEdge& a, const HalfEdge& b) {
     if (a.begin == b.begin) {
-      return g.getLevelOf(a.end) > g.getLevelOf(b.end);
+      auto aLevel = g.getLevelOf(a.end);
+      auto bLevel = g.getLevelOf(b.end);
+      if (aLevel == bLevel) {
+        return a.end < b.end;
+      }
+      return aLevel > bLevel;
     }
     return a.begin < b.begin;
   };

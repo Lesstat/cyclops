@@ -202,18 +202,41 @@ void Dijkstra::relaxEdges(
   auto myLevel = graph->getLevelOf(node);
   auto edges
       = dir == Direction::S ? graph->getOutgoingEdgesOf(node) : graph->getIngoingEdgesOf(node);
+
+  std::optional<NodePos> lastNode = {};
+  std::optional<double> lastCost = {};
+  std::optional<HalfEdge> lastEdge = {};
   for (const auto& edge : edges) {
     NodePos nextNode = edge.end;
-    if (graph->getLevelOf(nextNode) < myLevel) {
-      return;
+    if (!lastNode) {
+      lastNode = nextNode;
+    }
+    if (*lastNode != nextNode) {
+      if (*lastCost < costs[*lastNode]) {
+        costs[*lastNode] = *lastCost;
+        touched.push_back(*lastNode);
+        previousEdge[*lastNode] = *lastEdge;
+        heap.push({ *lastNode, *lastCost });
+      }
+      lastNode = nextNode;
+      lastCost = {};
+      lastEdge = {};
     }
     double nextCost = cost + edge.costByConfiguration(config);
-    if (nextCost < costs[nextNode]) {
-      costs[nextNode] = nextCost;
-      touched.push_back(nextNode);
-      previousEdge[nextNode] = edge;
-      QueueElem next = std::make_pair(nextNode, nextCost);
-      heap.push(next);
+    if (!lastCost || *lastCost > nextCost) {
+      lastCost = nextCost;
+      lastEdge = edge;
+    }
+    if (graph->getLevelOf(nextNode) < myLevel) {
+      break;
+    }
+  }
+  if (lastNode && lastCost) {
+    if (*lastCost < costs[*lastNode]) {
+      costs[*lastNode] = *lastCost;
+      touched.push_back(*lastNode);
+      previousEdge[*lastNode] = *lastEdge;
+      heap.push({ *lastNode, *lastCost });
     }
   }
 }
