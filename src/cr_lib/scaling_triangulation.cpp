@@ -210,7 +210,7 @@ public:
     auto t1 = createTriangle(e1, e2, e3);
 
     auto simComparator = [this](size_t left, size_t right) {
-      return triangles[left].edgeLength() < triangles[right].edgeLength();
+      return triangles[left].bestSimilarity > triangles[right].bestSimilarity;
     };
 
     std::priority_queue<size_t, std::vector<size_t>, decltype(simComparator)> q{ simComparator };
