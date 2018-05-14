@@ -62,6 +62,14 @@ class Triangulation {
       return { childEdge1, childEdge2 };
     }
 
+    double length() const
+    {
+      auto& p1 = tri->points[point1];
+      auto& p2 = tri->points[point2];
+
+      return p1.p.distance(p2.p);
+    }
+
 private:
     size_t childEdge1 = 0;
     size_t childEdge2 = 0;
@@ -153,6 +161,12 @@ public:
                 << std::chrono::duration_cast<ms>(end - start).count() << "ms" << '\n';
       return result;
     }
+    double edgeLength() const
+    {
+      auto& e = tri->edges[edge1];
+      auto length = e.length();
+      return length;
+    }
   };
 
   std::vector<Point> points;
@@ -196,7 +210,7 @@ public:
     auto t1 = createTriangle(e1, e2, e3);
 
     auto simComparator = [this](size_t left, size_t right) {
-      return triangles[left].bestSimilarity > triangles[right].bestSimilarity;
+      return triangles[left].edgeLength() < triangles[right].edgeLength();
     };
 
     std::priority_queue<size_t, std::vector<size_t>, decltype(simComparator)> q{ simComparator };
@@ -210,7 +224,9 @@ public:
       q.pop();
       auto& t = triangles[tIndex];
       for (auto child : t.split()) {
-        q.push(child);
+        if (triangles[child].edgeLength() > 0.04) {
+          q.push(child);
+        }
       }
     }
   }
