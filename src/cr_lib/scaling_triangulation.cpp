@@ -83,7 +83,7 @@ private:
     bool noMoreRoutes = false;
 
 public:
-    double bestSimilarity = 1;
+    double greatestCostRatio = 1;
 
     Triangle(size_t e1, size_t e2, size_t e3, Triangulation* tri)
         : edge1(e1)
@@ -92,18 +92,25 @@ public:
         , tri(tri)
     {
       auto pointVec = points();
-      noMoreRoutes = true;
-      for (size_t i = 0; i < pointVec.size(); ++i) {
-        for (size_t j = i + 1; j < pointVec.size(); ++j) {
-          auto sim = tri->compare(pointVec[i], pointVec[j]);
-          if (sim < tri->threshold) {
-            noMoreRoutes = false;
-          }
-          if (sim < bestSimilarity) {
-            bestSimilarity = sim;
-          }
+      // noMoreRoutes = true;
+      auto& p1 = tri->points[pointVec[0]];
+      auto& p2 = tri->points[pointVec[1]];
+      auto& p3 = tri->points[pointVec[2]];
+      auto center = p1.p * 0.33 + p2.p * 0.33 + p3.p * 0.33;
+
+      auto calcRatio = [](double costA, double costB) {
+        if (costA < costB) {
+          std::swap(costA, costB);
         }
-      }
+        return costA / costB;
+      };
+
+      auto newCost1 = p1.r.costs * center;
+      auto newCost2 = p2.r.costs * center;
+      auto newCost3 = p3.r.costs * center;
+
+      greatestCostRatio = std::max({ calcRatio(newCost1, newCost2), calcRatio(newCost1, newCost3),
+          calcRatio(newCost2, newCost3) });
     }
 
     std::vector<size_t> points()
@@ -210,7 +217,7 @@ public:
     auto t1 = createTriangle(e1, e2, e3);
 
     auto simComparator = [this](size_t left, size_t right) {
-      return triangles[left].bestSimilarity > triangles[right].bestSimilarity;
+      return triangles[left].greatestCostRatio < triangles[right].greatestCostRatio;
     };
 
     std::priority_queue<size_t, std::vector<size_t>, decltype(simComparator)> q{ simComparator };
@@ -224,9 +231,7 @@ public:
       q.pop();
       auto& t = triangles[tIndex];
       for (auto child : t.split()) {
-        if (triangles[child].edgeLength() > 0.04) {
-          q.push(child);
-        }
+        q.push(child);
       }
     }
   }
@@ -295,7 +300,7 @@ public:
     std::transform(
         triangles.begin(), triangles.end(), std::back_inserter(triTriangles), [](auto& t) {
           auto points = t.points();
-          return TriTriangle{ points[0], points[1], points[2], t.bestSimilarity == 1.0 };
+          return TriTriangle{ points[0], points[1], points[2], t.greatestCostRatio == 1.0 };
         });
 
     return { triPoints, triTriangles };
