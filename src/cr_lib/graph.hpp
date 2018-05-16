@@ -156,6 +156,7 @@ class Edge {
   friend void testEdgeInternals(const Edge& e, NodeId source, NodeId destination, Length length,
       Height height, Unsuitability unsuitability, const ReplacedEdge& edgeA,
       const ReplacedEdge& edgeB);
+  friend Edge createEdge(std::ifstream&, std::ifstream&);
 
   private:
   friend class boost::serialization::access;

@@ -18,6 +18,7 @@
 #include "contractor.hpp"
 #include "dijkstra.hpp"
 #include "grid.hpp"
+#include "multi_file_format.hpp"
 #include "routeComparator.hpp"
 #include "scaling_triangulation.hpp"
 #include "server_http.hpp"
@@ -569,15 +570,15 @@ int main(int argc, char* argv[])
 {
   std::cout.imbue(std::locale(""));
 
-  std::string textFileName{};
-  std::string binFileName{};
+  std::string loadFileName{};
   std::string saveFileName{};
   double contractionPercent;
 
   po::options_description loading{ "loading options" };
   loading.add_options()(
-      "text,t", po::value<std::string>(&textFileName), "load graph from text file")(
-      "bin,b", po::value<std::string>(&binFileName), "load graph form binary file");
+      "text,t", po::value<std::string>(&loadFileName), "load graph from text file")(
+      "bin,b", po::value<std::string>(&loadFileName), "load graph form binary file")(
+      "multi,m", po::value<std::string>(&loadFileName), "load graph from multiple files");
 
   po::options_description action{ "actions" };
   action.add_options()("contract,c", "contract graph");
@@ -602,10 +603,12 @@ int main(int argc, char* argv[])
     return 0;
   }
   Graph g{ std::vector<Node>(), std::vector<Edge>() };
-  if (!textFileName.empty()) {
-    g = loadGraphFromTextFile(textFileName);
-  } else if (!binFileName.empty()) {
-    g = loadGraphFromBinaryFile(binFileName);
+  if (vm.count("text") > 0) {
+    g = loadGraphFromTextFile(loadFileName);
+  } else if (vm.count("bin") > 0) {
+    g = loadGraphFromBinaryFile(loadFileName);
+  } else if (vm.count("multi") > 0) {
+    g = readMultiFileGraph(loadFileName);
   } else {
     std::cout << "No input file given" << '\n';
     std::cout << all << '\n';
