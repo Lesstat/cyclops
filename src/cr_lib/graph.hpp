@@ -187,7 +187,7 @@ class Edge {
 class Node {
   public:
   Node() = default;
-  Node(NodeId id, Lat lat, Lng lng, Height height);
+  Node(NodeId id, Lat lat, Lng lng);
   Node(const Node& other) = default;
   Node(Node&& other) noexcept = default;
   virtual ~Node() noexcept = default;
@@ -200,8 +200,7 @@ class Node {
   friend std::ostream& operator<<(std::ostream& os, const Node& n);
 
   static Node createFromText(const std::string& text);
-  friend void testNodeInternals(
-      const Node& n, NodeId id, Lat lat, Lng lng, Height height, size_t level);
+  friend void testNodeInternals(const Node& n, NodeId id, Lat lat, Lng lng, size_t level);
 
   Lat lat() const;
   Lng lng() const;
@@ -212,14 +211,12 @@ class Node {
   NodeId id_;
   Lat lat_;
   Lng lng_;
-  Height height;
   size_t level = 0;
   template <class Archive> void serialize(Archive& ar, const unsigned int /*version*/)
   {
     ar& id_;
     ar& lat_;
     ar& lng_;
-    ar& height;
     ar& level;
   }
 };

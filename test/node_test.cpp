@@ -18,12 +18,11 @@
 #include "catch.hpp"
 #include "graph.hpp"
 
-void testNodeInternals(const Node& n, NodeId id, Lat lat, Lng lng, Height height, size_t level)
+void testNodeInternals(const Node& n, NodeId id, Lat lat, Lng lng, size_t level)
 {
   REQUIRE(n.id_ == id);
   REQUIRE(n.lat_ == lat);
   REQUIRE(n.lng_ == lng);
-  REQUIRE(n.height == height);
   REQUIRE(n.level == level);
 }
 
@@ -31,5 +30,5 @@ TEST_CASE("Create Node from text repersentation")
 {
 
   Node n = Node::createFromText("0 163361 48.6478807 9.3334938 300 2");
-  testNodeInternals(n, NodeId{ 0 }, Lat{ 48.6478807 }, Lng{ 9.3334938 }, Height{ 300 }, 2);
+  testNodeInternals(n, NodeId{ 0 }, Lat{ 48.6478807 }, Lng{ 9.3334938 }, 2);
 }
