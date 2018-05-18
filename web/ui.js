@@ -1,6 +1,6 @@
 var map = L.map("mapid", { closePopupOnClick: false }).setView(
   [48.7456643, 9.1070856],
-  15
+  13
 );
 var start = true;
 
@@ -387,7 +387,8 @@ function moveDot(event) {
 
       let cost = bestRoute.cost;
 
-      document.getElementById("route_length").innerHTML = Math.round( cost.length /1000 ) /10;
+      document.getElementById("route_length").innerHTML =
+        Math.round(cost.length / 1000) / 10;
       document.getElementById("route_height").innerHTML = cost.height / 10;
       document.getElementById("route_unsuitability").innerHTML =
         cost.unsuitability;
@@ -408,7 +409,6 @@ function triangleArea(p1, p2, p3) {
 
   return Math.sqrt(s * (s - a) * (s - b) * (s - c));
 }
-
 
 function configToCoords(values) {
   return {
@@ -495,16 +495,13 @@ function scalingTriangulation() {
   let s = document.getElementById("start").innerHTML;
   let t = document.getElementById("end").innerHTML;
   let maxSplits = document.getElementById("maxSplits").value;
+  let maxLevel = document.getElementById("maxLevel").value;
+  let uri = "/scaled" + "?s=" + s + "&t=" + t + "&maxSplits=" + maxSplits;
 
-  xmlhttp.open(
-    "GET",
-    "/scaled" +
-      "?s=" +
-      s +
-      "&t=" +
-      t +
-      "&maxSplits=" +
-      maxSplits
-  );
+  if (maxLevel > 0) {
+    uri += "&maxLevel=" + maxLevel;
+  }
+
+  xmlhttp.open("GET", uri);
   xmlhttp.send();
 }

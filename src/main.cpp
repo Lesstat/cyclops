@@ -320,58 +320,8 @@ void runWebServer(Graph& g)
     response->write(SimpleWeb::StatusCode::success_ok, result);
   };
 
-  server.resource["^/splitting"]["GET"] = [&g](Response response, Request request) {
-    std::optional<size_t> s{}, t{}, threshold{}, maxSplits{}, dummy{};
-
-    auto queryParams = request->parse_query_string();
-    extractQueryFields(queryParams, s, t, dummy, dummy, dummy);
-    if (!(s && t)) {
-      response->write(SimpleWeb::StatusCode::client_error_bad_request,
-          "Request needs to contain the parameters: s, t");
-      return;
-    }
-    for (const auto& param : queryParams) {
-      if (param.first == "threshold") {
-        threshold = stoull(param.second);
-      } else if (param.first == "maxSplits") {
-        maxSplits = stoull(param.second);
-      }
-    }
-
-    auto [routes, count]
-        = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t })
-              .triangleSplitting(threshold.value_or(30), maxSplits.value_or(15), 5, 2);
-    std::stringstream result;
-
-    result << "[";
-
-    for (const auto& r : routes) {
-      const auto& [conf, route, selected, parents] = r;
-      result << "{ \"config\": \"" << conf << "\", ";
-      result << "\"route\": " << routeToJson(route, g) << ", ";
-      result << "\"selected\": " << (selected ? "true" : "false") << ",";
-      result << "\"parents\": [";
-      bool first = true;
-      for (const auto& p : parents) {
-        if (!first) {
-          result << ",";
-        }
-        result << '"' << p << '"';
-        first = false;
-      }
-      result << "]},";
-    }
-    auto stringResult = result.str();
-    stringResult.pop_back();
-    stringResult.push_back(']');
-
-    SimpleWeb::CaseInsensitiveMultimap header;
-    header.emplace("Content-Type", "application/json");
-    response->write(SimpleWeb::StatusCode::success_ok, stringResult, header);
-  };
-
   server.resource["^/scaled"]["GET"] = [&g](Response response, Request request) {
-    std::optional<size_t> s{}, t{}, threshold{}, maxSplits{}, dummy{};
+    std::optional<size_t> s{}, t{}, maxSplits{}, dummy{}, maxLevel{};
 
     auto queryParams = request->parse_query_string();
     extractQueryFields(queryParams, s, t, dummy, dummy, dummy);
@@ -381,15 +331,15 @@ void runWebServer(Graph& g)
       return;
     }
     for (const auto& param : queryParams) {
-      if (param.first == "threshold") {
-        threshold = stoull(param.second);
-      } else if (param.first == "maxSplits") {
+      if (param.first == "maxSplits") {
         maxSplits = stoull(param.second);
+      } else if (param.first == "maxLevel") {
+        maxLevel = stoull(param.second);
       }
     }
     auto d = g.createDijkstra();
-    auto [points, triangles] = scaledTriangulation(
-        d, NodePos{ *s }, NodePos{ *t }, threshold.value_or(60) / 100.0, maxSplits.value_or(10));
+    auto [points, triangles]
+        = scaledTriangulation(d, NodePos{ *s }, NodePos{ *t }, maxSplits.value_or(10), maxLevel);
     std::stringstream result;
 
     result << "{ \"points\": [";

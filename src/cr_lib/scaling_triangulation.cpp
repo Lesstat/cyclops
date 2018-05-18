@@ -84,15 +84,16 @@ private:
 
 public:
     double greatestCostRatio = 1;
+    size_t level;
 
-    Triangle(size_t e1, size_t e2, size_t e3, Triangulation* tri)
+    Triangle(size_t e1, size_t e2, size_t e3, size_t level, Triangulation* tri)
         : edge1(e1)
         , edge2(e2)
         , edge3(e3)
         , tri(tri)
+        , level(level)
     {
       auto pointVec = points();
-      // noMoreRoutes = true;
       auto& p1 = tri->points[pointVec[0]];
       auto& p2 = tri->points[pointVec[1]];
       auto& p3 = tri->points[pointVec[2]];
@@ -150,17 +151,17 @@ public:
 
         auto newEdge1
             = tri->createEdge(tri->edges[halfEdges[0]].point2, tri->edges[halfEdges[1]].point2);
-        result.push_back(tri->createTriangle(halfEdges[0], halfEdges[1], newEdge1));
+        result.push_back(tri->createTriangle(halfEdges[0], halfEdges[1], newEdge1, level + 1));
 
         auto newEdge2
             = tri->createEdge(tri->edges[halfEdges[2]].point2, tri->edges[halfEdges[3]].point2);
-        result.push_back(tri->createTriangle(halfEdges[2], halfEdges[3], newEdge2));
+        result.push_back(tri->createTriangle(halfEdges[2], halfEdges[3], newEdge2, level + 1));
 
         auto newEdge3
             = tri->createEdge(tri->edges[halfEdges[4]].point2, tri->edges[halfEdges[5]].point2);
-        result.push_back(tri->createTriangle(halfEdges[4], halfEdges[5], newEdge3));
+        result.push_back(tri->createTriangle(halfEdges[4], halfEdges[5], newEdge3, level + 1));
 
-        result.push_back(tri->createTriangle(newEdge1, newEdge2, newEdge3));
+        result.push_back(tri->createTriangle(newEdge1, newEdge2, newEdge3, level + 1));
       }
 
       auto end = std::chrono::high_resolution_clock::now();
@@ -184,22 +185,20 @@ public:
   Dijkstra& d;
   NodePos from;
   NodePos to;
-  double threshold;
   std::optional<double> optLength;
   std::optional<double> optHeight;
   std::optional<double> optUnsuitability;
   std::optional<double> maxOpt;
 
   public:
-  Triangulation(Dijkstra& d, NodePos from, NodePos to, double threshold)
+  Triangulation(Dijkstra& d, NodePos from, NodePos to)
       : d(d)
       , from(from)
       , to(to)
-      , threshold(threshold)
   {
   }
 
-  void triangulate(size_t maxSplits)
+  void triangulate(size_t maxSplits, size_t maxLevel)
   {
     auto p1 = createPoint(PosVector({ 1, 0, 0 }));
     auto p2 = createPoint(PosVector({ 0, 1, 0 }));
@@ -214,7 +213,7 @@ public:
     auto e2 = createEdge(p1, p3);
     auto e3 = createEdge(p3, p2);
 
-    auto t1 = createTriangle(e1, e2, e3);
+    auto t1 = createTriangle(e1, e2, e3, 1);
 
     auto simComparator = [this](size_t left, size_t right) {
       return triangles[left].greatestCostRatio < triangles[right].greatestCostRatio;
@@ -230,6 +229,9 @@ public:
       auto tIndex = q.top();
       q.pop();
       auto& t = triangles[tIndex];
+      if (t.level > maxLevel) {
+        continue;
+      }
       for (auto child : t.split()) {
         q.push(child);
       }
@@ -263,9 +265,9 @@ public:
     return edges.size() - 1;
   }
 
-  size_t createTriangle(size_t e1, size_t e2, size_t e3)
+  size_t createTriangle(size_t e1, size_t e2, size_t e3, size_t level)
   {
-    triangles.emplace_back(e1, e2, e3, this);
+    triangles.emplace_back(e1, e2, e3, level, this);
     return triangles.size() - 1;
   }
 
@@ -308,13 +310,13 @@ public:
 };
 
 std::tuple<std::vector<TriPoint>, std::vector<TriTriangle>> scaledTriangulation(
-    Dijkstra& d, NodePos from, NodePos to, double threshold, size_t maxSplits)
+    Dijkstra& d, NodePos from, NodePos to, size_t maxSplits, std::optional<size_t> maxLevel)
 {
 
   auto start = std::chrono::high_resolution_clock::now();
 
-  Triangulation tri(d, from, to, threshold);
-  tri.triangulate(maxSplits);
+  Triangulation tri(d, from, to);
+  tri.triangulate(maxSplits, maxLevel.value_or(std::numeric_limits<size_t>::max()));
   auto result = tri.output();
 
   auto end = std::chrono::high_resolution_clock::now();

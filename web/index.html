@@ -43,9 +43,10 @@
 	    <div class="card-block">
 	      <div class="card-header">Alternative Routes</div>
 	      <div class="card-text container">
-		<button type="button" onclick="scalingTriangulation()">Find Alternatives</button> <br />
-		<button type="button" onclick="alternativeRoutes('trulyRandom')" >Random Alternatives</button> 
+		<button type="button" onclick="scalingTriangulation()">Find Alternatives</button> 
+		<button type="button" onclick="alternativeRoutes('trulyRandom')" >Random Alternatives</button> <br />
 		Maximum Splits: <input type="input" id="maxSplits" value="15" /> <br />
+		Maximum Level: <input type="input" id="maxLevel" value="5" /> <br />
 		Blue  Config: <span id="blue_conf" ></span> <br />
 		Green Config: <span id="green_conf" ></span> <br />
 		Shared Part: <span id="shared">0</span>% <br />
@@ -59,9 +60,7 @@
 	  <div id="mapid" style="height:900px"></div>
       </div>
     </div>
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
     <script src="web/ui.js"></script>
   </body>
 
