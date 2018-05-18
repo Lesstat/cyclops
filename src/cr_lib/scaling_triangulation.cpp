@@ -112,6 +112,7 @@ public:
 
       greatestCostRatio = std::max({ calcRatio(newCost1, newCost2), calcRatio(newCost1, newCost3),
           calcRatio(newCost2, newCost3) });
+      noMoreRoutes = greatestCostRatio == 1.0;
     }
 
     std::vector<size_t> points()
@@ -305,7 +306,7 @@ public:
     std::transform(
         triangles.begin(), triangles.end(), std::back_inserter(triTriangles), [](auto& t) {
           auto points = t.points();
-          return TriTriangle{ points[0], points[1], points[2], t.greatestCostRatio == 1.0 };
+          return TriTriangle{ points[0], points[1], points[2], t.filled() };
         });
 
     return { triPoints, triTriangles };
