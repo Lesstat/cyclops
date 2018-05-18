@@ -78,7 +78,7 @@ function calcDist(length, height, unsuitability) {
         opacity: 0.65
       };
       document.getElementById("route_length").innerHTML =
-        Math.round(xmlhttp.response.length / 100) / 10;
+        Math.round(xmlhttp.response.length / 1000) / 10;
       document.getElementById("route_height").innerHTML =
         xmlhttp.response.height / 10;
       document.getElementById("route_unsuitability").innerHTML =
@@ -166,7 +166,6 @@ function alternativeRoutes(kind) {
         L.geoJSON(xmlhttp.response.route2.route.geometry, { style: myStyle2 })
       );
       document.getElementById("shared").innerHTML = xmlhttp.response.shared;
-      document.getElementById("frechet").innerHTML = xmlhttp.response.frechet;
     } else {
       document.getElementById("route_length").innerHTML = "Unknown";
       document.getElementById("route_height").innerHTML = "Unknown";
@@ -388,7 +387,7 @@ function moveDot(event) {
 
       let cost = bestRoute.cost;
 
-      document.getElementById("route_length").innerHTML = cost.length;
+      document.getElementById("route_length").innerHTML = Math.round( cost.length /1000 ) /10;
       document.getElementById("route_height").innerHTML = cost.height / 10;
       document.getElementById("route_unsuitability").innerHTML =
         cost.unsuitability;
@@ -410,9 +409,6 @@ function triangleArea(p1, p2, p3) {
   return Math.sqrt(s * (s - a) * (s - b) * (s - c));
 }
 
-function uncheck() {
-  document.getElementById("filter").checked = false;
-}
 
 function configToCoords(values) {
   return {
@@ -498,7 +494,6 @@ function scalingTriangulation() {
 
   let s = document.getElementById("start").innerHTML;
   let t = document.getElementById("end").innerHTML;
-  let threshold = document.getElementById("sharingThreshold").value;
   let maxSplits = document.getElementById("maxSplits").value;
 
   xmlhttp.open(
@@ -508,8 +503,6 @@ function scalingTriangulation() {
       s +
       "&t=" +
       t +
-      "&threshold=" +
-      threshold +
       "&maxSplits=" +
       maxSplits
   );
