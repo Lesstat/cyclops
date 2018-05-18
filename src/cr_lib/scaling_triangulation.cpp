@@ -198,7 +198,7 @@ public:
   {
   }
 
-  void triangulate(size_t maxSplits, size_t maxLevel)
+  void triangulate(size_t maxSplits, size_t maxLevel, const bool splitByLevel)
   {
     auto p1 = createPoint(PosVector({ 1, 0, 0 }));
     auto p2 = createPoint(PosVector({ 0, 1, 0 }));
@@ -215,8 +215,11 @@ public:
 
     auto t1 = createTriangle(e1, e2, e3, 1);
 
-    auto simComparator = [this](size_t left, size_t right) {
-      return triangles[left].greatestCostRatio < triangles[right].greatestCostRatio;
+    auto simComparator = [this, splitByLevel](size_t left, size_t right) {
+      if (splitByLevel)
+        return triangles[left].level > triangles[right].level;
+      else
+        return triangles[left].greatestCostRatio < triangles[right].greatestCostRatio;
     };
 
     std::priority_queue<size_t, std::vector<size_t>, decltype(simComparator)> q{ simComparator };
@@ -309,14 +312,14 @@ public:
   }
 };
 
-std::tuple<std::vector<TriPoint>, std::vector<TriTriangle>> scaledTriangulation(
-    Dijkstra& d, NodePos from, NodePos to, size_t maxSplits, std::optional<size_t> maxLevel)
+std::tuple<std::vector<TriPoint>, std::vector<TriTriangle>> scaledTriangulation(Dijkstra& d,
+    NodePos from, NodePos to, size_t maxSplits, std::optional<size_t> maxLevel, bool splitByLevel)
 {
 
   auto start = std::chrono::high_resolution_clock::now();
 
   Triangulation tri(d, from, to);
-  tri.triangulate(maxSplits, maxLevel.value_or(std::numeric_limits<size_t>::max()));
+  tri.triangulate(maxSplits, maxLevel.value_or(std::numeric_limits<size_t>::max()), splitByLevel);
   auto result = tri.output();
 
   auto end = std::chrono::high_resolution_clock::now();

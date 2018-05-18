@@ -322,6 +322,7 @@ void runWebServer(Graph& g)
 
   server.resource["^/scaled"]["GET"] = [&g](Response response, Request request) {
     std::optional<size_t> s{}, t{}, maxSplits{}, dummy{}, maxLevel{};
+    bool splitByLevel{ false };
 
     auto queryParams = request->parse_query_string();
     extractQueryFields(queryParams, s, t, dummy, dummy, dummy);
@@ -335,11 +336,13 @@ void runWebServer(Graph& g)
         maxSplits = stoull(param.second);
       } else if (param.first == "maxLevel") {
         maxLevel = stoull(param.second);
+      } else if (param.first == "splitByLevel" && param.second == "true") {
+        splitByLevel = true;
       }
     }
     auto d = g.createDijkstra();
-    auto [points, triangles]
-        = scaledTriangulation(d, NodePos{ *s }, NodePos{ *t }, maxSplits.value_or(10), maxLevel);
+    auto [points, triangles] = scaledTriangulation(
+        d, NodePos{ *s }, NodePos{ *t }, maxSplits.value_or(10), maxLevel, splitByLevel);
     std::stringstream result;
 
     result << "{ \"points\": [";

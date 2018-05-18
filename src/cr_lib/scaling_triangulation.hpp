@@ -34,7 +34,7 @@ struct TriTriangle {
   bool filled;
 };
 
-std::tuple<std::vector<TriPoint>, std::vector<TriTriangle>> scaledTriangulation(
-    Dijkstra& d, NodePos from, NodePos to, size_t maxSplits, std::optional<size_t> maxLevel);
+std::tuple<std::vector<TriPoint>, std::vector<TriTriangle>> scaledTriangulation(Dijkstra& d,
+    NodePos from, NodePos to, size_t maxSplits, std::optional<size_t> maxLevel, bool splitByLevel);
 
 #endif /* SCALING_TRIANGULATION_H */

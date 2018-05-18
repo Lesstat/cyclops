@@ -496,10 +496,14 @@ function scalingTriangulation() {
   let t = document.getElementById("end").innerHTML;
   let maxSplits = document.getElementById("maxSplits").value;
   let maxLevel = document.getElementById("maxLevel").value;
+  let splitByLevel = document.getElementById("splitByLevel").checked;
   let uri = "/scaled" + "?s=" + s + "&t=" + t + "&maxSplits=" + maxSplits;
 
   if (maxLevel > 0) {
     uri += "&maxLevel=" + maxLevel;
+  }
+  if (splitByLevel) {
+    uri += "&splitByLevel=" + "true";
   }
 
   xmlhttp.open("GET", uri);
