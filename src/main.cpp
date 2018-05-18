@@ -183,7 +183,9 @@ void runWebServer(Graph& g)
       return;
     }
     auto pos = grid.findNextNode(Lat{ lat }, Lng{ lng });
-    response->write(SimpleWeb::StatusCode::success_ok, std::to_string(pos->get()));
+    SimpleWeb::CaseInsensitiveMultimap header;
+    header.emplace("Content-Type", "text/plain");
+    response->write(SimpleWeb::StatusCode::success_ok, std::to_string(pos->get()), header);
   };
 
   server.resource["^/route"]["GET"] = [&g](Response response, Request request) {
