@@ -186,10 +186,9 @@ public:
   Dijkstra& d;
   NodePos from;
   NodePos to;
-  std::optional<double> optLength;
-  std::optional<double> optHeight;
-  std::optional<double> optUnsuitability;
-  std::optional<double> maxOpt;
+  std::optional<double> lengthFac;
+  std::optional<double> heightFac;
+  std::optional<double> unsuitFac;
 
   public:
   Triangulation(Dijkstra& d, NodePos from, NodePos to)
@@ -205,10 +204,14 @@ public:
     auto p2 = createPoint(PosVector({ 0, 1, 0 }));
     auto p3 = createPoint(PosVector({ 0, 0, 1 }));
 
-    optLength = points[p1].r.costs.length;
-    optHeight = points[p1].r.costs.height;
-    optUnsuitability = points[p1].r.costs.unsuitability;
-    maxOpt = std::max({ *optLength, *optHeight, *optUnsuitability });
+    double optLength = points[p1].r.costs.length;
+    double optHeight = points[p2].r.costs.height;
+    double optUnsuitability = points[p3].r.costs.unsuitability;
+    auto maxOpt = std::max({ optLength, optHeight, optUnsuitability });
+
+    lengthFac = maxOpt / optLength;
+    heightFac = maxOpt / optHeight;
+    unsuitFac = maxOpt / optUnsuitability;
 
     auto e1 = createEdge(p1, p2);
     auto e2 = createEdge(p1, p3);
@@ -246,11 +249,11 @@ public:
   {
     auto start = std::chrono::high_resolution_clock::now();
     Route r;
-    if (maxOpt) {
+    if (lengthFac) {
       Config c = p;
-      c.length = LengthConfig{ c.length * (*maxOpt / *optLength) };
-      c.height = HeightConfig{ c.height * (*maxOpt / *optHeight) };
-      c.unsuitability = UnsuitabilityConfig{ c.unsuitability * (*maxOpt / *optUnsuitability) };
+      c.length = LengthConfig{ c.length * *lengthFac };
+      c.height = HeightConfig{ c.height * *heightFac };
+      c.unsuitability = UnsuitabilityConfig{ c.unsuitability * *unsuitFac };
       r = *d.findBestRoute(from, to, c);
     } else {
       r = *d.findBestRoute(from, to, p);

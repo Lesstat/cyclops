@@ -199,11 +199,36 @@ void runWebServer(Graph& g)
     }
 
     auto dijkstra = g.createDijkstra();
+    auto bestLengthRoute = dijkstra.findBestRoute(NodePos{ *s }, NodePos{ *t },
+        Config{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } });
+    if (!bestLengthRoute) {
+      return;
+    }
+    auto bestHeightRoute = dijkstra.findBestRoute(NodePos{ *s }, NodePos{ *t },
+        Config{ LengthConfig{ 0 }, HeightConfig{ 1 }, UnsuitabilityConfig{ 0 } });
+    auto bestUnsuitabilityRoute = dijkstra.findBestRoute(NodePos{ *s }, NodePos{ *t },
+        Config{ LengthConfig{ 0 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 1 } });
+
+    auto bestLength = bestLengthRoute->costs.length;
+    auto bestHeight = bestHeightRoute->costs.height;
+    auto bestUnsuitability = bestUnsuitabilityRoute->costs.unsuitability;
+
+    auto maxConfigParam = std::max({ bestLength.get(), bestHeight.get(), bestUnsuitability.get() });
+
+    auto lengthFactor = maxConfigParam / bestLength;
+    auto heightFactor = maxConfigParam / bestHeight;
+    auto unsuitFactor = maxConfigParam / bestUnsuitability;
+
+    Config c{ LengthConfig{ (static_cast<double>(*length) / 100.0) },
+      HeightConfig{ (static_cast<double>(*height) / 100.0) },
+      UnsuitabilityConfig{ (static_cast<double>(*unsuitability) / 100.0) } };
+
+    c.length = LengthConfig{ c.length * lengthFactor };
+    c.height = HeightConfig{ c.height * heightFactor };
+    c.unsuitability = UnsuitabilityConfig{ c.unsuitability * unsuitFactor };
 
     auto start = std::chrono::high_resolution_clock::now();
-    auto route = dijkstra.findBestRoute(NodePos{ *s }, NodePos{ *t },
-        Config{ LengthConfig{ *length / 100.0 }, HeightConfig{ *height / 100.0 },
-            UnsuitabilityConfig{ *unsuitability / 100.0 } });
+    auto route = dijkstra.findBestRoute(NodePos{ *s }, NodePos{ *t }, c);
     auto end = std::chrono::high_resolution_clock::now();
 
     using ms = std::chrono::milliseconds;
