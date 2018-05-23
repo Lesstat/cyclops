@@ -16,6 +16,7 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "dijkstra.hpp"
+#include "loginfo.hpp"
 #include <queue>
 
 const double dmax = std::numeric_limits<double>::max();
@@ -96,6 +97,7 @@ bool Dijkstra::QueueComparator::operator()(QueueElem left, QueueElem right)
 
 std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config config)
 {
+  auto log = Logger::getInstance();
 
   clearState();
   this->config = config;
@@ -119,23 +121,29 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
   bool tBigger = false;
   double minCandidate = dmax;
   std::optional<NodePos> minNode = {};
+  size_t pqPops = 0;
 
   while (true) {
     // Quit if both are empty or one is empty and the other is bigger than minCandidate
     if ((heapS.empty() && heapT.empty()) || (heapS.empty() && tBigger)
         || (heapT.empty() && sBigger)) {
+      *log << "Dijkstra popped " << pqPops << " nodes from PQ"
+           << "\\n";
       if (minNode.has_value()) {
         return buildRoute(minNode.value(), previousEdgeS, previousEdgeT, from, to);
       }
       return {};
     }
     if (sBigger && tBigger) {
+      *log << "Dijkstra popped " << pqPops << " nodes from PQ"
+           << "\\n";
       return buildRoute(minNode.value(), previousEdgeS, previousEdgeT, from, to);
     }
 
     if (!heapS.empty() && !sBigger) {
       auto [node, cost] = heapS.top();
       heapS.pop();
+      pqPops++;
       if (cost > costS[node]) {
         continue;
       }
@@ -161,6 +169,7 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
     if (!heapT.empty() && !tBigger) {
       auto [node, cost] = heapT.top();
       heapT.pop();
+      pqPops++;
       if (cost > costT[node]) {
         continue;
       }
