@@ -18,6 +18,7 @@
 #include "contractor.hpp"
 #include "dijkstra.hpp"
 #include "grid.hpp"
+#include "loginfo.hpp"
 #include "multi_file_format.hpp"
 #include "routeComparator.hpp"
 #include "scaling_triangulation.hpp"
@@ -346,6 +347,9 @@ void runWebServer(Graph& g)
   };
 
   server.resource["^/scaled"]["GET"] = [&g](Response response, Request request) {
+    auto log = Logger::getInstance();
+    log->init();
+
     std::optional<size_t> s{}, t{}, maxSplits{}, dummy{}, maxLevel{};
     bool splitByLevel{ false };
 
@@ -365,6 +369,9 @@ void runWebServer(Graph& g)
         splitByLevel = true;
       }
     }
+
+    *log << "from " << *s << " to " << *t << "\\n";
+
     auto d = g.createDijkstra();
     auto [points, triangles] = scaledTriangulation(
         d, NodePos{ *s }, NodePos{ *t }, maxSplits.value_or(10), maxLevel, splitByLevel);
@@ -398,7 +405,8 @@ void runWebServer(Graph& g)
       result << "}";
     }
 
-    result << "]";
+    result << "],";
+    result << "\"debug\":\"" << log->getInfo() << "\" ";
 
     result << "}";
 

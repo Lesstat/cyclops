@@ -17,6 +17,7 @@
 */
 
 #include "scaling_triangulation.hpp"
+#include "loginfo.hpp"
 #include "routeComparator.hpp"
 #include <iostream>
 
@@ -212,6 +213,11 @@ public:
     lengthFac = maxOpt / optLength;
     heightFac = maxOpt / optHeight;
     unsuitFac = maxOpt / optUnsuitability;
+    auto log = Logger::getInstance();
+
+    *log << "length correction factor:" << *lengthFac << "\\n";
+    *log << "height correction factor:" << *heightFac << "\\n";
+    *log << "unsuitability correction factor:" << *unsuitFac << "\\n";
 
     auto e1 = createEdge(p1, p2);
     auto e2 = createEdge(p1, p3);

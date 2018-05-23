@@ -17,7 +17,17 @@ L.tileLayer("http://{s}.tile.openstreetmap.org/{id}/{z}/{x}/{y}.png", {
   id: ""
 }).addTo(map);
 
-// panOutMap();
+document.addEventListener("keydown", event => {
+  if (event.ctrlKey && event.altKey && event.key == "d") {
+    //Code follows
+    let debugLog = document.getElementById("debuglog");
+    if (debugLog.hasAttribute("hidden")) {
+      debugLog.removeAttribute("hidden");
+    } else {
+      debugLog.setAttribute("hidden", "");
+    }
+  }
+});
 
 function calcDistWithCurrentSelection() {
   let length = document.getElementById("length_percent").innerHTML;
@@ -53,6 +63,7 @@ function getNode(id, latlng) {
 
   xmlhttp.onload = function() {
     if (xmlhttp.status == 200) {
+      addToDebugLog("getNode", xmlhttp.response.debug);
       document.getElementById(id).innerHTML = xmlhttp.responseText;
       calcDistWithCurrentSelection();
     }
@@ -72,6 +83,7 @@ function calcDist(length, height, unsuitability) {
   xmlhttp.responseType = "json";
   xmlhttp.onload = function() {
     if (xmlhttp.status == 200) {
+      addToDebugLog("single route", xmlhttp.response.debug);
       let myStyle = {
         color: "#3333FF",
         weight: 5,
@@ -133,6 +145,7 @@ function alternativeRoutes(kind) {
   xmlhttp.responseType = "json";
   xmlhttp.onload = function() {
     if (xmlhttp.status == 200) {
+      addToDebugLog("kind", xmlhttp.response.debug);
       let myStyle1 = {
         color: "#3333FF",
         weight: 5,
@@ -207,89 +220,6 @@ function rainbow(number) {
 
 var listOfRoutes = [];
 
-function triangleSplitting() {
-  geoJson.clearLayers();
-  let xmlhttp = new XMLHttpRequest();
-
-  xmlhttp.responseType = "json";
-  xmlhttp.onload = function() {
-    if (xmlhttp.status == 200) {
-      listOfRoutes = [];
-      let filter = document.getElementById("filter").checked;
-      drawTriangle();
-
-      let canvas = document.getElementById("triangleSelector");
-      let ctx = canvas.getContext("2d");
-
-      let routes = xmlhttp.response;
-      for (var rc in routes) {
-        let col = rainbow(rc);
-
-        let myStyle = {
-          color: col,
-          weight: 4,
-          opacity: 1
-        };
-
-        let values = routes[rc].config.split("/");
-        let coord = configToCoords(values);
-
-        drawDot(coord.x, coord.y, col);
-
-        for (let par in routes[rc].parents) {
-          let parConfig = routes[rc].parents[par].split("/");
-          let parCoord = configToCoords(parConfig);
-          ctx.beginPath();
-          ctx.moveTo(coord.x, coord.y);
-          ctx.lineTo(parCoord.x, parCoord.y);
-          ctx.stroke();
-        }
-
-        if (!filter || (filter && routes[rc].selected)) {
-          let geoRoute = L.geoJSON(routes[rc].route.route.geometry, {
-            style: myStyle
-          });
-          geoJson.addLayer(geoRoute);
-          listOfRoutes.push({
-            point: coord,
-            route: geoRoute,
-            config: values,
-            cost: {
-              length: routes[rc].route.length,
-              height: routes[rc].route.height,
-              unsuitability: routes[rc].route.unsuitability
-            }
-          });
-        }
-      }
-
-      document.getElementById("shared").innerHTML = "Unknown";
-      document.getElementById("frechet").innerHTML = "Unknown";
-    } else {
-      document.getElementById("route_length").innerHTML = "Unknown";
-      document.getElementById("route_height").innerHTML = "Unknown";
-      document.getElementById("route_unsuitability").innerHTML = "Unknown";
-    }
-  };
-  let s = document.getElementById("start").innerHTML;
-  let t = document.getElementById("end").innerHTML;
-  let threshold = document.getElementById("sharingThreshold").value;
-  let maxSplits = document.getElementById("maxSplits").value;
-  xmlhttp.open(
-    "GET",
-    "/splitting" +
-      "?s=" +
-      s +
-      "&t=" +
-      t +
-      "&threshold=" +
-      threshold +
-      "&maxSplits=" +
-      maxSplits
-  );
-  xmlhttp.send();
-}
-
 function initializeCanvas() {
   let canvas = document.getElementById("triangleSelector");
   canvas.addEventListener("mousemove", moveDot);
@@ -299,6 +229,7 @@ function initializeCanvas() {
   drawTriangle();
   drawDot(center.x, center.y);
 }
+
 const lengthCorner = { x: 5, y: 505 };
 const heightCorner = { x: 505, y: 505 };
 const unsuitabilityCorner = { x: 252, y: 22 };
@@ -429,6 +360,7 @@ function scalingTriangulation() {
   xmlhttp.responseType = "json";
   xmlhttp.onload = function() {
     if (xmlhttp.status == 200) {
+      addToDebugLog("triangulation", xmlhttp.response.debug);
       listOfRoutes = [];
       drawTriangle();
 
@@ -508,4 +440,16 @@ function scalingTriangulation() {
 
   xmlhttp.open("GET", uri);
   xmlhttp.send();
+}
+
+function addToDebugLog(requestType, message) {
+  if (!message) {
+    return;
+  }
+  let debugLog = document.getElementById("debuglog");
+  let content = "Debug log for " + requestType + " request\n";
+  content += message;
+  content += "End of log for " + requestType + " request\n";
+  content += "=============================================\n";
+  debugLog.value += content;
 }
