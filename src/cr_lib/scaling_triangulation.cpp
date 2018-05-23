@@ -19,6 +19,7 @@
 #include "scaling_triangulation.hpp"
 #include "loginfo.hpp"
 #include "routeComparator.hpp"
+#include <future>
 #include <iostream>
 
 using ms = std::chrono::milliseconds;
@@ -49,13 +50,13 @@ class Triangulation {
     {
     }
 
-    std::pair<size_t, size_t> split()
+    std::pair<size_t, size_t> split(Dijkstra& d)
     {
       if (childEdge1 == 0 || childEdge2 == 0) {
         auto& p1 = tri->points[point1];
         auto& p2 = tri->points[point2];
         PosVector center = (p1.p + p2.p) * 0.5;
-        auto pCenter = tri->createPoint(center);
+        auto pCenter = tri->createPoint(center, d);
         childEdge1 = tri->createEdge(point1, pCenter);
         childEdge2 = tri->createEdge(point2, pCenter);
       }
@@ -138,9 +139,15 @@ public:
 
       if (!noMoreRoutes) {
         result.reserve(4);
-        auto edgePair1 = tri->edges[edge1].split();
-        auto edgePair2 = tri->edges[edge2].split();
-        auto edgePair3 = tri->edges[edge3].split();
+
+        auto edgePair1Future
+            = std::async(std::launch::async, [this]() { return tri->edges[edge1].split(tri->d1); });
+        auto edgePair2Future
+            = std::async(std::launch::async, [this]() { return tri->edges[edge2].split(tri->d2); });
+        auto edgePair3 = tri->edges[edge3].split(tri->d3);
+        auto edgePair1 = edgePair1Future.get();
+        auto edgePair2 = edgePair2Future.get();
+
         std::vector<size_t> halfEdges;
         halfEdges.push_back(edgePair1.first);
         halfEdges.push_back(edgePair1.second);
@@ -182,9 +189,15 @@ public:
   std::vector<Point> points;
   std::vector<Edge> edges;
   std::vector<Triangle> triangles;
+
+  std::mutex pointMutex;
+  std::mutex edgeMutex;
+
   std::map<std::pair<size_t, size_t>, double> similarities;
 
-  Dijkstra& d;
+  Dijkstra& d1;
+  Dijkstra d2;
+  Dijkstra d3;
   NodePos from;
   NodePos to;
   std::optional<double> lengthFac;
@@ -193,7 +206,9 @@ public:
 
   public:
   Triangulation(Dijkstra& d, NodePos from, NodePos to)
-      : d(d)
+      : d1(d)
+      , d2(d)
+      , d3(d)
       , from(from)
       , to(to)
   {
@@ -201,9 +216,15 @@ public:
 
   void triangulate(size_t maxSplits, size_t maxLevel, const bool splitByLevel)
   {
-    auto p1 = createPoint(PosVector({ 1, 0, 0 }));
-    auto p2 = createPoint(PosVector({ 0, 1, 0 }));
-    auto p3 = createPoint(PosVector({ 0, 0, 1 }));
+    auto p1Future = std::async(std::launch::async, [this]() {
+      return createPoint(PosVector({ 1, 0, 0 }), d1);
+    });
+    auto p2Future = std::async(std::launch::async, [this]() {
+      return createPoint(PosVector({ 0, 1, 0 }), d2);
+    });
+    auto p3 = createPoint(PosVector({ 0, 0, 1 }), d3);
+    auto p1 = p1Future.get();
+    auto p2 = p2Future.get();
 
     double optLength = points[p1].r.costs.length;
     double optHeight = points[p2].r.costs.height;
@@ -235,6 +256,8 @@ public:
     std::priority_queue<size_t, std::vector<size_t>, decltype(simComparator)> q{ simComparator };
     q.push(t1);
     triangles.reserve(maxSplits * 4);
+    points.reserve(maxSplits * 4);
+    edges.reserve(3 + maxSplits * 9);
 
     size_t count = 0;
     while (!q.empty() && count < maxSplits) {
@@ -251,9 +274,8 @@ public:
     }
   }
 
-  size_t createPoint(const PosVector& p)
+  size_t createPoint(const PosVector& p, Dijkstra& d)
   {
-    auto start = std::chrono::high_resolution_clock::now();
     Route r;
     if (lengthFac) {
       Config c = p;
@@ -264,16 +286,15 @@ public:
     } else {
       r = *d.findBestRoute(from, to, p);
     }
+    std::lock_guard lock(pointMutex);
     points.emplace_back(p, r, this);
 
-    auto end = std::chrono::high_resolution_clock::now();
-    std::cerr << "creating the point/route took "
-              << std::chrono::duration_cast<ms>(end - start).count() << "ms" << '\n';
     return points.size() - 1;
   }
 
   size_t createEdge(size_t p1, size_t p2)
   {
+    std::lock_guard lock(edgeMutex);
     edges.emplace_back(p1, p2, this);
     return edges.size() - 1;
   }
