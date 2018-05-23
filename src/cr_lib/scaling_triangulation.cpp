@@ -133,8 +133,6 @@ public:
 
     std::vector<size_t> split()
     {
-      auto start = std::chrono::high_resolution_clock::now();
-
       std::vector<size_t> result{};
 
       if (!noMoreRoutes) {
@@ -173,9 +171,6 @@ public:
         result.push_back(tri->createTriangle(newEdge1, newEdge2, newEdge3, level + 1));
       }
 
-      auto end = std::chrono::high_resolution_clock::now();
-      std::cerr << "splitting the triangle took "
-                << std::chrono::duration_cast<ms>(end - start).count() << "ms" << '\n';
       return result;
     }
     double edgeLength() const
