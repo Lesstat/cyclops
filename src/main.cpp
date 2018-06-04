@@ -17,9 +17,9 @@
 */
 #include "contractor.hpp"
 #include "dijkstra.hpp"
+#include "graph_loading.hpp"
 #include "grid.hpp"
 #include "loginfo.hpp"
-#include "multi_file_format.hpp"
 #include "routeComparator.hpp"
 #include "scaling_triangulation.hpp"
 #include "server_http.hpp"
@@ -31,41 +31,6 @@
 #include <chrono>
 #include <fstream>
 #include <random>
-
-using ms = std::chrono::milliseconds;
-
-Graph loadGraphFromTextFile(std::string& graphPath)
-{
-  const size_t N = 256 * 1024;
-  char buffer[N];
-  std::ifstream graphFile{};
-  graphFile.rdbuf()->pubsetbuf((char*)buffer, N);
-  graphFile.open(graphPath);
-
-  std::cout << "Reading Graphdata" << '\n';
-  auto start = std::chrono::high_resolution_clock::now();
-  Graph g = Graph::createFromStream(graphFile);
-  auto end = std::chrono::high_resolution_clock::now();
-
-  std::cout << "creating the graph took " << std::chrono::duration_cast<ms>(end - start).count()
-            << "ms" << '\n';
-  return g;
-}
-
-Graph loadGraphFromBinaryFile(std::string& graphPath)
-{
-  std::ifstream binFile{ graphPath };
-  boost::archive::binary_iarchive bin{ binFile };
-
-  std::cout << "Reading Graphdata" << '\n';
-  auto start = std::chrono::high_resolution_clock::now();
-  Graph g = Graph::createFromBinaryFile(bin);
-  auto end = std::chrono::high_resolution_clock::now();
-
-  std::cout << "creating the graph took " << std::chrono::duration_cast<ms>(end - start).count()
-            << "ms" << '\n';
-  return g;
-}
 
 Graph contractGraph(Graph& g, double rest, bool printStats)
 {

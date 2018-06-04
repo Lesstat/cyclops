@@ -22,6 +22,7 @@
 #include <cmath>
 #include <iostream>
 #include <queue>
+#include <random>
 
 using LengthConfig = NamedType<double, struct LengthConfigParameter>;
 using HeightConfig = NamedType<double, struct HeightConfigParameter>;
@@ -66,6 +67,8 @@ struct Config {
   }
 };
 
+Config generateRandomConfig();
+
 std::ostream& operator<<(std::ostream& stream, const Config& c);
 
 struct Route {
@@ -83,6 +86,8 @@ class Dijkstra {
   Dijkstra& operator=(Dijkstra&& other) noexcept = default;
 
   std::optional<Route> findBestRoute(NodePos from, NodePos to, Config config);
+
+  size_t pqPops = 0;
 
   private:
   using QueueElem = std::pair<NodePos, double>;

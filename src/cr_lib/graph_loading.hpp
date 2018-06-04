@@ -17,7 +17,11 @@
 */
 #include "graph.hpp"
 #include <boost/filesystem.hpp>
+#include <chrono>
 #include <fstream>
+#include <iostream>
+
+using ms = std::chrono::milliseconds;
 
 Node createNode(std::ifstream& graph, std::ifstream& labels)
 {
@@ -83,6 +87,9 @@ Graph readMultiFileGraph(std::string graphPath)
   std::ifstream nodeLabelsFile{ nodeLabels.string() };
   std::ifstream skipsFile{ skips.string() };
 
+  std::cout << "Reading Graphdata" << '\n';
+  auto start = std::chrono::high_resolution_clock::now();
+
   std::string line;
   std::getline(graphFile, line);
   while (line.front() == '#') {
@@ -114,6 +121,43 @@ Graph readMultiFileGraph(std::string graphPath)
   for (size_t i = 0; i < edgeCount; ++i) {
     edges.push_back(createEdge(chFile, skipsFile));
   }
+  Graph g{ std::move(nodes), std::move(edges) };
+  auto end = std::chrono::high_resolution_clock::now();
 
-  return Graph{ std::move(nodes), std::move(edges) };
+  std::cout << "creating the graph took " << std::chrono::duration_cast<ms>(end - start).count()
+            << "ms" << '\n';
+  return g;
+}
+
+Graph loadGraphFromTextFile(std::string& graphPath)
+{
+  const size_t N = 256 * 1024;
+  char buffer[N];
+  std::ifstream graphFile{};
+  graphFile.rdbuf()->pubsetbuf((char*)buffer, N);
+  graphFile.open(graphPath);
+
+  std::cout << "Reading Graphdata" << '\n';
+  auto start = std::chrono::high_resolution_clock::now();
+  Graph g = Graph::createFromStream(graphFile);
+  auto end = std::chrono::high_resolution_clock::now();
+
+  std::cout << "creating the graph took " << std::chrono::duration_cast<ms>(end - start).count()
+            << "ms" << '\n';
+  return g;
+}
+
+Graph loadGraphFromBinaryFile(std::string& graphPath)
+{
+  std::ifstream binFile{ graphPath };
+  boost::archive::binary_iarchive bin{ binFile };
+
+  std::cout << "Reading Graphdata" << '\n';
+  auto start = std::chrono::high_resolution_clock::now();
+  Graph g = Graph::createFromBinaryFile(bin);
+  auto end = std::chrono::high_resolution_clock::now();
+
+  std::cout << "creating the graph took " << std::chrono::duration_cast<ms>(end - start).count()
+            << "ms" << '\n';
+  return g;
 }

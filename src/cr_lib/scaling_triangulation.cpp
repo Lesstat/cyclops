@@ -346,14 +346,9 @@ std::tuple<std::vector<TriPoint>, std::vector<TriTriangle>> scaledTriangulation(
     NodePos from, NodePos to, size_t maxSplits, std::optional<size_t> maxLevel, bool splitByLevel)
 {
 
-  auto start = std::chrono::high_resolution_clock::now();
-
   Triangulation tri(d, from, to);
   tri.triangulate(maxSplits, maxLevel.value_or(std::numeric_limits<size_t>::max()), splitByLevel);
   auto result = tri.output();
 
-  auto end = std::chrono::high_resolution_clock::now();
-  std::cerr << "creating the triangulation took "
-            << std::chrono::duration_cast<ms>(end - start).count() << "ms" << '\n';
   return result;
 }

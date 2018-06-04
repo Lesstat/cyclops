@@ -358,18 +358,6 @@ AlternativeRoutes RouteExplorer::optimizeSharing()
   return AlternativeRoutes(middleI.position, first, middleJ.position, second, bestShared, frechet);
 }
 
-Config generateRandomConfig()
-{
-  std::random_device rd{};
-  std::uniform_real_distribution lenDist(0.0, 1.0);
-  LengthConfig l(lenDist(rd));
-  std::uniform_real_distribution heightDist(0.0, 1.0 - l.get());
-  HeightConfig h(heightDist(rd));
-  UnsuitabilityConfig u(1 - l - h);
-
-  return Config{ l, h, u };
-}
-
 AlternativeRoutes RouteExplorer::randomAlternatives()
 {
   Route route = {};

@@ -32,6 +32,7 @@ Dijkstra::Dijkstra(Graph* g, size_t nodeCount)
 
 void Dijkstra::clearState()
 {
+  pqPops = 0;
   for (auto nodeId : touchedS) {
     costS[nodeId] = dmax;
   }
@@ -121,7 +122,6 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
   bool tBigger = false;
   double minCandidate = dmax;
   std::optional<NodePos> minNode = {};
-  size_t pqPops = 0;
 
   while (true) {
     // Quit if both are empty or one is empty and the other is bigger than minCandidate
@@ -263,4 +263,16 @@ std::ostream& operator<<(std::ostream& stream, const Config& c)
 {
   stream << c.length << "/" << c.height << "/" << c.unsuitability;
   return stream;
+}
+
+Config generateRandomConfig()
+{
+  std::random_device rd{};
+  std::uniform_real_distribution lenDist(0.0, 1.0);
+  LengthConfig l(lenDist(rd));
+  std::uniform_real_distribution heightDist(0.0, 1.0 - l.get());
+  HeightConfig h(heightDist(rd));
+  UnsuitabilityConfig u(1 - l - h);
+
+  return Config{ l, h, u };
 }

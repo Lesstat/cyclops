@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(cycle-routing)
-add_compile_options(-Wall -Wextra -Wpedantic -std=c++17)
+add_compile_options(-Wall -Wextra -Wpedantic -std=c++17 -Wno-register)
 
 # Set a default build type if none was specified
 set(default_build_type "Release")
@@ -44,6 +44,10 @@ target_link_libraries(cr simple-web-server)
 # Definition of Testing library catch
 add_library(catch INTERFACE)
 target_include_directories(catch INTERFACE vendor/catch)
+
+
+add_executable(cr_expr src/experiments.cpp)
+target_link_libraries(cr_expr cr_lib)
 
 # Testing executable links against catch and cr_lib
 file(GLOB test_src test/*.cpp)
