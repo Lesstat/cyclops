@@ -152,7 +152,6 @@ function alternativeRoutes(kind) {
         opacity: 0.65
       };
       drawTriangle();
-      document.getElementById("blue_conf").innerHTML = xmlhttp.response.config1;
       var values = xmlhttp.response.config1.split("/");
       let coord = configToCoords(values.map(val => val / 100));
 
@@ -167,8 +166,6 @@ function alternativeRoutes(kind) {
         weight: 5,
         opacity: 0.65
       };
-      document.getElementById("green_conf").innerHTML =
-        xmlhttp.response.config2;
 
       values = xmlhttp.response.config2.split("/");
       coord = configToCoords(values.map(val => val / 100));
@@ -178,7 +175,6 @@ function alternativeRoutes(kind) {
       geoJson.addLayer(
         L.geoJSON(xmlhttp.response.route2.route.geometry, { style: myStyle2 })
       );
-      document.getElementById("shared").innerHTML = xmlhttp.response.shared;
     } else {
       document.getElementById("route_length").innerHTML = "Unknown";
       document.getElementById("route_height").innerHTML = "Unknown";
