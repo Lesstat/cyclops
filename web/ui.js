@@ -9,6 +9,9 @@ var endPopup = L.popup({ autoClose: false });
 var geoJson = L.layerGroup([]).addTo(map);
 var towerLayer = L.layerGroup([]).addTo(map);
 
+let canvas = document.getElementById("triangleSelector");
+let canvasRgb = document.getElementById("triangleSelectorRGB");
+
 L.tileLayer("http://{s}.tile.openstreetmap.org/{id}/{z}/{x}/{y}.png", {
   maxZoom: 18,
   attribution:
@@ -146,16 +149,18 @@ function alternativeRoutes(kind) {
   xmlhttp.onload = function() {
     if (xmlhttp.status == 200) {
       addToDebugLog("kind", xmlhttp.response.debug);
+
+      let values = xmlhttp.response.config1.split("/");
+
       let myStyle1 = {
-        color: "#3333FF",
+        color: gradientToColor(values),
         weight: 5,
         opacity: 0.65
       };
-      drawTriangle();
-      var values = xmlhttp.response.config1.split("/");
+      drawTriangle(canvas);
       let coord = configToCoords(values.map(val => val / 100));
 
-      drawDot(coord.x, coord.y, "blue");
+      drawDot(canvas, coord.x, coord.y, "blue");
 
       geoJson.addLayer(
         L.geoJSON(xmlhttp.response.route1.route.geometry, { style: myStyle1 })
@@ -170,7 +175,7 @@ function alternativeRoutes(kind) {
       values = xmlhttp.response.config2.split("/");
       coord = configToCoords(values.map(val => val / 100));
 
-      drawDot(coord.x, coord.y, "green");
+      drawDot(canvas, coord.x, coord.y, "green");
 
       geoJson.addLayer(
         L.geoJSON(xmlhttp.response.route2.route.geometry, { style: myStyle2 })
@@ -214,16 +219,27 @@ function rainbow(number) {
   return colors[number % colors.length];
 }
 
+function gradientToColor(config) {
+  let rgb = config.map(val => Math.round(val * 255));
+  var decColor = 0x1000000 + rgb[0] + 0x100 * rgb[1] + 0x10000 * rgb[2];
+  return "#" + decColor.toString(16).substr(1);
+}
+
 var listOfRoutes = [];
 
 function initializeCanvas() {
-  let canvas = document.getElementById("triangleSelector");
   canvas.addEventListener("mousemove", moveDot);
   canvas.addEventListener("mouseup", mouseUp);
   canvas.addEventListener("mousedown", mouseDown);
 
-  drawTriangle();
-  drawDot(center.x, center.y);
+  canvasRgb.addEventListener("mousemove", moveDot);
+  canvasRgb.addEventListener("mouseup", mouseUp);
+  canvasRgb.addEventListener("mousedown", mouseDown);
+
+  drawTriangle(canvas);
+  drawTriangle(canvasRgb);
+  drawDot(canvas, center.x, center.y);
+  drawDot(canvasRgb, center.x, center.y);
 }
 
 const lengthCorner = { x: 5, y: 505 };
@@ -231,8 +247,7 @@ const heightCorner = { x: 505, y: 505 };
 const unsuitabilityCorner = { x: 252, y: 22 };
 const center = configToCoords([1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]);
 
-function drawTriangle() {
-  let canvas = document.getElementById("triangleSelector");
+function drawTriangle(canvas) {
   let ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -244,11 +259,10 @@ function drawTriangle() {
   ctx.fill();
 }
 
-function drawDot(x, y, style) {
+function drawDot(canvas, x, y, style) {
   if (style === undefined) {
     style = "black";
   }
-  let canvas = document.getElementById("triangleSelector");
   let ctx = canvas.getContext("2d");
 
   ctx.fillStyle = style;
@@ -275,8 +289,10 @@ function moveDot(event) {
   let unsuitabilitySpan = document.getElementById("road_percent");
 
   if (clicked && event) {
-    drawTriangle();
-    drawDot(event.offsetX, event.offsetY);
+    drawTriangle(canvas);
+    drawDot(canvas, event.offsetX, event.offsetY);
+    drawTriangle(canvasRgb);
+    drawDot(canvasRgb, event.offsetX, event.offsetY);
     let point = { x: event.offsetX, y: event.offsetY };
     let lengthArea = triangleArea(point, heightCorner, unsuitabilityCorner);
     let heightArea = triangleArea(point, lengthCorner, unsuitabilityCorner);
@@ -358,49 +374,27 @@ function scalingTriangulation() {
     if (xmlhttp.status == 200) {
       addToDebugLog("triangulation", xmlhttp.response.debug);
       listOfRoutes = [];
-      drawTriangle();
-
-      let canvas = document.getElementById("triangleSelector");
-      let ctx = canvas.getContext("2d");
+      drawTriangle(canvas);
+      drawTriangle(canvasRgb);
 
       let points = xmlhttp.response.points;
       let triangles = xmlhttp.response.triangles;
 
-      for (let t in triangles) {
-        ctx.fillStyle = "black";
-        let point1 = configToCoords(
-          points[triangles[t].point1].conf.split("/")
-        );
-        let point2 = configToCoords(
-          points[triangles[t].point2].conf.split("/")
-        );
-        let point3 = configToCoords(
-          points[triangles[t].point3].conf.split("/")
-        );
-        ctx.beginPath();
-        ctx.moveTo(point1.x, point1.y);
-        ctx.lineTo(point2.x, point2.y);
-        ctx.lineTo(point3.x, point3.y);
-        if (triangles[t].filled) {
-          ctx.fillStyle = rainbow(triangles[t].point1);
-          ctx.fill();
-        } else {
-          ctx.stroke();
-        }
-      }
+      drawTriangles(canvas.getContext("2d"), points, triangles, false);
+      drawTriangles(canvasRgb.getContext("2d"), points, triangles, true);
+
       for (let p in points) {
-        let col = rainbow(p);
+        let values = points[p].conf.split("/");
+        let col = gradientToColor(values);
+        let coord = configToCoords(values);
+        drawDot(canvas, coord.x, coord.y, rainbow(p));
+        drawDot(canvasRgb, coord.x, coord.y, col);
 
         let myStyle = {
-          color: col,
+          color: rainbow(p),
           weight: 4,
           opacity: 1
         };
-
-        let values = points[p].conf.split("/");
-        let coord = configToCoords(values);
-        drawDot(coord.x, coord.y, col);
-
         let geoRoute = L.geoJSON(points[p].route.route.geometry, {
           style: myStyle
         });
@@ -448,4 +442,48 @@ function addToDebugLog(requestType, message) {
   content += "End of log for " + requestType + " request\n";
   content += "=============================================\n";
   debugLog.value += content;
+}
+
+function drawTriangles(ctx, points, triangles, gradient) {
+  for (let t in triangles) {
+    ctx.fillStyle = "black";
+    let config1 = points[triangles[t].point1].conf
+      .split("/")
+      .map(val => parseFloat(val));
+    let config2 = points[triangles[t].point2].conf
+      .split("/")
+      .map(val => parseFloat(val));
+    let config3 = points[triangles[t].point3].conf
+      .split("/")
+      .map(val => parseFloat(val));
+    let point1 = configToCoords(config1);
+    let point2 = configToCoords(config2);
+    let point3 = configToCoords(config3);
+
+    ctx.beginPath();
+    ctx.moveTo(point1.x, point1.y);
+    ctx.lineTo(point2.x, point2.y);
+    ctx.lineTo(point3.x, point3.y);
+    let filled = false;
+    if (gradient) {
+      if (triangles[t].noChildren) {
+        let center = [];
+        for (let i = 0; i < 3; i++) {
+          center.push((config1[i] + config2[i] + config3[i]) / 3);
+        }
+        ctx.fillStyle = gradientToColor(center);
+        filled = true;
+      }
+    } else {
+      if (triangles[t].noMoreRoutes) {
+        ctx.fillStyle = rainbow(triangles[t].point1);
+        filled = true;
+      }
+    }
+    if (filled) {
+      ctx.fill();
+    } else {
+      ctx.stroke();
+    }
+  }
 }

@@ -83,6 +83,7 @@ private:
     size_t edge3;
     Triangulation* tri;
     bool noMoreRoutes = false;
+    bool noChildren = true;
 
 public:
     double greatestCostRatio = 1;
@@ -129,13 +130,15 @@ public:
       points.erase(std::unique(points.begin(), points.end()), points.end());
       return points;
     }
-    bool filled() { return noMoreRoutes; }
+    bool hasChildren() { return !noChildren; }
+    bool hasNoMoreRoutes() { return noMoreRoutes; }
 
     std::vector<size_t> split()
     {
       std::vector<size_t> result{};
 
       if (!noMoreRoutes) {
+        noChildren = false;
         result.reserve(4);
 
         auto edgePair1Future
@@ -331,7 +334,8 @@ public:
     std::transform(
         triangles.begin(), triangles.end(), std::back_inserter(triTriangles), [](auto& t) {
           auto points = t.points();
-          return TriTriangle{ points[0], points[1], points[2], t.filled() };
+          return TriTriangle{ points[0], points[1], points[2], t.hasChildren(),
+            t.hasNoMoreRoutes() };
         });
 
     return { triPoints, triTriangles };

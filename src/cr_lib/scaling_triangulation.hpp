@@ -31,7 +31,8 @@ struct TriTriangle {
   size_t point2;
   size_t point3;
 
-  bool filled;
+  bool noChildren;
+  bool noMoreRoutes;
 };
 
 std::tuple<std::vector<TriPoint>, std::vector<TriTriangle>> scaledTriangulation(Dijkstra& d,
