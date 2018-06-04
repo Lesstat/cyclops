@@ -20,12 +20,16 @@
 
 #include "routeComparator.hpp"
 
-std::string routeToJson(const Route& route, const Graph& g)
+std::string routeToJson(const Route& route, const Graph& g, bool writeLogs = false)
 {
   std::stringstream resultJson;
   resultJson << "{ \"length\": " << route.costs.length << ", \"height\": " << route.costs.height
-             << ", \"unsuitability\": " << route.costs.unsuitability
-             << R"(, "route": { "type": "Feature", "geometry": { "type": "LineString", )"
+             << ", \"unsuitability\": " << route.costs.unsuitability;
+  if (writeLogs) {
+    auto log = Logger::getInstance();
+    resultJson << ", \"debug\":\"" << log->getInfo() << "\" ";
+  }
+  resultJson << R"(, "route": { "type": "Feature", "geometry": { "type": "LineString", )"
              << "\"coordinates\":[";
 
   std::unordered_set<NodeId> nodes;

@@ -51,6 +51,13 @@ class Logger {
   std::string& getInfo();
 
   virtual ~Logger();
+
+  static Logger* initLogger()
+  {
+    auto log = getInstance();
+    log->init();
+    return log;
+  }
 };
 
 #endif /* LOGINFO_H */

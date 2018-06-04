@@ -32,6 +32,8 @@
 #include <fstream>
 #include <random>
 
+using ms = std::chrono::milliseconds;
+
 Graph loadGraphFromTextFile(std::string& graphPath)
 {
   const size_t N = 256 * 1024;
@@ -45,7 +47,6 @@ Graph loadGraphFromTextFile(std::string& graphPath)
   Graph g = Graph::createFromStream(graphFile);
   auto end = std::chrono::high_resolution_clock::now();
 
-  using ms = std::chrono::milliseconds;
   std::cout << "creating the graph took " << std::chrono::duration_cast<ms>(end - start).count()
             << "ms" << '\n';
   return g;
@@ -61,7 +62,6 @@ Graph loadGraphFromBinaryFile(std::string& graphPath)
   Graph g = Graph::createFromBinaryFile(bin);
   auto end = std::chrono::high_resolution_clock::now();
 
-  using ms = std::chrono::milliseconds;
   std::cout << "creating the graph took " << std::chrono::duration_cast<ms>(end - start).count()
             << "ms" << '\n';
   return g;
@@ -134,6 +134,7 @@ void runWebServer(Graph& g)
   };
 
   server.resource["^/web/?.*"]["GET"] = [](Response response, Request request) {
+    Logger::initLogger();
     auto web_root_path = boost::filesystem::canonical("web");
 
     std::string pathWithoutWeb{};
@@ -166,6 +167,7 @@ void runWebServer(Graph& g)
     response->write(buffer);
   };
   server.resource["^/node_at"]["GET"] = [&grid](Response response, Request request) {
+    Logger::initLogger();
     const double IMPOSSIBLE_VALUE = -1000;
     double lat = IMPOSSIBLE_VALUE;
     double lng = IMPOSSIBLE_VALUE;
@@ -190,6 +192,8 @@ void runWebServer(Graph& g)
   };
 
   server.resource["^/route"]["GET"] = [&g](Response response, Request request) {
+    auto log = Logger::initLogger();
+
     std::optional<size_t> s{}, t{}, length{}, height{}, unsuitability{};
     extractQueryFields(request->parse_query_string(), s, t, length, height, unsuitability);
 
@@ -231,13 +235,14 @@ void runWebServer(Graph& g)
     auto start = std::chrono::high_resolution_clock::now();
     auto route = dijkstra.findBestRoute(NodePos{ *s }, NodePos{ *t }, c);
     auto end = std::chrono::high_resolution_clock::now();
+    size_t dur = std::chrono::duration_cast<ms>(end - start).count();
+    *log << "Dijkstra took " << dur << "ms"
+         << "\\n";
 
-    using ms = std::chrono::milliseconds;
-    std::cout << "Finding the route took " << std::chrono::duration_cast<ms>(end - start).count()
-              << "ms" << '\n';
+    std::cout << "Finding the route took " << dur << "ms" << '\n';
     if (route) {
 
-      auto json = routeToJson(*route, g);
+      auto json = routeToJson(*route, g, true);
       SimpleWeb::CaseInsensitiveMultimap header;
       header.emplace("Content-Type", "application/json");
       response->write(SimpleWeb::StatusCode::success_ok, json, header);
@@ -246,6 +251,7 @@ void runWebServer(Graph& g)
   };
 
   server.resource["^/alternative/.*"]["GET"] = [&g](Response response, Request request) {
+    Logger::initLogger();
     std::optional<size_t> s{}, t{}, dummy{};
 
     extractQueryFields(request->parse_query_string(), s, t, dummy, dummy, dummy);
@@ -282,6 +288,7 @@ void runWebServer(Graph& g)
   };
 
   server.resource["^/csv"]["GET"] = [&g](Response response, Request request) {
+    Logger::initLogger();
     size_t sampleSize = 10;
     size_t threshold = 30;
     size_t maxSplits = 15;
@@ -303,7 +310,6 @@ void runWebServer(Graph& g)
 
     auto dijkstra = g.createDijkstra();
 
-    using ms = std::chrono::milliseconds;
     std::stringstream result;
     result << "from, to, method, threshold, maxSplits,maxLevel,maxRepeating, setSize, "
               "nonidenticalRoutes, routeCount, lastInterestingRoute, lowestSharing, time"
@@ -347,8 +353,7 @@ void runWebServer(Graph& g)
   };
 
   server.resource["^/scaled"]["GET"] = [&g](Response response, Request request) {
-    auto log = Logger::getInstance();
-    log->init();
+    auto log = Logger::initLogger();
 
     std::optional<size_t> s{}, t{}, maxSplits{}, dummy{}, maxLevel{};
     bool splitByLevel{ false };
@@ -401,7 +406,8 @@ void runWebServer(Graph& g)
       result << "{ \"point1\":" << t.point1 << ",";
       result << "\"point2\":" << t.point2 << ",";
       result << "\"point3\":" << t.point3 << ",";
-      result << "\"filled\":" << t.filled;
+      result << "\"noChildren\":" << t.noChildren << ",";
+      result << "\"noMoreRoutes\":" << t.noMoreRoutes;
       result << "}";
     }
 
@@ -442,7 +448,6 @@ int testGraph(Graph& g)
     auto nEnd = std::chrono::high_resolution_clock::now();
 
     if (dRoute && nRoute) {
-      using ms = std::chrono::milliseconds;
       auto normalTime = std::chrono::duration_cast<ms>(nEnd - dEnd).count();
       auto chTime = std::chrono::duration_cast<ms>(dEnd - dStart).count();
       std::cout << "ND/CH: " << normalTime << "/" << chTime << " = "
