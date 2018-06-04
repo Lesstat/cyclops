@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(cycle-routing)
-add_compile_options(-Wall -Wextra -Wpedantic -std=c++17 -g -Wno-register -O3)
+add_compile_options(-Wall -Wextra -Wpedantic -std=c++17 -Wno-register -O3)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(cotire)
