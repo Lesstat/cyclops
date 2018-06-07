@@ -320,7 +320,7 @@ void runWebServer(Graph& g)
   server.resource["^/scaled"]["GET"] = [&g](Response response, Request request) {
     auto log = Logger::initLogger();
 
-    std::optional<size_t> s{}, t{}, maxSplits{}, dummy{}, maxLevel{};
+    std::optional<size_t> s{}, t{}, maxSplits{}, dummy{}, maxLevel{}, maxOverlap{};
     bool splitByLevel{ false };
 
     auto queryParams = request->parse_query_string();
@@ -337,14 +337,16 @@ void runWebServer(Graph& g)
         maxLevel = stoull(param.second);
       } else if (param.first == "splitByLevel" && param.second == "true") {
         splitByLevel = true;
+      } else if (param.first == "maxOverlap") {
+        maxOverlap = stoull(param.second);
       }
     }
 
     *log << "from " << *s << " to " << *t << "\\n";
 
     auto d = g.createDijkstra();
-    auto [points, triangles] = scaledTriangulation(
-        d, NodePos{ *s }, NodePos{ *t }, maxSplits.value_or(10), maxLevel, splitByLevel);
+    auto [points, triangles] = scaledTriangulation(d, NodePos{ *s }, NodePos{ *t },
+        maxSplits.value_or(10), maxLevel, splitByLevel, maxOverlap.value_or(95) / 100.0);
     std::stringstream result;
 
     result << "{ \"points\": [";
@@ -356,7 +358,8 @@ void runWebServer(Graph& g)
         result << ",";
       }
       result << "{ \"conf\": \"" << p.p << "\",";
-      result << "\"route\":" << routeToJson(p.r, g);
+      result << "\"route\":" << routeToJson(p.r, g) << ",";
+      result << "\"selected\": " << p.selected;
       result << "}";
     }
     result << "],";

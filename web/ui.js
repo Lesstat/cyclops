@@ -384,6 +384,9 @@ function scalingTriangulation() {
       drawTriangles(canvasRgb.getContext("2d"), points, triangles, true);
 
       for (let p in points) {
+        if (!points[p].selected) {
+          continue;
+        }
         let values = points[p].conf.split("/");
         let col = gradientToColor(values);
         let coord = configToCoords(values);
@@ -418,8 +421,19 @@ function scalingTriangulation() {
   let t = document.getElementById("end").innerHTML;
   let maxSplits = document.getElementById("maxSplits").value;
   let maxLevel = document.getElementById("maxLevel").value;
+  let maxOverlap = document.getElementById("maxOverlap").value;
   let splitByLevel = document.getElementById("splitByLevel").checked;
-  let uri = "/scaled" + "?s=" + s + "&t=" + t + "&maxSplits=" + maxSplits;
+
+  let uri =
+    "/scaled" +
+    "?s=" +
+    s +
+    "&t=" +
+    t +
+    "&maxSplits=" +
+    maxSplits +
+    "&maxOverlap=" +
+    maxOverlap;
 
   if (maxLevel > 0) {
     uri += "&maxLevel=" + maxLevel;
@@ -487,3 +501,10 @@ function drawTriangles(ctx, points, triangles, gradient) {
     }
   }
 }
+function overlapChange() {
+  let slider = document.getElementById("maxOverlap");
+  let span = document.getElementById("overlap");
+  span.innerHTML = slider.value + "%";
+}
+
+overlapChange();

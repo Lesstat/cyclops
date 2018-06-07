@@ -17,6 +17,7 @@
 */
 
 #include "scaling_triangulation.hpp"
+#include "ilp_independent_set.hpp"
 #include "loginfo.hpp"
 #include "routeComparator.hpp"
 #include <future>
@@ -320,15 +321,39 @@ public:
     similarities[mapIndex] = sharing;
     return sharing;
   }
-  std::tuple<std::vector<TriPoint>, std::vector<TriTriangle>> output()
+  std::tuple<std::vector<TriPoint>, std::vector<TriTriangle>> output(double maxOverlap)
   {
     std::vector<TriPoint> triPoints;
     std::vector<TriTriangle> triTriangles;
 
+    std::vector<std::pair<size_t, size_t>> edges;
+
+    for (size_t i = 0; i < points.size(); ++i) {
+      for (size_t j = i + 1; j < points.size(); ++j) {
+        if (calculateSharing(points[i].r, points[j].r) >= maxOverlap) {
+          edges.emplace_back(i, j);
+        }
+      }
+    }
+    namespace c = std::chrono;
+    auto start = c::high_resolution_clock::now();
+    auto independentSet = find_independent_set(points.size(), edges);
+    auto end = c::high_resolution_clock::now();
+    size_t dur = c::duration_cast<ms>(end - start).count();
+    auto log = Logger::getInstance();
+    *log << "Finding independent set (" << independentSet.size() << "/" << points.size()
+         << ") took " << dur << "ms "
+         << "\\n";
+
     triPoints.reserve(points.size());
+
     std::transform(points.begin(), points.end(), std::back_inserter(triPoints), [](auto& p) {
-      return TriPoint{ p.p, p.r };
+      return TriPoint{ p.p, p.r, false };
     });
+
+    for (auto& n : independentSet) {
+      triPoints[n].selected = true;
+    }
 
     triTriangles.reserve(triangles.size());
     std::transform(
@@ -343,12 +368,13 @@ public:
 };
 
 std::tuple<std::vector<TriPoint>, std::vector<TriTriangle>> scaledTriangulation(Dijkstra& d,
-    NodePos from, NodePos to, size_t maxSplits, std::optional<size_t> maxLevel, bool splitByLevel)
+    NodePos from, NodePos to, size_t maxSplits, std::optional<size_t> maxLevel, bool splitByLevel,
+    double maxOverlap)
 {
 
   Triangulation tri(d, from, to);
   tri.triangulate(maxSplits, maxLevel.value_or(std::numeric_limits<size_t>::max()), splitByLevel);
-  auto result = tri.output();
+  auto result = tri.output(maxOverlap);
 
   return result;
 }

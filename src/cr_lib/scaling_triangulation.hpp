@@ -24,6 +24,7 @@
 struct TriPoint {
   PosVector p;
   Route r;
+  bool selected;
 };
 
 struct TriTriangle {
@@ -36,6 +37,7 @@ struct TriTriangle {
 };
 
 std::tuple<std::vector<TriPoint>, std::vector<TriTriangle>> scaledTriangulation(Dijkstra& d,
-    NodePos from, NodePos to, size_t maxSplits, std::optional<size_t> maxLevel, bool splitByLevel);
+    NodePos from, NodePos to, size_t maxSplits, std::optional<size_t> maxLevel, bool splitByLevel,
+    double maxOverlap = 0.9);
 
 #endif /* SCALING_TRIANGULATION_H */
