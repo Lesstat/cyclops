@@ -24,6 +24,7 @@
 #include <iostream>
 
 using ms = std::chrono::milliseconds;
+namespace c = std::chrono;
 
 class Triangulation {
 
@@ -202,6 +203,8 @@ public:
   std::optional<double> lengthFac;
   std::optional<double> heightFac;
   std::optional<double> unsuitFac;
+  size_t explore_time = 0;
+  size_t recommendation_time = 0;
 
   public:
   Triangulation(Dijkstra& d, NodePos from, NodePos to)
@@ -215,6 +218,7 @@ public:
 
   void triangulate(size_t maxSplits, size_t maxLevel, const bool splitByLevel)
   {
+    auto start = c::high_resolution_clock::now();
     auto p1Future = std::async(std::launch::async, [this]() {
       return createPoint(PosVector({ 1, 0, 0 }), d1);
     });
@@ -254,9 +258,10 @@ public:
 
     std::priority_queue<size_t, std::vector<size_t>, decltype(simComparator)> q{ simComparator };
     q.push(t1);
-    triangles.reserve(maxSplits * 4);
-    points.reserve(maxSplits * 4);
-    edges.reserve(3 + maxSplits * 9);
+    size_t reserveMultiplier = std::max({ size_t(2), maxSplits });
+    triangles.reserve(reserveMultiplier * 4);
+    points.reserve(reserveMultiplier * 4);
+    edges.reserve(3 + reserveMultiplier * 9);
 
     size_t count = 0;
     while (!q.empty() && count < maxSplits) {
@@ -271,6 +276,8 @@ public:
         q.push(child);
       }
     }
+    auto end = c::high_resolution_clock::now();
+    explore_time = c::duration_cast<ms>(end - start).count();
   }
 
   size_t createPoint(const PosVector& p, Dijkstra& d)
@@ -321,7 +328,7 @@ public:
     similarities[mapIndex] = sharing;
     return sharing;
   }
-  std::tuple<std::vector<TriPoint>, std::vector<TriTriangle>> output(double maxOverlap)
+  TriangulationResult output(double maxOverlap)
   {
     std::vector<TriPoint> triPoints;
     std::vector<TriTriangle> triTriangles;
@@ -335,15 +342,14 @@ public:
         }
       }
     }
-    namespace c = std::chrono;
     auto start = c::high_resolution_clock::now();
     auto independentSet = find_independent_set(points.size(), edges);
     auto end = c::high_resolution_clock::now();
-    size_t dur = c::duration_cast<ms>(end - start).count();
-    auto log = Logger::getInstance();
-    *log << "Finding independent set (" << independentSet.size() << "/" << points.size()
-         << ") took " << dur << "ms "
-         << "\\n";
+    recommendation_time = c::duration_cast<ms>(end - start).count();
+    // auto log = Logger::getInstance();
+    // *log << "Finding independent set (" << independentSet.size() << "/" << points.size()
+    //      << ") took " << dur << "ms "
+    //      << "\\n";
 
     triPoints.reserve(points.size());
 
@@ -363,13 +369,12 @@ public:
             t.hasNoMoreRoutes() };
         });
 
-    return { triPoints, triTriangles };
+    return { triPoints, triTriangles, explore_time, recommendation_time };
   }
 };
 
-std::tuple<std::vector<TriPoint>, std::vector<TriTriangle>> scaledTriangulation(Dijkstra& d,
-    NodePos from, NodePos to, size_t maxSplits, std::optional<size_t> maxLevel, bool splitByLevel,
-    double maxOverlap)
+TriangulationResult scaledTriangulation(Dijkstra& d, NodePos from, NodePos to, size_t maxSplits,
+    std::optional<size_t> maxLevel, bool splitByLevel, double maxOverlap)
 {
 
   Triangulation tri(d, from, to);

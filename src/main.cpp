@@ -345,8 +345,10 @@ void runWebServer(Graph& g)
     *log << "from " << *s << " to " << *t << "\\n";
 
     auto d = g.createDijkstra();
-    auto [points, triangles] = scaledTriangulation(d, NodePos{ *s }, NodePos{ *t },
+    auto triangulation = scaledTriangulation(d, NodePos{ *s }, NodePos{ *t },
         maxSplits.value_or(10), maxLevel, splitByLevel, maxOverlap.value_or(95) / 100.0);
+    auto& points = triangulation.points;
+    auto& triangles = triangulation.triangles;
     std::stringstream result;
 
     result << "{ \"points\": [";

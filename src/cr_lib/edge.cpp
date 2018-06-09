@@ -86,7 +86,7 @@ HalfEdge Edge::makeHalfEdge(NodePos begin, NodePos end) const
   return e;
 }
 
-float HalfEdge::costByConfiguration(const Config& conf) const { return cost * conf; }
+double HalfEdge::costByConfiguration(const Config& conf) const { return cost * conf; }
 
 void Edge::administerEdges(const std::vector<Edge>& edges)
 {
@@ -101,9 +101,9 @@ void Edge::administerEdges(const std::vector<Edge>& edges)
 const Edge& Edge::getEdge(EdgeId id) { return edges.at(id); }
 Edge& Edge::getMutEdge(EdgeId id) { return edges.at(id); }
 
-float Cost::operator*(const Config& conf) const
+double Cost::operator*(const Config& conf) const
 {
-  float combinedCost = this->length * conf.length + this->height * conf.height
+  double combinedCost = this->length * conf.length + this->height * conf.height
       + this->unsuitability * conf.unsuitability;
 
   if (!(combinedCost >= 0)) {
@@ -113,7 +113,7 @@ float Cost::operator*(const Config& conf) const
     assert(false);
   }
   if (combinedCost == 0) {
-    return std::numeric_limits<float>::epsilon();
+    return std::numeric_limits<double>::epsilon();
   }
   return combinedCost;
 }

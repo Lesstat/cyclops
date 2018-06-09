@@ -30,21 +30,21 @@ class Logger {
 
   void init();
 
-  template <typename T> Logger& operator<<(const T& s)
+  template <typename T> Logger& operator<<(const T& /*s*/)
   {
-    info += s;
+    // info += s;
     return *this;
   }
 
-  Logger& operator<<(const double& d)
+  Logger& operator<<(const double& /*d*/)
   {
-    info += std::to_string(d);
+    // info += std::to_string(d);
     return *this;
   }
 
-  Logger& operator<<(const size_t& d)
+  Logger& operator<<(const size_t& /*d*/)
   {
-    info += std::to_string(d);
+    // info += std::to_string(d);
     return *this;
   }
 

@@ -18,6 +18,7 @@
 
 #include "dijkstra.hpp"
 #include "graph_loading.hpp"
+#include "grid.hpp"
 #include "routeComparator.hpp"
 #include "scaling_triangulation.hpp"
 #include <boost/program_options.hpp>
@@ -31,6 +32,134 @@ void printErrorAndHelp(const std::string& error, const po::options_description& 
 {
   std::cout << error << '\n';
   std::cout << all << '\n';
+}
+
+void explore(std::ifstream& file, std::ofstream& output, Dijkstra& d, size_t splitCount,
+    size_t maxLevel, double maxSimilarity, std::string type)
+{
+  while (!file.eof()) {
+    size_t from;
+    size_t to;
+    file >> from >> to;
+    if (from == to) {
+      continue;
+    }
+    if (file.eof()) {
+      break;
+    }
+    if (!d.findBestRoute(NodePos{ from }, NodePos{ to }, PosVector{ { 1, 0, 0 } })) {
+      std::cout << "did not find routes"
+                << "\n";
+      continue;
+    }
+    try {
+      auto exploration = scaledTriangulation(d, NodePos{ from }, NodePos{ to }, splitCount,
+          maxLevel > 0 ? maxLevel : std::optional<size_t>{}, false);
+
+      auto routes_recommended = std::count_if(
+          exploration.points.begin(), exploration.points.end(), [](auto p) { return p.selected; });
+      auto routeCount = exploration.points.size();
+
+      output << type << "," << from << "," << to << "," << splitCount << "," << maxLevel << ","
+             << maxSimilarity << "," << routeCount << "," << routes_recommended << ","
+             << exploration.explore_time << "," << exploration.recommendation_time << '\n';
+    } catch (...) {
+      continue;
+    }
+  }
+}
+
+void search_candidates(Graph& g)
+{
+  std::cout << "searching for candidates" << '\n';
+  std::ofstream day;
+  day.open("daytour", std::ios::app);
+  day.seekp(0, std::ios_base::end);
+  std::ofstream week;
+  week.open("weektour", std::ios::app);
+  week.seekp(0, std::ios_base::end);
+
+  size_t daycount = 0;
+  size_t weekcount = 0;
+
+  const double minDay = 40000;
+  const double maxDay = 80000;
+  const double minWeek = 120000;
+
+  std::random_device rd{};
+  std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
+
+  auto d = g.createDijkstra();
+  Config c = PosVector{ { 1, 0, 0 } };
+
+  for (size_t i = 0; i < 1000; ++i) {
+    if (i % 100 == 0) {
+      std::cout << "found " << daycount << " daytours and " << weekcount << " more day tours."
+                << "\n";
+    }
+    NodePos from{ dist(rd) };
+    NodePos to{ dist(rd) };
+
+    auto mayRoute = d.findBestRoute(from, to, c);
+    if (!mayRoute) {
+      continue;
+    }
+    auto route = *mayRoute;
+    if (minDay <= route.costs.length && route.costs.length <= maxDay) {
+      daycount++;
+      day << from.get() << " " << to.get() << '\n';
+    } else if (route.costs.length >= minWeek) {
+      weekcount++;
+      week << from.get() << " " << to.get() << '\n';
+    }
+  }
+}
+
+void search_commuting_candidates(Graph& g)
+{
+
+  std::ofstream commute{};
+  commute.open("commute", std::ios::app);
+  commute.seekp(0, std::ios::end);
+
+  std::vector<NodePos> candidates;
+
+  auto d = g.createDijkstra();
+  Config c = PosVector{ { 1, 0, 0 } };
+
+  std::random_device rd{};
+  std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
+
+  auto schlossPos = PositionalNode{ Lat{ 48.77846 }, Lng{ 9.18018 }, NodePos{ 1 } };
+  for (int i = 0; i < 10000; ++i) {
+    NodePos otherPos{ dist(rd) };
+    auto other = g.getNode(otherPos);
+
+    auto length
+        = haversine_distance(schlossPos, PositionalNode{ other.lat(), other.lng(), otherPos });
+    if (length <= 10000) {
+      candidates.push_back(otherPos);
+    }
+  }
+
+  auto pairs = 0;
+  std::cout << "found " << candidates.size() << " candidates" << '\n';
+  for (size_t i = 0; i < candidates.size(); ++i) {
+    for (size_t j = i + 1; j < candidates.size(); ++j) {
+      if (pairs >= 250) {
+        std::cout << "found " << pairs << " pairs"
+                  << "\n";
+        return;
+      }
+      auto route = d.findBestRoute(candidates[i], candidates[j], c);
+      if (route && route->costs.length > 2000) {
+        commute << candidates[i] << " " << candidates[j] << "\n";
+        pairs++;
+      }
+    }
+  }
+  std::cout << "found " << pairs << " pairs"
+            << "\n";
 }
 
 int main(int argc, char* argv[])
@@ -54,7 +183,9 @@ int main(int argc, char* argv[])
 
   po::options_description experiment{ "Experiment to conduct" };
   dataConfiguration.add_options()("dijkstra,d", "Run dijkstra for random s-t queries ")(
-      "alt,a", "Run alternative route search for random s-t queries");
+      "alt,a", "Run alternative route search for random s-t queries")(
+      "candidates,c", "find candidates for one and more day tours")(
+      "commute", "find candidates for commuting tours");
 
   po::options_description all;
   all.add_options()("help,h", "prints help message");
@@ -77,7 +208,8 @@ int main(int argc, char* argv[])
   }
 
   std::ofstream output{};
-  output.open(saveFileName);
+  output.open(saveFileName, std::ios::app);
+  output.seekp(0, std::ios::end);
   if (!output.good()) {
     printErrorAndHelp("Output file " + parameterInputFile + " could not be read", all);
     return 1;
@@ -91,7 +223,6 @@ int main(int argc, char* argv[])
   } else if (vm.count("multi") > 0) {
     g = readMultiFileGraph(loadFileName);
   } else {
-
     printErrorAndHelp("No input graph given", all);
     return 1;
   }
@@ -101,45 +232,21 @@ int main(int argc, char* argv[])
   std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
 
   if (vm.count("alt") > 0) {
-    output << "from,to,maxSplits,maxLevel,maxSimilarity,routeCount,time\n";
+    // output << "type,from,to,maxSplits,maxLevel,maxSimilarity,routeCount,recommendedRouteCount,"
+    //           "exploreTime,recommendationTime\n";
     while (!params.eof()) {
-      size_t splitCount = 0, maxLevel = 0, sampleSize = 0;
+      size_t splitCount = 0, maxLevel = 0;
       double maxSimilarity = 1.0;
-      params >> sampleSize >> splitCount >> maxLevel >> maxSimilarity;
-      std::cout << "Starting Configuration: " << sampleSize << " " << splitCount << " " << maxLevel
-                << " " << maxSimilarity << "\n";
+      params >> splitCount >> maxLevel >> maxSimilarity;
+      std::cout << "Starting Configuration: " << splitCount << " " << maxLevel << " "
+                << maxSimilarity << "\n";
 
-      size_t curRoute = 0;
-      while (curRoute < sampleSize) {
-        NodePos from{ dist(rd) };
-        NodePos to{ dist(rd) };
-        if (!d.findBestRoute(from, to, PosVector({ 1, 0, 0 }))) {
-          continue;
-        }
-        auto start = std::chrono::high_resolution_clock::now();
-        auto triPoints = std::get<std::vector<TriPoint>>(
-            scaledTriangulation(d, from, to, splitCount, maxLevel, false));
-        auto end = std::chrono::high_resolution_clock::now();
-        auto time = std::chrono::duration_cast<ms>(end - start).count();
-
-        std::vector<bool> uniqueRoute(triPoints.size(), true);
-
-        for (size_t i = 0; i < triPoints.size(); ++i) {
-          if (!uniqueRoute[i])
-            continue;
-          for (size_t j = i + 1; j < triPoints.size(); ++j) {
-            auto sharing = calculateSharing(triPoints[i].r, triPoints[j].r);
-            if (sharing > maxSimilarity) {
-              uniqueRoute[j] = false;
-            }
-          }
-        }
-        auto routeCount = std::count(uniqueRoute.begin(), uniqueRoute.end(), true);
-
-        output << from << "," << to << "," << splitCount << "," << maxLevel << "," << maxSimilarity
-               << "," << routeCount << "," << time << '\n';
-        curRoute++;
-      }
+      std::ifstream day{ "daytour" };
+      std::ifstream week{ "weektour" };
+      std::ifstream commute{ "commute" };
+      explore(day, output, d, splitCount, maxLevel, maxSimilarity, "day");
+      explore(week, output, d, splitCount, maxLevel, maxSimilarity, "week");
+      explore(commute, output, d, splitCount, maxLevel, maxSimilarity, "commute");
     }
   } else if (vm.count("dijkstra") > 0) {
     output
@@ -170,7 +277,10 @@ int main(int argc, char* argv[])
         curRoute++;
       }
     }
+  } else if (vm.count("candidates") > 0) {
+    search_candidates(g);
+  } else if (vm.count("commute") > 0) {
+    search_commuting_candidates(g);
   }
-
   return 0;
 }

@@ -36,8 +36,14 @@ struct TriTriangle {
   bool noMoreRoutes;
 };
 
-std::tuple<std::vector<TriPoint>, std::vector<TriTriangle>> scaledTriangulation(Dijkstra& d,
-    NodePos from, NodePos to, size_t maxSplits, std::optional<size_t> maxLevel, bool splitByLevel,
-    double maxOverlap = 0.9);
+struct TriangulationResult {
+  std::vector<TriPoint> points;
+  std::vector<TriTriangle> triangles;
+  size_t explore_time;
+  size_t recommendation_time;
+};
+
+TriangulationResult scaledTriangulation(Dijkstra& d, NodePos from, NodePos to, size_t maxSplits,
+    std::optional<size_t> maxLevel, bool splitByLevel, double maxOverlap = 0.9);
 
 #endif /* SCALING_TRIANGULATION_H */

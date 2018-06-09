@@ -58,7 +58,7 @@ struct Cost {
       , unsuitability(0)
   {
   }
-  float operator*(const Config& conf) const;
+  double operator*(const Config& conf) const;
 
   Cost operator+(const Cost& c) const
   {
@@ -87,7 +87,7 @@ struct HalfEdge {
   NodePos begin;
   Cost cost;
 
-  float costByConfiguration(const Config& conf) const;
+  double costByConfiguration(const Config& conf) const;
 
   private:
   friend class boost::serialization::access;

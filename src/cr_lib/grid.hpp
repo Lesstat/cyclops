@@ -83,4 +83,5 @@ class Grid {
   long sideLength;
 };
 
+double haversine_distance(const PositionalNode& a, const PositionalNode& b);
 #endif /* GRID_H */

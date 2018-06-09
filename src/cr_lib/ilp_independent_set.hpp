@@ -60,7 +60,12 @@ class ilpSet {
       throw std::invalid_argument(
           "GLPK returned " + std::to_string(status) + " for LP relaxiation");
     }
-    status = glp_intopt(problem, nullptr);
+    glp_iocp params;
+    glp_init_iocp(&params);
+
+    params.tm_lim = 5000;
+
+    status = glp_intopt(problem, &params);
     if (status != 0) {
       throw std::invalid_argument("GLPK returned " + std::to_string(status) + " for ILP");
     }
@@ -89,6 +94,14 @@ class ilpSet {
 std::vector<size_t> find_independent_set(
     size_t nodeCount, std::vector<std::pair<size_t, size_t>>& edges)
 {
+
+  if (edges.empty()) {
+    std::vector<size_t> result;
+    for (size_t i = 0; i < nodeCount; ++i) {
+      result.push_back(i);
+    }
+    return result;
+  }
   ilpSet lp(nodeCount);
   lp.addEdges(edges);
   return lp.find_set();
