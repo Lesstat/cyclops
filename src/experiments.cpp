@@ -54,7 +54,7 @@ void explore(std::ifstream& file, std::ofstream& output, Dijkstra& d, size_t spl
     }
     try {
       auto exploration = scaledTriangulation(d, NodePos{ from }, NodePos{ to }, splitCount,
-          maxLevel > 0 ? maxLevel : std::optional<size_t>{}, false);
+          maxLevel > 0 ? maxLevel : std::optional<size_t>{}, false, maxSimilarity);
 
       auto routes_recommended = std::count_if(
           exploration.points.begin(), exploration.points.end(), [](auto p) { return p.selected; });

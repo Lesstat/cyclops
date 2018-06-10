@@ -44,6 +44,6 @@ struct TriangulationResult {
 };
 
 TriangulationResult scaledTriangulation(Dijkstra& d, NodePos from, NodePos to, size_t maxSplits,
-    std::optional<size_t> maxLevel, bool splitByLevel, double maxOverlap = 0.9);
+    std::optional<size_t> maxLevel, bool splitByLevel, double maxOverlap);
 
 #endif /* SCALING_TRIANGULATION_H */
