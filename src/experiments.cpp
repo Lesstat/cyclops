@@ -19,6 +19,7 @@
 #include "dijkstra.hpp"
 #include "graph_loading.hpp"
 #include "grid.hpp"
+#include "ilp_independent_set.hpp"
 #include "routeComparator.hpp"
 #include "scaling_triangulation.hpp"
 #include <boost/program_options.hpp>
@@ -27,6 +28,7 @@
 #include <random>
 
 namespace po = boost::program_options;
+namespace c = std::chrono;
 
 void printErrorAndHelp(const std::string& error, const po::options_description& all)
 {
@@ -63,6 +65,50 @@ void explore(std::ifstream& file, std::ofstream& output, Dijkstra& d, size_t spl
       output << type << "," << from << "," << to << "," << splitCount << "," << maxLevel << ","
              << maxSimilarity << "," << routeCount << "," << routes_recommended << ","
              << exploration.explore_time << "," << exploration.recommendation_time << '\n';
+    } catch (...) {
+      continue;
+    }
+  }
+}
+void explore_random(std::ifstream& file, std::ofstream& output, Dijkstra& d, size_t splitCount,
+    double maxSimilarity, std::string type)
+{
+  while (!file.eof()) {
+    size_t from;
+    size_t to;
+    file >> from >> to;
+    if (from == to) {
+      continue;
+    }
+    if (file.eof()) {
+      break;
+    }
+    try {
+      std::vector<Route> routes;
+      auto start = c::high_resolution_clock::now();
+      for (size_t i = 0; i < splitCount * 3; ++i) {
+        routes.push_back(
+            d.findBestRoute(NodePos{ from }, NodePos{ to }, generateRandomConfig()).value());
+      }
+      auto end = c::high_resolution_clock::now();
+      size_t exploreTime = c::duration_cast<ms>(end - start).count();
+
+      std::vector<std::pair<size_t, size_t>> edges;
+      for (size_t i = 0; i < routes.size(); ++i) {
+        for (size_t j = i + 1; j < routes.size(); ++j) {
+          if (calculateSharing(routes[i], routes[j]) > maxSimilarity) {
+            edges.emplace_back(i, j);
+          }
+        }
+      }
+      start = c::high_resolution_clock::now();
+      auto set = find_independent_set(routes.size(), edges);
+      end = c::high_resolution_clock::now();
+      size_t recommendation_time = c::duration_cast<ms>(end - start).count();
+
+      output << type << "," << from << "," << to << "," << splitCount << "," << maxSimilarity << ","
+             << routes.size() << "," << set.size() << "," << exploreTime << ","
+             << recommendation_time << '\n';
     } catch (...) {
       continue;
     }
@@ -184,8 +230,8 @@ int main(int argc, char* argv[])
   po::options_description experiment{ "Experiment to conduct" };
   dataConfiguration.add_options()("dijkstra,d", "Run dijkstra for random s-t queries ")(
       "alt,a", "Run alternative route search for random s-t queries")(
-      "candidates,c", "find candidates for one and more day tours")(
-      "commute", "find candidates for commuting tours");
+      "candidates,c", "find candidates for one and more day tours")("commute",
+      "find candidates for commuting tours")("random,r", "explore random configurations");
 
   po::options_description all;
   all.add_options()("help,h", "prints help message");
@@ -281,6 +327,22 @@ int main(int argc, char* argv[])
     search_candidates(g);
   } else if (vm.count("commute") > 0) {
     search_commuting_candidates(g);
+  } else if (vm.count("random") > 0) {
+    output << "type,from,to,maxSplits,maxSimilarity,routeCount,recommendedRouteCount,"
+              "exploreTime,recommendationTime\n";
+    while (!params.eof()) {
+      size_t splitCount = 0;
+      double maxSimilarity = 1.0;
+      params >> splitCount >> maxSimilarity;
+      std::cout << "Starting Configuration: " << splitCount << " " << maxSimilarity << "\n";
+
+      std::ifstream day{ "daytour" };
+      std::ifstream week{ "weektour" };
+      std::ifstream commute{ "commute" };
+      explore_random(day, output, d, splitCount, maxSimilarity, "day");
+      explore_random(week, output, d, splitCount, maxSimilarity, "week");
+      explore_random(commute, output, d, splitCount, maxSimilarity, "commute");
+    }
   }
   return 0;
 }

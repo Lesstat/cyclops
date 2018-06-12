@@ -92,19 +92,6 @@ class ilpSet {
 };
 
 std::vector<size_t> find_independent_set(
-    size_t nodeCount, std::vector<std::pair<size_t, size_t>>& edges)
-{
-
-  if (edges.empty()) {
-    std::vector<size_t> result;
-    for (size_t i = 0; i < nodeCount; ++i) {
-      result.push_back(i);
-    }
-    return result;
-  }
-  ilpSet lp(nodeCount);
-  lp.addEdges(edges);
-  return lp.find_set();
-}
+    size_t nodeCount, std::vector<std::pair<size_t, size_t>>& edges);
 
 #endif /* ILP_INDEPENDENT_SET_H */
