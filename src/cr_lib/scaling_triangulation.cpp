@@ -365,7 +365,7 @@ public:
     std::transform(
         triangles.begin(), triangles.end(), std::back_inserter(triTriangles), [](auto& t) {
           auto points = t.points();
-          return TriTriangle{ points[0], points[1], points[2], t.hasChildren(),
+          return TriTriangle{ points[0], points[1], points[2], !t.hasChildren(),
             t.hasNoMoreRoutes() };
         });
 

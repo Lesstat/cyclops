@@ -12,7 +12,7 @@ var towerLayer = L.layerGroup([]).addTo(map);
 let canvas = document.getElementById("triangleSelector");
 let canvasRgb = document.getElementById("triangleSelectorRGB");
 
-L.tileLayer("http://{s}.tile.openstreetmap.org/{id}/{z}/{x}/{y}.png", {
+L.tileLayer("http://{s}.tiles.wmflabs.org/bw-mapnik/{z}/{x}/{y}.png", {
   maxZoom: 18,
   attribution:
     'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
@@ -221,7 +221,12 @@ function rainbow(number) {
 
 function gradientToColor(config) {
   let rgb = config.map(val => Math.round(val * 255));
-  var decColor = 0x1000000 + rgb[0] + 0x100 * rgb[1] + 0x10000 * rgb[2];
+  let myMax = Math.max(...rgb);
+  var decColor =
+    0x1000000 +
+    Math.round(rgb[0] * 255.0 / myMax) +
+    0x100 * Math.round(rgb[1] * 255.0 / myMax) +
+    0x10000 * Math.round(rgb[2] * 255.0 / myMax);
   return "#" + decColor.toString(16).substr(1);
 }
 
