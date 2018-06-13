@@ -93,9 +93,9 @@ function calcDist(length, height, unsuitability) {
         opacity: 0.65
       };
       document.getElementById("route_length").innerHTML =
-        Math.round(xmlhttp.response.length / 1000) / 10;
+        Math.round(xmlhttp.response.length / 100) / 10;
       document.getElementById("route_height").innerHTML =
-        xmlhttp.response.height / 10;
+        xmlhttp.response.height;
       document.getElementById("route_unsuitability").innerHTML =
         xmlhttp.response.unsuitability;
       geoJson.clearLayers();
@@ -336,8 +336,8 @@ function moveDot(event) {
       let cost = bestRoute.cost;
 
       document.getElementById("route_length").innerHTML =
-        Math.round(cost.length / 1000) / 10;
-      document.getElementById("route_height").innerHTML = cost.height / 10;
+        Math.round(cost.length / 100) / 10;
+      document.getElementById("route_height").innerHTML = cost.height;
       document.getElementById("route_unsuitability").innerHTML =
         cost.unsuitability;
     }
@@ -399,9 +399,9 @@ function scalingTriangulation() {
         drawDot(canvasRgb, coord.x, coord.y, col);
 
         let myStyle = {
-          color: rainbow(p),
+          color: col,
           weight: 4,
-          opacity: 1
+          opacity: 0.7
         };
         let geoRoute = L.geoJSON(points[p].route.route.geometry, {
           style: myStyle
