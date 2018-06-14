@@ -42,7 +42,7 @@ std::string routeToJson(const Route& route, const Graph& g, bool writeLogs = fal
 
   for (const auto& edge : route.edges) {
     const auto& node = g.getNode(edge.sourcePos());
-    resultJson << '[' << node.lng() << ", " << node.lat() << "],";
+    resultJson << '[' << node.lng() << ", " << node.lat() << ", " << node.height() << "],";
   }
   if (!route.edges.empty()) {
     const auto& lastEdge = route.edges[route.edges.size() - 1];

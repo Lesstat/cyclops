@@ -34,6 +34,7 @@ NodeId Node::id() const { return id_; }
 
 Lat Node::lat() const { return lat_; }
 Lng Node::lng() const { return lng_; }
+short Node::height() const { return height_; }
 
 std::ostream& operator<<(std::ostream& os, const Node& n)
 {
