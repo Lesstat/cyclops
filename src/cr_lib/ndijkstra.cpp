@@ -52,7 +52,7 @@ std::optional<RouteWithCount> NormalDijkstra::findBestRoute(NodePos from, NodePo
     if (heap.empty()) {
       return {};
     }
-    auto[node, pathCost] = heap.top();
+    auto [node, pathCost] = heap.top();
     heap.pop();
     if (node == to) {
       return buildRoute(from, to);
@@ -67,12 +67,14 @@ std::optional<RouteWithCount> NormalDijkstra::findBestRoute(NodePos from, NodePo
       double nextCost = pathCost + edge.costByConfiguration(config);
       if (nextCost < cost[nextNode]) {
         QueueElem next = std::make_tuple(nextNode, nextCost);
+        if (cost[nextNode] == std::numeric_limits<double>::max()) {
+          touched.push_back(nextNode);
+        }
         cost[nextNode] = nextCost;
         paths[nextNode] = paths[node];
-        touched.push_back(nextNode);
         previousEdge[nextNode] = { edge };
-        heap.push(std::move(next));
-      } else if (std::abs(nextCost - cost[nextNode]) < 0.1) {
+        heap.push(next);
+      } else if (std::abs(nextCost - cost[nextNode]) < 0.001) {
         paths[nextNode] += paths[node];
         previousEdge[nextNode].push_back(edge);
       }
@@ -167,7 +169,7 @@ std::optional<RouteWithCount> RouteIterator::next()
       return {};
     }
 
-    auto[hRoute, hTo] = heap.top();
+    auto [hRoute, hTo] = heap.top();
     heap.pop();
 
     if (hTo == from) {

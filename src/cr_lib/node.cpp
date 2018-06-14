@@ -17,11 +17,12 @@
 */
 #include "graph.hpp"
 
-Node::Node(NodeId id, Lat lat, Lng lng)
+Node::Node(NodeId id, Lat lat, Lng lng, short height)
     : id_(id)
     , lat_(lat)
     , lng_(lng)
     , level(0)
+    , height_(height)
 {
 }
 
@@ -43,12 +44,13 @@ std::ostream& operator<<(std::ostream& os, const Node& n)
 Node Node::createFromText(const std::string& text)
 {
   size_t id, osmId, level;
-  double lat, lng, height;
+  double lat, lng;
+  short height;
 
   std::sscanf(
-      text.c_str(), "%lu%lu%lf%lf%lf%lu", &id, &osmId, &lat, &lng, &height, &level); // NOLINT
+      text.c_str(), "%lu%lu%lf%lf%hi%lu", &id, &osmId, &lat, &lng, &height, &level); // NOLINT
 
-  Node n{ NodeId{ id }, Lat(lat), Lng(lng) };
+  Node n{ NodeId{ id }, Lat(lat), Lng(lng), height };
   n.level = level;
   return n;
 }

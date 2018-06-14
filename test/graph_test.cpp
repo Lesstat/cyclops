@@ -21,10 +21,10 @@
 TEST_CASE("Offset array is correctly initialized")
 {
   std::vector<Node> nodes;
-  nodes.emplace_back(Node{ NodeId(0), Lat(3.4), Lng(4.6) });
-  nodes.emplace_back(Node{ NodeId(1), Lat(3.4), Lng(4.6) });
-  nodes.emplace_back(Node{ NodeId(2), Lat(3.4), Lng(4.6) });
-  nodes.emplace_back(Node{ NodeId(3), Lat(3.4), Lng(4.6) });
+  nodes.emplace_back(NodeId(0), Lat(3.4), Lng(4.6), 0);
+  nodes.emplace_back(NodeId(1), Lat(3.4), Lng(4.6), 0);
+  nodes.emplace_back(NodeId(2), Lat(3.4), Lng(4.6), 0);
+  nodes.emplace_back(NodeId(3), Lat(3.4), Lng(4.6), 0);
 
   std::vector<Edge> edges;
   edges.emplace_back(Edge{ NodeId(1), NodeId(0) });

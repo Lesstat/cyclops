@@ -187,7 +187,7 @@ class Edge {
 class Node {
   public:
   Node() = default;
-  Node(NodeId id, Lat lat, Lng lng);
+  Node(NodeId id, Lat lat, Lng lng, short height);
   Node(const Node& other) = default;
   Node(Node&& other) noexcept = default;
   virtual ~Node() noexcept = default;
@@ -204,6 +204,7 @@ class Node {
 
   Lat lat() const;
   Lng lng() const;
+  short height() const;
 
   private:
   friend class boost::serialization::access;
@@ -212,12 +213,14 @@ class Node {
   Lat lat_;
   Lng lng_;
   size_t level = 0;
+  short height_;
   template <class Archive> void serialize(Archive& ar, const unsigned int /*version*/)
   {
     ar& id_;
     ar& lat_;
     ar& lng_;
     ar& level;
+    ar& height_;
   }
 };
 

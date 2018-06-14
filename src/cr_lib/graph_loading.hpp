@@ -26,12 +26,13 @@ using ms = std::chrono::milliseconds;
 Node createNode(std::ifstream& graph, std::ifstream& labels)
 {
   size_t id, osmId, level;
-  double lat, lng, height;
+  double lat, lng;
+  short height;
 
   graph >> id >> osmId >> lat >> lng >> height >> level;
   labels >> level;
 
-  Node n{ NodeId{ id }, Lat(lat), Lng(lng) };
+  Node n{ NodeId{ id }, Lat(lat), Lng(lng), height };
   n.assignLevel(level);
   return n;
 }

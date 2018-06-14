@@ -164,6 +164,7 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
         auto pair = std::any_cast<EdgePair>(msg);
         auto& in = pair.in;
         auto& out = pair.out;
+        bool warm = false;
 
         size_t lpCount = 0;
         Config config{ LengthConfig{ 0.33 }, HeightConfig{ 0.33 }, UnsuitabilityConfig{ 0.33 } };
@@ -188,6 +189,53 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
 
         bool routeIncluded = false;
         while (!finished) {
+          if (!warm) {
+            warm = true;
+            auto [isShortest, foundRoute] = isShortestPath(d, in, out,
+                Config{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } });
+
+            if (!foundRoute || foundRoute->edges.empty()) {
+              stats.recordMaxValues(lpCount, lp.constraintCount());
+              break;
+            }
+            if (isShortest && foundRoute->pathCount == 1) {
+              storeShortcut(StatisticsCollector::CountType::shortestPath);
+              break;
+            }
+            auto routes = d.routeIter(in.end, out.end);
+            if (!extractRoutesAndAddConstraints(routes, shortcutCost, lp, out, in, routeIncluded)) {
+              finished = true;
+              break;
+            }
+
+            auto dResult = isShortestPath(d, in, out,
+                Config{ LengthConfig{ 0 }, HeightConfig{ 1 }, UnsuitabilityConfig{ 0 } });
+            isShortest = dResult.first;
+            foundRoute = dResult.second;
+            if (isShortest && foundRoute->pathCount == 1) {
+              storeShortcut(StatisticsCollector::CountType::shortestPath);
+              break;
+            }
+            routes = d.routeIter(in.end, out.end);
+            if (!extractRoutesAndAddConstraints(routes, shortcutCost, lp, out, in, routeIncluded)) {
+              finished = true;
+              break;
+            }
+
+            dResult = isShortestPath(d, in, out,
+                Config{ LengthConfig{ 0 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 1 } });
+            isShortest = dResult.first;
+            foundRoute = dResult.second;
+            if (isShortest && foundRoute->pathCount == 1) {
+              storeShortcut(StatisticsCollector::CountType::shortestPath);
+              break;
+            }
+            routes = d.routeIter(in.end, out.end);
+            if (!extractRoutesAndAddConstraints(routes, shortcutCost, lp, out, in, routeIncluded)) {
+              finished = true;
+              break;
+            }
+          }
           auto [isShortest, foundRoute] = isShortestPath(d, in, out, config);
           if (isShortest) {
             if (foundRoute->pathCount == 1) {
@@ -196,10 +244,6 @@ void Contractor::contract(MultiQueue& queue, Graph& g)
             }
           }
 
-          if (!foundRoute || foundRoute->edges.empty()) {
-            stats.recordMaxValues(lpCount, lp.constraintCount());
-            break;
-          }
           auto routes = d.routeIter(in.end, out.end);
           while (!routes.finished()) {
             if (!extractRoutesAndAddConstraints(routes, shortcutCost, lp, out, in, routeIncluded)) {
