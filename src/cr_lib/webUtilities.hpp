@@ -23,6 +23,7 @@
 std::string routeToJson(const Route& route, const Graph& g, bool writeLogs = false)
 {
   std::stringstream resultJson;
+  resultJson.precision(7);
   resultJson << "{ \"length\": " << route.costs.length << ", \"height\": " << route.costs.height
              << ", \"unsuitability\": " << route.costs.unsuitability;
   if (writeLogs) {
