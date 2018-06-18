@@ -22,7 +22,6 @@ L.tileLayer("http://{s}.tiles.wmflabs.org/bw-mapnik/{z}/{x}/{y}.png", {
 
 document.addEventListener("keydown", event => {
   if (event.ctrlKey && event.altKey && event.key == "d") {
-    //Code follows
     let debugLog = document.getElementById("debuglog");
     if (debugLog.hasAttribute("hidden")) {
       debugLog.removeAttribute("hidden");
@@ -98,13 +97,13 @@ function calcDist(length, height, unsuitability) {
         xmlhttp.response.height;
       document.getElementById("route_unsuitability").innerHTML =
         xmlhttp.response.unsuitability;
-      geoJson.clearLayers();
+      clearOverlays();
       geoJson.addLayer(
         L.geoJSON(xmlhttp.response.route, {
-          style: myStyle
+          style: myStyle,
+          onEachFeature: createHeightChart
         })
       );
-      createHeightChart(xmlhttp.response.route);
     } else {
       document.getElementById("route_length").innerHTML = "Unknown";
       document.getElementById("route_height").innerHTML = "Unknown";
@@ -145,7 +144,7 @@ function panOutMap() {
 
 function alternativeRoutes(kind) {
   listOfRoutes = [];
-  geoJson.clearLayers();
+  clearOverlays();
   let xmlhttp = new XMLHttpRequest();
 
   xmlhttp.responseType = "json";
@@ -374,7 +373,7 @@ function configToCoords(values) {
   };
 }
 function scalingTriangulation() {
-  geoJson.clearLayers();
+  clearOverlays();
   let xmlhttp = new XMLHttpRequest();
 
   xmlhttp.responseType = "json";
@@ -518,7 +517,9 @@ function overlapChange() {
 let heightValues = [];
 let labels = [];
 let myLineChart = {};
-function createHeightChart(json) {
+let heightMarker;
+function createHeightChart(json, layer) {
+  layer.bindPopup("I have a height chart attached");
   let coords = json.geometry.coordinates;
 
   if (myLineChart.destroy) myLineChart.destroy();
@@ -550,9 +551,28 @@ function createHeightChart(json) {
           pointRadius: 3
         }
       ]
+    },
+    options: {
+      onHover: function(event, points) {
+        if (points.length > 0) {
+          let index = points[0]._index;
+
+          let ll = L.latLng(coords[index][1], coords[index][0]);
+          if (heightMarker) {
+            heightMarker.setLatLng(ll);
+          } else {
+            heightMarker = L.marker(ll).addTo(map);
+          }
+        }
+      }
     }
   });
   myLineChart.update();
+}
+function clearOverlays() {
+  geoJson.clearLayers();
+  if (heightMarker) heightMarker.remove();
+  heightMarker = undefined;
 }
 
 overlapChange();
