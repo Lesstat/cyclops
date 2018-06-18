@@ -100,8 +100,11 @@ function calcDist(length, height, unsuitability) {
         xmlhttp.response.unsuitability;
       geoJson.clearLayers();
       geoJson.addLayer(
-        L.geoJSON(xmlhttp.response.route.geometry, { style: myStyle })
+        L.geoJSON(xmlhttp.response.route, {
+          style: myStyle
+        })
       );
+      createHeightChart(xmlhttp.response.route);
     } else {
       document.getElementById("route_length").innerHTML = "Unknown";
       document.getElementById("route_height").innerHTML = "Unknown";
@@ -510,6 +513,46 @@ function overlapChange() {
   let slider = document.getElementById("maxOverlap");
   let span = document.getElementById("overlap");
   span.innerHTML = slider.value + "%";
+}
+
+let heightValues = [];
+let labels = [];
+let myLineChart = {};
+function createHeightChart(json) {
+  let coords = json.geometry.coordinates;
+
+  if (myLineChart.destroy) myLineChart.destroy();
+  heightValues = [];
+  labels = [];
+  let dist = 0;
+  for (let c in coords) {
+    if (c > 0) {
+      let node = L.latLng(coords[c][1], coords[c][0]);
+      let lastNode = L.latLng(coords[c - 1][1], coords[c - 1][0]);
+      dist += lastNode.distanceTo(node);
+    }
+    labels.push(Math.round(dist * 10) / 10);
+    heightValues.push(coords[c][2]);
+  }
+
+  let ctx = document.getElementById("heightChart").getContext("2d");
+  myLineChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: "Height Profile",
+          borderColor: "rgb(255, 99, 132)",
+          pointBackgroundColor: "rgb(0,0,0)",
+          data: heightValues,
+          lineTension: 0,
+          pointRadius: 3
+        }
+      ]
+    }
+  });
+  myLineChart.update();
 }
 
 overlapChange();
