@@ -330,6 +330,10 @@ function moveDot(event) {
     if (minDist <= 5) {
       let bestRoute = listOfRoutes[minIndex];
       bestRoute.route.setStyle({ weight: 10 });
+      createHeightChart(
+        bestRoute.route.toGeoJSON().features[0],
+        bestRoute.route
+      );
       let conf = bestRoute.config;
       lengthSpan.innerHTML = conf[0] * 100;
       heightSpan.innerHTML = conf[1] * 100;
@@ -573,6 +577,7 @@ function clearOverlays() {
   geoJson.clearLayers();
   if (heightMarker) heightMarker.remove();
   heightMarker = undefined;
+  if (myLineChart.destroy) myLineChart.destroy();
 }
 
 overlapChange();
