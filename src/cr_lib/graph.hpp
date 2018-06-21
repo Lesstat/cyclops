@@ -187,7 +187,7 @@ class Edge {
 class Node {
   public:
   Node() = default;
-  Node(NodeId id, Lat lat, Lng lng, short height);
+  Node(NodeId id, Lat lat, Lng lng, double height);
   Node(const Node& other) = default;
   Node(Node&& other) noexcept = default;
   virtual ~Node() noexcept = default;
@@ -213,7 +213,7 @@ class Node {
   Lat lat_;
   Lng lng_;
   size_t level = 0;
-  short height_;
+  double height_;
   template <class Archive> void serialize(Archive& ar, const unsigned int /*version*/)
   {
     ar& id_;

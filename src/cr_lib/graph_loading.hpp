@@ -27,7 +27,7 @@ Node createNode(std::ifstream& graph, std::ifstream& labels)
 {
   size_t id, osmId, level;
   double lat, lng;
-  short height;
+  double height;
 
   graph >> id >> osmId >> lat >> lng >> height >> level;
   labels >> level;

@@ -17,7 +17,7 @@
 */
 #include "graph.hpp"
 
-Node::Node(NodeId id, Lat lat, Lng lng, short height)
+Node::Node(NodeId id, Lat lat, Lng lng, double height)
     : id_(id)
     , lat_(lat)
     , lng_(lng)
@@ -46,10 +46,10 @@ Node Node::createFromText(const std::string& text)
 {
   size_t id, osmId, level;
   double lat, lng;
-  short height;
+  double height;
 
   std::sscanf(
-      text.c_str(), "%lu%lu%lf%lf%hi%lu", &id, &osmId, &lat, &lng, &height, &level); // NOLINT
+      text.c_str(), "%lu%lu%lf%lf%lf%lu", &id, &osmId, &lat, &lng, &height, &level); // NOLINT
 
   Node n{ NodeId{ id }, Lat(lat), Lng(lng), height };
   n.level = level;
