@@ -430,6 +430,59 @@ class LevelPrio : public CenterAlphaPrio {
   };
 };
 
+class SimRouteCountPrio : public TrianglePrio {
+  double maxOverlap;
+
+  public:
+  SimRouteCountPrio(Triangulation* tri, double maxOverlap)
+      : TrianglePrio(tri)
+      , maxOverlap(maxOverlap){};
+
+  bool noMoreRoutes(size_t p1, size_t p2, size_t p3) override
+  {
+    auto simCount1 = 0;
+    auto simCount2 = 0;
+    auto simCount3 = 0;
+    auto lastPoint = std::max({ p1, p2, p3 });
+    for (size_t i = 0; i < lastPoint; ++i) {
+      if (i != p1 && tri->compare(i, p1) > maxOverlap) {
+        simCount1++;
+      }
+      if (i != p2 && tri->compare(i, p2) > maxOverlap) {
+        simCount2++;
+      }
+      if (i != p3 && tri->compare(i, p3) > maxOverlap) {
+        simCount3++;
+      }
+    }
+    bool tooManySim = simCount1 > 1 && simCount1 > 1 && simCount1 > 1;
+    return tooManySim || (tri->compare(p1, p2) == 1 && tri->compare(p2, p3) == 1);
+  };
+
+  double prio(size_t, size_t p1, size_t p2, size_t p3) override
+  {
+
+    auto result = 0;
+    auto lastPoint = std::max({ p1, p2, p3 });
+    for (size_t i = 0; i < lastPoint; ++i) {
+      if (i != p1 && tri->compare(i, p1) > maxOverlap) {
+        result++;
+      }
+      if (i != p2 && tri->compare(i, p2) > maxOverlap) {
+        result++;
+      }
+      if (i != p3 && tri->compare(i, p3) > maxOverlap) {
+        result++;
+      }
+    }
+    return result;
+  }
+  bool comparator(size_t left, size_t right) const override
+  {
+    return tri->triangle(left).greatestCostRatio > tri->triangle(right).greatestCostRatio;
+  }
+};
+
 TriangulationResult scaledTriangulation(Dijkstra& d, NodePos from, NodePos to, size_t maxSplits,
     std::optional<size_t> maxLevel, bool splitByLevel, double maxOverlap)
 {
@@ -437,10 +490,11 @@ TriangulationResult scaledTriangulation(Dijkstra& d, NodePos from, NodePos to, s
   Triangulation tri(d, from, to);
   CenterAlphaPrio centerPrio(&tri);
   LevelPrio levelPrio(&tri);
+  SimRouteCountPrio simPrio(&tri, maxOverlap);
   if (splitByLevel) {
     tri.prioCalculation(&levelPrio);
   } else {
-    tri.prioCalculation(&centerPrio);
+    tri.prioCalculation(&simPrio);
   }
   tri.triangulate(maxSplits, maxLevel.value_or(std::numeric_limits<size_t>::max()));
   auto result = tri.output(maxOverlap);
