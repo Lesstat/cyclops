@@ -161,6 +161,11 @@ void runWebServer(Graph& g)
 
     std::optional<size_t> s{}, t{}, length{}, height{}, unsuitability{};
     extractQueryFields(request->parse_query_string(), s, t, length, height, unsuitability);
+    if (s > g.getNodeCount() || t > g.getNodeCount()) {
+      response->write(
+          SimpleWeb::StatusCode::client_error_bad_request, "Request contains illegal node ids");
+      return;
+    }
 
     if (!(s && t && length && height && unsuitability)) {
       response->write(SimpleWeb::StatusCode::client_error_bad_request,
@@ -220,6 +225,11 @@ void runWebServer(Graph& g)
     std::optional<size_t> s{}, t{}, dummy{};
 
     extractQueryFields(request->parse_query_string(), s, t, dummy, dummy, dummy);
+    if (s > g.getNodeCount() || t > g.getNodeCount()) {
+      response->write(
+          SimpleWeb::StatusCode::client_error_bad_request, "Request contains illegal node ids");
+      return;
+    }
     if (!(s && t)) {
       response->write(SimpleWeb::StatusCode::client_error_bad_request,
           "Request needs to contain the parameters: s, t");
@@ -325,6 +335,11 @@ void runWebServer(Graph& g)
 
     auto queryParams = request->parse_query_string();
     extractQueryFields(queryParams, s, t, dummy, dummy, dummy);
+    if (s > g.getNodeCount() || t > g.getNodeCount()) {
+      response->write(
+          SimpleWeb::StatusCode::client_error_bad_request, "Request contains illegal node ids");
+      return;
+    }
     if (!(s && t)) {
       response->write(SimpleWeb::StatusCode::client_error_bad_request,
           "Request needs to contain the parameters: s, t");
