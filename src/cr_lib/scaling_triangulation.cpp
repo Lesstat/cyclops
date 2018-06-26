@@ -455,7 +455,8 @@ class SimRouteCountPrio : public TrianglePrio {
         simCount3++;
       }
     }
-    bool tooManySim = simCount1 > 1 && simCount1 > 1 && simCount1 > 1;
+    auto maxSim = 2;
+    bool tooManySim = simCount1 > maxSim && simCount2 > maxSim && simCount3 > maxSim;
     return tooManySim || (tri->compare(p1, p2) == 1 && tri->compare(p2, p3) == 1);
   };
 
