@@ -53,15 +53,9 @@ Edge createEdge(std::ifstream& ch, std::ifstream& skips)
     e.edgeB = EdgeId{ static_cast<size_t>(edgeB) };
   }
 
-  Cost cost;
-  cost.length = Length(length);
-  cost.height = Height(height);
-  cost.unsuitability = Unsuitability(unsuitability);
+  Cost cost({ length, height, unsuitability });
 
   e.setCost(cost);
-  assert(e.cost.length >= 0);
-  assert(e.cost.height >= 0);
-  assert(e.cost.unsuitability >= 0);
   return e;
 }
 

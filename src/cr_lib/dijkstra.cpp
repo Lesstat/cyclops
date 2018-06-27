@@ -21,7 +21,7 @@
 
 const double dmax = std::numeric_limits<double>::max();
 const short smax = std::numeric_limits<short>::max();
-const Cost maxCost{ Length(dmax), Height(smax), Unsuitability(smax) };
+const Cost maxCost{ std::vector<double>(3, dmax) };
 
 Dijkstra::Dijkstra(Graph* g, size_t nodeCount)
     : costS(nodeCount, dmax)

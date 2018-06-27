@@ -56,12 +56,10 @@ Edge Edge::createFromText(const std::string& text)
     e.edgeA = EdgeId{ static_cast<size_t>(edgeA) };
     e.edgeB = EdgeId{ static_cast<size_t>(edgeB) };
   }
-  e.cost.length = Length(length);
-  e.cost.height = Height(height);
-  e.cost.unsuitability = Unsuitability(unsuitability);
-  assert(e.cost.length >= 0);
-  assert(e.cost.height >= 0);
-  assert(e.cost.unsuitability >= 0);
+  e.cost = Cost({ length, height, unsuitability });
+  for (double c : e.cost.values) {
+    assert(0 <= c);
+  }
   return e;
 }
 
@@ -103,13 +101,13 @@ Edge& Edge::getMutEdge(EdgeId id) { return edges.at(id); }
 
 double Cost::operator*(const Config& conf) const
 {
-  double combinedCost = this->length * conf.length + this->height * conf.height
-      + this->unsuitability * conf.unsuitability;
+  double combinedCost = this->values[0] * conf.length + this->values[1] * conf.height
+      + this->values[2] * conf.unsuitability;
 
   if (!(combinedCost >= 0)) {
-    std::cout << "length " << this->length << " * " << conf.length << '\n'
-              << "height " << this->height << " * " << conf.height << '\n'
-              << "unsuit " << this->unsuitability << " * " << conf.unsuitability << '\n';
+    std::cout << "length " << this->values[0] << " * " << conf.length << '\n'
+              << "height " << this->values[1] << " * " << conf.height << '\n'
+              << "unsuit " << this->values[2] << " * " << conf.unsuitability << '\n';
     assert(false);
   }
   if (combinedCost == 0) {

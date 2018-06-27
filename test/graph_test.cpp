@@ -81,7 +81,7 @@ TEST_CASE("Read small file into graph")
   auto route = optionalRoute.value();
   REQUIRE(route.edges[0].getSourceId() == 0);
   REQUIRE(route.edges[1].getSourceId() == 1);
-  REQUIRE(route.costs.length == 101);
-  REQUIRE(route.costs.height == 4);
-  REQUIRE(route.costs.unsuitability == 140);
+  REQUIRE(route.costs.values[0] == 101);
+  REQUIRE(route.costs.values[1] == 4);
+  REQUIRE(route.costs.values[2] == 140);
 }

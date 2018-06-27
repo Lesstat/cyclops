@@ -43,41 +43,39 @@ class NormalDijkstra;
 struct Config;
 
 struct Cost {
-  Length length;
-  Height height;
-  Unsuitability unsuitability;
-  Cost(Length l, Height h, Unsuitability u)
-      : length(l)
-      , height(h)
-      , unsuitability(u)
+  std::vector<double> values;
+  Cost(std::vector<double> values)
+      : values(values)
   {
   }
-  Cost()
-      : length(0)
-      , height(0)
-      , unsuitability(0)
+  Cost(int dim = 3)
+      : Cost(std::vector<double>(dim, 0))
   {
   }
   double operator*(const Config& conf) const;
 
   Cost operator+(const Cost& c) const
   {
-    return Cost{ Length(length.get() + c.length.get()), Height(height.get() + c.height.get()),
-      Unsuitability(unsuitability.get() + c.unsuitability.get()) };
+    std::vector<double> newValues;
+    for (size_t i = 0; i < values.size(); ++i) {
+      newValues.push_back(values[i] + c.values[i]);
+    }
+    return newValues;
   };
   Cost operator-(const Cost& c) const
   {
-    return Cost{ Length(length.get() - c.length.get()), Height(height.get() - c.height.get()),
-      Unsuitability(unsuitability.get() - c.unsuitability.get()) };
+    std::vector<double> newValues;
+    for (size_t i = 0; i < values.size(); ++i) {
+      newValues.push_back(values[i] - c.values[i]);
+    }
+    return newValues;
   };
 
   private:
   friend class boost::serialization::access;
   template <class Archive> void serialize(Archive& ar, const unsigned int /*version*/)
   {
-    ar& length;
-    ar& height;
-    ar& unsuitability;
+    ar& values;
   }
 };
 

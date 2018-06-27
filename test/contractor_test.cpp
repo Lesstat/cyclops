@@ -204,9 +204,9 @@ Route findRouteBetweenIds(Graph& g, NodeId from, NodeId to)
 
 void compareRoutes(Route& routeA, Route& routeB)
 {
-  REQUIRE(routeA.costs.length == routeB.costs.length);
-  REQUIRE(routeA.costs.height == routeB.costs.height);
-  REQUIRE(routeA.costs.unsuitability == routeB.costs.unsuitability);
+  for (size_t i = 0; i < routeA.costs.values.size(); ++i) {
+    REQUIRE(routeA.costs.values[i] == routeB.costs.values[i]);
+  }
 }
 
 TEST_CASE("Contracting one level of Graph")

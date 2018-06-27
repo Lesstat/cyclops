@@ -130,16 +130,19 @@ class ContractingThread {
   {
     Cost c2 = route.costs;
 
-    if (c2.length <= shortcutCost.length && c2.height <= shortcutCost.height
-        && c2.unsuitability <= shortcutCost.unsuitability) {
-      return false;
+    bool dominated = true;
+    for (size_t i = 0; i <= c2.values.size(); i++) {
+      if (c2.values[i] > shortcutCost.values[i]) {
+        dominated = false;
+        break;
+      }
     }
+    if (dominated)
+      return false;
 
     Cost newCost = shortcutCost - c2;
 
-    lp.addConstraint({ newCost.length, static_cast<double>(newCost.height),
-                         static_cast<double>(newCost.unsuitability) },
-        std::numeric_limits<double>::max(), 0.0);
+    lp.addConstraint(newCost.values, std::numeric_limits<double>::max(), 0.0);
     return true;
   }
 

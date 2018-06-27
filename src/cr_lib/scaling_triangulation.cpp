@@ -246,9 +246,9 @@ void Triangulation::triangulate(size_t maxSplits, size_t maxLevel)
   auto p1 = p1Future.get();
   auto p2 = p2Future.get();
 
-  double optLength = points[p1].r.costs.length;
-  double optHeight = points[p2].r.costs.height;
-  double optUnsuitability = points[p3].r.costs.unsuitability;
+  double optLength = points[p1].r.costs.values[0];
+  double optHeight = points[p2].r.costs.values[1];
+  double optUnsuitability = points[p3].r.costs.values[2];
   auto maxOpt = std::max({ optLength, optHeight, optUnsuitability });
 
   lengthFac = maxOpt / optLength;

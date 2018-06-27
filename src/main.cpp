@@ -71,9 +71,9 @@ void cliDijkstra(Graph& ch)
     if (maybeRoute.has_value()) {
       auto route = maybeRoute.value();
 
-      std::cout << "Route is " << route.costs.length << "m long" << '\n';
-      std::cout << "Route has " << route.costs.height << "m absolute height difference" << '\n';
-      std::cout << "Route has " << route.costs.unsuitability << " unsuitability costs" << '\n';
+      std::cout << "Route is " << route.costs.values[0] << "m long" << '\n';
+      std::cout << "Route has " << route.costs.values[1] << "m absolute height difference" << '\n';
+      std::cout << "Route has " << route.costs.values[2] << " unsuitability costs" << '\n';
 
     } else {
       std::cout << "No route from " << from << "to " << to << "found" << '\n';
@@ -184,11 +184,11 @@ void runWebServer(Graph& g)
     auto bestUnsuitabilityRoute = dijkstra.findBestRoute(NodePos{ *s }, NodePos{ *t },
         Config{ LengthConfig{ 0 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 1 } });
 
-    auto bestLength = bestLengthRoute->costs.length;
-    auto bestHeight = bestHeightRoute->costs.height;
-    auto bestUnsuitability = bestUnsuitabilityRoute->costs.unsuitability;
+    auto bestLength = bestLengthRoute->costs.values[0];
+    auto bestHeight = bestHeightRoute->costs.values[1];
+    auto bestUnsuitability = bestUnsuitabilityRoute->costs.values[2];
 
-    auto maxConfigParam = std::max({ bestLength.get(), bestHeight.get(), bestUnsuitability.get() });
+    auto maxConfigParam = std::max({ bestLength, bestHeight, bestUnsuitability });
 
     auto lengthFactor = maxConfigParam / bestLength;
     auto heightFactor = maxConfigParam / bestHeight;
@@ -440,12 +440,12 @@ int testGraph(Graph& g)
       ++route;
       if (std::abs(dRoute->costs * c - nRoute->costs * c) > 0.1) {
         std::cout << '\n' << "cost differ in route from " << from << " to " << to << '\n';
-        std::cout << "dLength: " << dRoute->costs.length << ", nLength: " << nRoute->costs.length
-                  << '\n';
-        std::cout << "dHeight: " << dRoute->costs.height << ", nHeight: " << nRoute->costs.height
-                  << '\n';
-        std::cout << "dUnsuitability: " << dRoute->costs.unsuitability
-                  << ", nUnsuitability: " << nRoute->costs.unsuitability << '\n';
+        std::cout << "dLength: " << dRoute->costs.values[0]
+                  << ", nLength: " << nRoute->costs.values[0] << '\n';
+        std::cout << "dHeight: " << dRoute->costs.values[1]
+                  << ", nHeight: " << nRoute->costs.values[1] << '\n';
+        std::cout << "dUnsuitability: " << dRoute->costs.values[2]
+                  << ", nUnsuitability: " << nRoute->costs.values[2] << '\n';
         std::cout << "total cost d: " << dRoute->costs * c
                   << ", total cost n: " << nRoute->costs * c << '\n';
 
@@ -480,11 +480,11 @@ int testGraph(Graph& g)
                         << currentPos << " at index " << i << '\n';
 
               std::cout << '\n'
-                        << "Normal dijkstra needs length " << nTest->costs.length << " height "
-                        << nTest->costs.height << " road " << nTest->costs.unsuitability << '\n';
+                        << "Normal dijkstra needs length " << nTest->costs.values[0] << " height "
+                        << nTest->costs.values[1] << " road " << nTest->costs.values[2] << '\n';
 
-              std::cout << "CH dijkstra needs     length " << dTest->costs.length << " height "
-                        << dTest->costs.height << " road " << dTest->costs.unsuitability << '\n';
+              std::cout << "CH dijkstra needs     length " << dTest->costs.values[0] << " height "
+                        << dTest->costs.values[1] << " road " << dTest->costs.values[2] << '\n';
 
               std::cout << nextToLastPos << " has level " << nextToLast->getLevel() << '\n';
               std::cout << lastPos << " has level " << last->getLevel() << '\n';
@@ -494,30 +494,30 @@ int testGraph(Graph& g)
               std::cout << "Outgoing edges of " << nextToLastPos << '\n';
               for (const auto& edge : outEdges) {
                 std::cout << "Id " << edge.id << " Target " << edge.end << " length "
-                          << edge.cost.length << ", height " << edge.cost.height
-                          << ", road: " << edge.cost.unsuitability << '\n';
+                          << edge.cost.values[0] << ", height " << edge.cost.values[1]
+                          << ", road: " << edge.cost.values[2] << '\n';
               }
               outEdges = g.getOutgoingEdgesOf(g.getNodePos(last));
               std::cout << "Outgoing edges of " << g.getNodePos(last) << '\n';
               for (const auto& edge : outEdges) {
                 std::cout << "Id " << edge.id << " Target " << edge.end << " length "
-                          << edge.cost.length << ", height " << edge.cost.height
-                          << ", road: " << edge.cost.unsuitability << '\n';
+                          << edge.cost.values[0] << ", height " << edge.cost.values[1]
+                          << ", road: " << edge.cost.values[2] << '\n';
               }
 
               std::cout << "------------------ ROUTES --------------------" << '\n';
               std::cout << "Normal Route " << '\n';
               for (const auto& e : nTest->edges) {
                 const auto edge = Edge::getEdge(e);
-                std::cout << "length " << edge.getCost().length << " height "
-                          << edge.getCost().height << " road " << edge.getCost().unsuitability
+                std::cout << "length " << edge.getCost().values[0] << " height "
+                          << edge.getCost().values[1] << " road " << edge.getCost().values[2]
                           << '\n';
               }
 
               std::cout << "CH Route" << '\n';
               for (const auto& edge : dTest->edges) {
-                std::cout << "length " << edge.getCost().length << " height "
-                          << edge.getCost().height << " road " << edge.getCost().unsuitability
+                std::cout << "length " << edge.getCost().values[0] << " height "
+                          << edge.getCost().values[1] << " road " << edge.getCost().values[2]
                           << '\n';
               }
 

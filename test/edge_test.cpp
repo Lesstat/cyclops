@@ -24,9 +24,9 @@ void testEdgeInternals(const Edge& e, NodeId source, NodeId destination, Length 
 {
   REQUIRE(e.source == source);
   REQUIRE(e.destination == destination);
-  REQUIRE(e.cost.length == length);
-  REQUIRE(e.cost.height == height);
-  REQUIRE(e.cost.unsuitability == unsuitability);
+  REQUIRE(e.cost.values[0] == length);
+  REQUIRE(e.cost.values[1] == height);
+  REQUIRE(e.cost.values[2] == unsuitability);
   REQUIRE(e.edgeA == edgeA);
   REQUIRE(e.edgeB == edgeB);
 }

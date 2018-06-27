@@ -90,10 +90,10 @@ double calculateSharing(const Route& referenceRoute, const Route& otherRoute)
   double sharedLength = 0;
   for (const auto& edge : otherRoute.edges) {
     if (edges.find(edge.getId()) != edges.end()) {
-      sharedLength += edge.getCost().length;
+      sharedLength += edge.getCost().values[0];
     }
   }
 
-  size_t maxLength = std::max(referenceRoute.costs.length, otherRoute.costs.length);
+  size_t maxLength = std::max(referenceRoute.costs.values[0], otherRoute.costs.values[0]);
   return sharedLength / maxLength;
 }

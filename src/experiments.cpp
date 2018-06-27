@@ -151,10 +151,10 @@ void search_candidates(Graph& g)
       continue;
     }
     auto route = *mayRoute;
-    if (minDay <= route.costs.length && route.costs.length <= maxDay) {
+    if (minDay <= route.costs.values[0] && route.costs.values[0] <= maxDay) {
       daycount++;
       day << from.get() << " " << to.get() << '\n';
-    } else if (route.costs.length >= minWeek) {
+    } else if (route.costs.values[0] >= minWeek) {
       weekcount++;
       week << from.get() << " " << to.get() << '\n';
     }
@@ -198,7 +198,7 @@ void search_commuting_candidates(Graph& g)
         return;
       }
       auto route = d.findBestRoute(candidates[i], candidates[j], c);
-      if (route && route->costs.length > 2000) {
+      if (route && route->costs.values[0] > 2000) {
         commute << candidates[i] << " " << candidates[j] << "\n";
         pairs++;
       }
@@ -317,8 +317,8 @@ int main(int argc, char* argv[])
         }
         auto route = *optRoute;
         output << from << "," << to << "," << conf.length << "," << conf.height << ","
-               << conf.unsuitability << "," << route.costs.length << "," << route.costs.height
-               << "," << route.costs.unsuitability << "," << route.edges.size() << "," << d.pqPops
+               << conf.unsuitability << "," << route.costs.values[0] << "," << route.costs.values[1]
+               << "," << route.costs.values[2] << "," << route.edges.size() << "," << d.pqPops
                << "," << time << '\n';
         curRoute++;
       }

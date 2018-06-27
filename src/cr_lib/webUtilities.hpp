@@ -24,8 +24,9 @@ std::string routeToJson(const Route& route, const Graph& g, bool writeLogs = fal
 {
   std::stringstream resultJson;
   resultJson.precision(7);
-  resultJson << "{ \"length\": " << route.costs.length << ", \"height\": " << route.costs.height
-             << ", \"unsuitability\": " << route.costs.unsuitability;
+  resultJson << "{ \"length\": " << route.costs.values[0]
+             << ", \"height\": " << route.costs.values[1]
+             << ", \"unsuitability\": " << route.costs.values[2];
   if (writeLogs) {
     auto log = Logger::getInstance();
     resultJson << ", \"debug\":\"" << log->getInfo() << "\" ";
