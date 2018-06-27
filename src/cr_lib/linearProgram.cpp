@@ -68,7 +68,7 @@ bool LinearProgram::solve()
     constraints.clear();
   }
   lp->primal();
-  return !lp->isProvenPrimalInfeasible();
+  return lp->primalFeasible();
 }
 
 double LinearProgram::objectiveFunctionValue() { return lp->objectiveValue(); }
@@ -77,7 +77,6 @@ std::vector<double> LinearProgram::variableValues()
 {
   auto cols = lp->getColSolution();
   std::vector<double> variables(&cols[0], &cols[columnCount]);
-
   return variables;
 }
 

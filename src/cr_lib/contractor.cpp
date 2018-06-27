@@ -35,7 +35,7 @@ class StatisticsCollector {
   StatisticsCollector(StatisticsCollector&& other) noexcept = default;
   virtual ~StatisticsCollector() noexcept
   {
-    if (!active) {
+    if (!active || shortCount == 0) {
       return;
     }
     std::lock_guard guard(key);
@@ -86,15 +86,9 @@ class StatisticsCollector {
 };
 std::mutex StatisticsCollector::key{};
 
-Contractor::Contractor(bool printStatistics)
-    : printStatistics(printStatistics)
-{
-}
-
-std::pair<bool, std::optional<RouteWithCount>> Contractor::isShortestPath(
+std::pair<bool, std::optional<RouteWithCount>> checkShortestPath(
     NormalDijkstra& d, const HalfEdge& startEdge, const HalfEdge& destEdge, const Config& conf)
 {
-
   auto foundRoute = d.findBestRoute(startEdge.end, destEdge.end, conf);
   if (!foundRoute) {
     return std::make_pair(false, foundRoute);
@@ -104,6 +98,182 @@ std::pair<bool, std::optional<RouteWithCount>> Contractor::isShortestPath(
   bool isShortest
       = route.edges.size() == 2 && route.edges[0] == startEdge.id && route.edges[1] == destEdge.id;
   return std::make_pair(isShortest, foundRoute);
+}
+
+class ContractingThread {
+  MultiQueue& queue;
+  Graph& graph;
+  StatisticsCollector stats;
+  Config config{ LengthConfig{ 0.33 }, HeightConfig{ 0.33 }, UnsuitabilityConfig{ 0.33 } };
+  LinearProgram lp;
+  HalfEdge* in = nullptr;
+  HalfEdge* out = nullptr;
+  size_t lpCount = 0;
+  bool finished = false;
+  NormalDijkstra d;
+  std::vector<Edge> shortcuts;
+  bool routeIncluded = false;
+  Cost shortcutCost;
+
+  public:
+  ContractingThread(MultiQueue& queue, Graph& g, bool printStatistics)
+      : queue(queue)
+      , graph(g)
+      , stats(printStatistics)
+      , lp(3)
+      , d(g.createNormalDijkstra())
+  {
+    shortcuts.reserve(graph.getNodeCount());
+  }
+
+  bool addConstraint(const RouteWithCount& route)
+  {
+    Cost c2 = route.costs;
+
+    if (c2.length <= shortcutCost.length && c2.height <= shortcutCost.height
+        && c2.unsuitability <= shortcutCost.unsuitability) {
+      return false;
+    }
+
+    Cost newCost = shortcutCost - c2;
+
+    lp.addConstraint({ newCost.length, static_cast<double>(newCost.height),
+                         static_cast<double>(newCost.unsuitability) },
+        std::numeric_limits<double>::max(), 0.0);
+    return true;
+  }
+
+  bool extractRoutesAndAddConstraints(RouteIterator& routes)
+  {
+    for (auto optRoute = routes.next(); optRoute; optRoute = routes.next()) {
+      auto route = *optRoute;
+      if (route.edges.size() == 2 && route.edges[0] == in->id && route.edges[1] == out->id) {
+        routeIncluded = true;
+        continue;
+      }
+      if (!addConstraint(route)) {
+        return false;
+      }
+      optRoute = routes.next();
+    }
+    return true;
+  }
+
+  void storeShortcut(StatisticsCollector::CountType type)
+  {
+    finished = true;
+    stats.countShortcut(type);
+    stats.recordMaxValues(lpCount, lp.constraintCount());
+    shortcuts.push_back(Contractor::createShortcut(Edge::getEdge(in->id), Edge::getEdge(out->id)));
+  };
+
+  bool testConfig(Config c)
+  {
+    auto [isShortest, foundRoute] = checkShortestPath(d, *in, *out, c);
+
+    if (!foundRoute || foundRoute->edges.empty()) {
+      stats.recordMaxValues(lpCount, lp.constraintCount());
+      return true;
+    }
+
+    if (isShortest || foundRoute->costs * c >= shortcutCost * c - 0.0001) {
+      storeShortcut(StatisticsCollector::CountType::shortestPath);
+      return true;
+    }
+    // auto routes = d.routeIter(in->end, out->end);
+    if (!addConstraint(*foundRoute)) {
+      finished = true;
+      return true;
+    }
+    return false;
+  }
+
+  void operator()()
+  {
+    std::any msg;
+
+    while (true) {
+      msg = queue.receive();
+      try {
+        auto pair = std::any_cast<EdgePair>(msg);
+        in = &pair.in;
+        out = &pair.out;
+        bool warm = false;
+
+        lpCount = 0;
+        lp = LinearProgram{ 3 };
+        lp.objective({ 1.0, 1.0, 1.0 });
+        lp.addConstraint({ 1.0, 1.0, 1.0 }, 1.0, 1.0);
+        lp.addConstraint({ 1.0, 0.0, 0.0 }, 1.0, 0.001);
+        lp.addConstraint({ 0.0, 1.0, 0.0 }, 1.0, 0.001);
+        lp.addConstraint({ 0.0, 0.0, 1.0 }, 1.0, 0.001);
+
+        config = Config{ LengthConfig{ 0.33 }, HeightConfig{ 0.33 }, UnsuitabilityConfig{ 0.33 } };
+        shortcutCost = in->cost + out->cost;
+
+        finished = false;
+
+        routeIncluded = false;
+        while (!finished) {
+          if (!warm) {
+            warm = true;
+            if (testConfig(Config{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } })
+                || testConfig(
+                       Config{ LengthConfig{ 0 }, HeightConfig{ 1 }, UnsuitabilityConfig{ 0 } })
+                || testConfig(
+                       Config{ LengthConfig{ 0 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 1 } })) {
+              break;
+            }
+          }
+
+          if (testConfig(config)) {
+            break;
+          }
+
+          if (lp.constraintCount() > 150) {
+            storeShortcut(StatisticsCollector::CountType::toManyConstraints);
+            break;
+          }
+
+          ++lpCount;
+          if (!lp.solve()) {
+            stats.recordMaxValues(lpCount, lp.constraintCount());
+            finished = true;
+            break;
+          }
+          auto values = lp.variableValues();
+
+          Config newConfig{ LengthConfig{ values[0] }, HeightConfig{ values[1] },
+            UnsuitabilityConfig{ values[2] } };
+          if (config == newConfig) {
+            if (routeIncluded) {
+              storeShortcut(StatisticsCollector::CountType::repeatingConfig);
+            } else {
+              finished = true;
+            }
+            break;
+          }
+          config = newConfig;
+        }
+
+      } catch (std::bad_any_cast e) {
+        auto responder = std::any_cast<std::shared_ptr<MultiQueue>>(msg);
+        responder->send(shortcuts);
+        return;
+      }
+    }
+  }
+};
+
+Contractor::Contractor(bool printStatistics)
+    : printStatistics(printStatistics)
+{
+}
+
+std::pair<bool, std::optional<RouteWithCount>> Contractor::isShortestPath(
+    NormalDijkstra& d, const HalfEdge& startEdge, const HalfEdge& destEdge, const Config& conf)
+{
+  return checkShortestPath(d, startEdge, destEdge, conf);
 }
 
 Edge Contractor::createShortcut(const Edge& e1, const Edge& e2)
@@ -116,178 +286,9 @@ Edge Contractor::createShortcut(const Edge& e1, const Edge& e2)
   return shortcut;
 }
 
-bool addConstraint(const RouteWithCount& route, const Cost& c1, LinearProgram& lp)
-{
-  Cost c2 = route.costs;
-
-  if (c2.length <= c1.length && c2.height <= c1.height && c2.unsuitability <= c1.unsuitability) {
-    return false;
-  }
-
-  Cost newCost = c1 - c2;
-
-  lp.addConstraint({ newCost.length, static_cast<double>(newCost.height),
-                       static_cast<double>(newCost.unsuitability) },
-      0.0);
-  return true;
-}
-
-bool extractRoutesAndAddConstraints(RouteIterator& routes, const Cost& shortcutCost,
-    LinearProgram& lp, const HalfEdge& out, const HalfEdge& in, bool& routeIncluded)
-{
-  for (auto optRoute = routes.next(); optRoute; optRoute = routes.next()) {
-    auto route = *optRoute;
-    if (route.edges.size() == 2 && route.edges[0] == in.id && route.edges[1] == out.id) {
-      routeIncluded = true;
-      continue;
-    }
-    if (!addConstraint(route, shortcutCost, lp)) {
-      return false;
-    }
-    optRoute = routes.next();
-  }
-  return true;
-}
-
 void Contractor::contract(MultiQueue& queue, Graph& g)
 {
-  std::thread t([this, &queue, &g]() {
-    std::any msg;
-    auto d = g.createNormalDijkstra();
-    std::vector<Edge> shortcuts;
-    shortcuts.reserve(g.getNodeCount());
-
-    StatisticsCollector stats{ printStatistics };
-    while (true) {
-      msg = queue.receive();
-      try {
-        auto pair = std::any_cast<EdgePair>(msg);
-        auto& in = pair.in;
-        auto& out = pair.out;
-        bool warm = false;
-
-        size_t lpCount = 0;
-        Config config{ LengthConfig{ 0.33 }, HeightConfig{ 0.33 }, UnsuitabilityConfig{ 0.33 } };
-        LinearProgram lp{ 3 };
-        lp.objective({ 1.0, 1.0, 1.0 });
-        lp.addConstraint({ 1.0, 1.0, 1.0 }, 1.0, 1.0);
-        lp.addConstraint({ 1.0, 0.0, 0.0 }, 1.0, 0.001);
-        lp.addConstraint({ 0.0, 1.0, 0.0 }, 1.0, 0.001);
-        lp.addConstraint({ 0.0, 0.0, 1.0 }, 1.0, 0.001);
-
-        Cost shortcutCost = in.cost + out.cost;
-
-        bool finished = false;
-        auto storeShortcut = [&in, &out, &lp, &lpCount, &shortcuts, &stats, &finished](
-                                 StatisticsCollector::CountType type) {
-          finished = true;
-          stats.countShortcut(type);
-          stats.recordMaxValues(lpCount, lp.constraintCount());
-          shortcuts.push_back(
-              Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
-        };
-
-        bool routeIncluded = false;
-        while (!finished) {
-          if (!warm) {
-            warm = true;
-            auto [isShortest, foundRoute] = isShortestPath(d, in, out,
-                Config{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } });
-
-            if (!foundRoute || foundRoute->edges.empty()) {
-              stats.recordMaxValues(lpCount, lp.constraintCount());
-              break;
-            }
-            if (isShortest && foundRoute->pathCount == 1) {
-              storeShortcut(StatisticsCollector::CountType::shortestPath);
-              break;
-            }
-            auto routes = d.routeIter(in.end, out.end);
-            if (!extractRoutesAndAddConstraints(routes, shortcutCost, lp, out, in, routeIncluded)) {
-              finished = true;
-              break;
-            }
-
-            auto dResult = isShortestPath(d, in, out,
-                Config{ LengthConfig{ 0 }, HeightConfig{ 1 }, UnsuitabilityConfig{ 0 } });
-            isShortest = dResult.first;
-            foundRoute = dResult.second;
-            if (isShortest && foundRoute->pathCount == 1) {
-              storeShortcut(StatisticsCollector::CountType::shortestPath);
-              break;
-            }
-            routes = d.routeIter(in.end, out.end);
-            if (!extractRoutesAndAddConstraints(routes, shortcutCost, lp, out, in, routeIncluded)) {
-              finished = true;
-              break;
-            }
-
-            dResult = isShortestPath(d, in, out,
-                Config{ LengthConfig{ 0 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 1 } });
-            isShortest = dResult.first;
-            foundRoute = dResult.second;
-            if (isShortest && foundRoute->pathCount == 1) {
-              storeShortcut(StatisticsCollector::CountType::shortestPath);
-              break;
-            }
-            routes = d.routeIter(in.end, out.end);
-            if (!extractRoutesAndAddConstraints(routes, shortcutCost, lp, out, in, routeIncluded)) {
-              finished = true;
-              break;
-            }
-          }
-          auto [isShortest, foundRoute] = isShortestPath(d, in, out, config);
-          if (isShortest) {
-            if (foundRoute->pathCount == 1) {
-              storeShortcut(StatisticsCollector::CountType::shortestPath);
-              break;
-            }
-          }
-
-          auto routes = d.routeIter(in.end, out.end);
-          while (!routes.finished()) {
-            if (!extractRoutesAndAddConstraints(routes, shortcutCost, lp, out, in, routeIncluded)) {
-              finished = true;
-              break;
-            }
-
-            if (lp.constraintCount() > 150) {
-              storeShortcut(StatisticsCollector::CountType::toManyConstraints);
-              break;
-            }
-
-            ++lpCount;
-            if (!lp.solve()) {
-              stats.recordMaxValues(lpCount, lp.constraintCount());
-              finished = true;
-              break;
-            }
-            auto values = lp.variableValues();
-
-            Config newConfig{ LengthConfig{ values[0] }, HeightConfig{ values[1] },
-              UnsuitabilityConfig{ values[2] } };
-            if (config == newConfig) {
-              if (routes.finished()) {
-                if (routeIncluded) {
-                  storeShortcut(StatisticsCollector::CountType::repeatingConfig);
-                } else {
-                  finished = true;
-                }
-                break;
-              }
-              routes.doubleHeapsize();
-            }
-            config = newConfig;
-          }
-        }
-
-      } catch (std::bad_any_cast e) {
-        auto responder = std::any_cast<std::shared_ptr<MultiQueue>>(msg);
-        responder->send(shortcuts);
-        return;
-      }
-    }
-  });
+  std::thread t{ ContractingThread{ queue, g, printStatistics } };
   t.detach();
 }
 
@@ -467,7 +468,8 @@ Graph Contractor::contractCompletely(Graph& g, double rest)
     intermedG = contract(intermedG);
     uncontractedNodesPercent
         = std::round(intermedG.getNodeCount() * 10000.0 / g.getNodeCount()) / 100;
-    std::cout << 100 - uncontractedNodesPercent << "% of the graph is contracted" << '\n'
+    std::cout << 100 - uncontractedNodesPercent << "% of the graph is contracted ("
+              << intermedG.getNodeCount() << " nodes left)" << '\n'
               << std::flush;
   }
   std::cout << '\n';
