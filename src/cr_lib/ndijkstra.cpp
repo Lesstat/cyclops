@@ -25,24 +25,17 @@ NormalDijkstra::NormalDijkstra(Graph* g, size_t nodeCount, bool unpack)
     , pathCount(0)
     , usedConfig(LengthConfig{ 0.0 }, HeightConfig{ 0.0 }, UnsuitabilityConfig{ 0.0 })
     , graph(g)
+    , heap(BiggerPathCost{})
     , unpack(unpack)
 {
 }
 
-std::optional<RouteWithCount> NormalDijkstra::findBestRoute(NodePos from, NodePos to, Config config)
+std::optional<RouteWithCount> NormalDijkstra::findBestRoute(
+    NodePos from, NodePos to, const Config& config)
 {
-
-  using QueueElem = std::tuple<NodePos, double>;
-  auto cmp = [](QueueElem left, QueueElem right) {
-    auto leftCost = std::get<double>(left);
-    auto rightCost = std::get<double>(right);
-    return leftCost > rightCost;
-  };
-  using Queue = std::priority_queue<QueueElem, std::vector<QueueElem>, decltype(cmp)>;
 
   usedConfig = config;
   clearState();
-  Queue heap{ cmp };
   heap.push(std::make_tuple(from, 0));
   touched.push_back(from);
   cost[from] = 0;
@@ -88,6 +81,9 @@ void NormalDijkstra::clearState()
     cost[pos] = std::numeric_limits<double>::max();
     paths[pos] = 0;
     previousEdge[pos].clear();
+  }
+  while (!heap.empty()) {
+    heap.pop();
   }
   touched.clear();
   pathCost = Cost{};
@@ -148,7 +144,7 @@ RouteIterator::RouteIterator(NormalDijkstra* dijkstra, NodePos from, NodePos to,
     , maxHeapSize(maxHeapSize)
     , from(from)
     , to(to)
-    , heap(BiggerCost(dijkstra->usedConfig))
+    , heap(BiggerRouteCost(dijkstra->usedConfig))
 {
   RouteWithCount route;
   route.pathCount = dijkstra->pathCount;

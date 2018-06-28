@@ -29,6 +29,17 @@ struct RouteWithCount {
 
 class RouteIterator;
 
+using QueueElem = std::tuple<NodePos, double>;
+struct BiggerPathCost {
+  bool operator()(QueueElem left, QueueElem right)
+  {
+    auto leftCost = std::get<double>(left);
+    auto rightCost = std::get<double>(right);
+    return leftCost > rightCost;
+  }
+};
+using Queue = std::priority_queue<QueueElem, std::vector<QueueElem>, BiggerPathCost>;
+
 class NormalDijkstra {
   public:
   NormalDijkstra(Graph* g, size_t nodeCount, bool unpack = false);
@@ -38,7 +49,7 @@ class NormalDijkstra {
   NormalDijkstra& operator=(const NormalDijkstra& other) = default;
   NormalDijkstra& operator=(NormalDijkstra&& other) = default;
 
-  std::optional<RouteWithCount> findBestRoute(NodePos from, NodePos to, Config config);
+  std::optional<RouteWithCount> findBestRoute(NodePos from, NodePos to, const Config& config);
   RouteIterator routeIter(NodePos from, NodePos to);
 
   friend RouteIterator;
@@ -57,17 +68,18 @@ class NormalDijkstra {
 
   Config usedConfig;
   Graph* graph;
+  Queue heap;
 
   bool unpack;
 };
 
-using QueueElem = std::tuple<RouteWithCount, NodePos>;
-struct BiggerCost {
-  BiggerCost(Config usedConfig)
+using RouteQueueElem = std::tuple<RouteWithCount, NodePos>;
+struct BiggerRouteCost {
+  BiggerRouteCost(Config usedConfig)
       : usedConfig(usedConfig)
   {
   }
-  bool operator()(QueueElem left, QueueElem right)
+  bool operator()(RouteQueueElem left, RouteQueueElem right)
   {
     auto leftRoute = std::get<RouteWithCount>(left);
     auto rightRoute = std::get<RouteWithCount>(right);
@@ -92,7 +104,8 @@ class RouteIterator {
   NodePos from;
   NodePos to;
   size_t outputCount = 0;
-  using Queue = std::priority_queue<QueueElem, std::vector<QueueElem>, BiggerCost>;
-  Queue heap;
+  using RouteQueue
+      = std::priority_queue<RouteQueueElem, std::vector<RouteQueueElem>, BiggerRouteCost>;
+  RouteQueue heap;
 };
 #endif /* NDIJKSTRA_H */

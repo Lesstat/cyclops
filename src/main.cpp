@@ -23,7 +23,6 @@
 #include "routeComparator.hpp"
 #include "scaling_triangulation.hpp"
 #include "server_http.hpp"
-#include "triangleexplorer.hpp"
 #include "webUtilities.hpp"
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/filesystem.hpp>
@@ -198,9 +197,9 @@ void runWebServer(Graph& g)
       HeightConfig{ (static_cast<double>(*height) / 100.0) },
       UnsuitabilityConfig{ (static_cast<double>(*unsuitability) / 100.0) } };
 
-    c.length = LengthConfig{ c.length * lengthFactor };
-    c.height = HeightConfig{ c.height * heightFactor };
-    c.unsuitability = UnsuitabilityConfig{ c.unsuitability * unsuitFactor };
+    c.values[0] *= lengthFactor;
+    c.values[2] *= heightFactor;
+    c.values[2] *= unsuitFactor;
 
     auto start = std::chrono::high_resolution_clock::now();
     auto route = dijkstra.findBestRoute(NodePos{ *s }, NodePos{ *t }, c);
@@ -218,113 +217,6 @@ void runWebServer(Graph& g)
       response->write(SimpleWeb::StatusCode::success_ok, json, header);
     }
     response->write(SimpleWeb::StatusCode::client_error_not_found, "Did not find route");
-  };
-
-  server.resource["^/alternative/.*"]["GET"] = [&g](Response response, Request request) {
-    Logger::initLogger();
-    std::optional<size_t> s{}, t{}, dummy{};
-
-    extractQueryFields(request->parse_query_string(), s, t, dummy, dummy, dummy);
-    if (s > g.getNodeCount() || t > g.getNodeCount()) {
-      response->write(
-          SimpleWeb::StatusCode::client_error_bad_request, "Request contains illegal node ids");
-      return;
-    }
-    if (!(s && t)) {
-      response->write(SimpleWeb::StatusCode::client_error_bad_request,
-          "Request needs to contain the parameters: s, t");
-      return;
-    }
-    std::stringstream result;
-    std::optional<AlternativeRoutes> optRoutes;
-    if (request->path.find("weighted") != std::string::npos) {
-      optRoutes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).weightedExplore();
-    } else if (request->path.find("distance") != std::string::npos) {
-      optRoutes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).exploreGreatestDistance();
-    } else if (request->path.find("sharing") != std::string::npos) {
-      optRoutes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).optimizeSharing();
-    } else if (request->path.find("random") != std::string::npos) {
-      optRoutes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).randomAlternatives();
-    } else if (request->path.find("trulyRandom") != std::string::npos) {
-      optRoutes = RouteExplorer(&g, NodePos{ *s }, NodePos{ *t }).trulyRandomAlternatives();
-    } else {
-      response->write(SimpleWeb::StatusCode::client_error_bad_request,
-          "no handler for this kind of alternative route");
-      return;
-    }
-
-    auto routes = optRoutes.value();
-
-    appendAlternativesToJsonStream(result, routes, g);
-
-    SimpleWeb::CaseInsensitiveMultimap header;
-    header.emplace("Content-Type", "application/json");
-    response->write(SimpleWeb::StatusCode::success_ok, result, header);
-  };
-
-  server.resource["^/csv"]["GET"] = [&g](Response response, Request request) {
-    Logger::initLogger();
-    size_t sampleSize = 10;
-    size_t threshold = 30;
-    size_t maxSplits = 15;
-    size_t maxLevel = 5;
-    size_t maxOldRoutes = 2;
-    for (const auto& field : request->parse_query_string()) {
-      if (field.first == "samplesize") {
-        sampleSize = stoull(field.second);
-      } else if (field.first == "threshold") {
-        threshold = stoull(field.second);
-      } else if (field.first == "maxSplits") {
-        maxSplits = stoull(field.second);
-      } else if (field.first == "maxLevel") {
-        maxLevel = stoull(field.second);
-      } else if (field.first == "maxRepeating") {
-        maxOldRoutes = stoull(field.second);
-      }
-    }
-
-    auto dijkstra = g.createDijkstra();
-
-    std::stringstream result;
-    result << "from, to, method, threshold, maxSplits,maxLevel,maxRepeating, setSize, "
-              "nonidenticalRoutes, routeCount, lastInterestingRoute, lowestSharing, time"
-           << '\n';
-    Config lengthOnly{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } };
-    std::random_device rd{};
-    std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
-    size_t counter = 0;
-    while (counter < sampleSize) {
-      NodePos from{ dist(rd) };
-      NodePos to{ dist(rd) };
-      auto shortest = dijkstra.findBestRoute(from, to, lengthOnly);
-      if (!shortest) {
-        continue;
-      }
-      counter++;
-      RouteExplorer explorer{ &g, from, to };
-      auto start = std::chrono::high_resolution_clock::now();
-      auto [routes, count]
-          = explorer.triangleSplitting(threshold, maxSplits, maxLevel, maxOldRoutes);
-      auto end = std::chrono::high_resolution_clock::now();
-      auto duration = std::chrono::duration_cast<ms>(end - start).count();
-
-      appendCsvLine(result, "splitting", from, to, threshold, maxSplits, maxLevel, maxOldRoutes,
-          routes, count, duration);
-
-      start = std::chrono::high_resolution_clock::now();
-      routes = std::get<0>(explorer.randomWithCount(threshold, count));
-      end = std::chrono::high_resolution_clock::now();
-      duration = std::chrono::duration_cast<ms>(end - start).count();
-
-      appendCsvLine(result, "random", from, to, threshold, maxSplits, maxLevel, maxOldRoutes,
-          routes, count, duration);
-
-      if (counter % 10 == 0) {
-        std::cout << "Finished " << counter << " s-t combinations" << '\n';
-      }
-    }
-
-    response->write(SimpleWeb::StatusCode::success_ok, result);
   };
 
   server.resource["^/scaled"]["GET"] = [&g](Response response, Request request) {

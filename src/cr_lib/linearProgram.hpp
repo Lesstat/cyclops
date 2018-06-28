@@ -19,6 +19,7 @@
 #define LINEARPROGRAM_H
 
 #include "ClpSimplex.hpp"
+#include "graph.hpp"
 #include <vector>
 
 class LinearProgram {
@@ -30,7 +31,7 @@ class LinearProgram {
   LinearProgram& operator=(const LinearProgram& other) = default;
   LinearProgram& operator=(LinearProgram&& other) = default;
 
-  void addConstraint(const std::vector<double>& coeff, double max, double min = -COIN_DBL_MAX);
+  void addConstraint(const double (&coeff)[Cost::dim], double max, double min = -COIN_DBL_MAX);
   void objective(const std::vector<double>& coeff);
   bool solve();
   double objectiveFunctionValue();
@@ -47,14 +48,16 @@ class LinearProgram {
   size_t columnCount;
 
   struct Constraint {
-    std::vector<double> coeff;
+    double coeff[Cost::dim];
     double max;
     double min;
-    Constraint(std::vector<double> coeff, double max, double min)
-        : coeff(coeff)
-        , max(max)
+    Constraint(const double (&coeff)[Cost::dim], double max, double min)
+        : max(max)
         , min(min)
     {
+      for (size_t i = 0; i < Cost::dim; ++i) {
+        this->coeff[i] = coeff[i];
+      }
     }
   };
   std::vector<Constraint> constraints;

@@ -43,21 +43,24 @@ class NormalDijkstra;
 struct Config;
 
 struct Cost {
-  std::vector<double> values;
-  Cost(std::vector<double> values)
-      : values(values)
+  static const size_t dim = 3;
+  double values[dim];
+  Cost(const std::vector<double>& values)
   {
+    for (size_t i = 0; i < dim; ++i) {
+      this->values[i] = values[i];
+      if (std::abs(this->values[i]) < 0.0001) {
+        this->values[i] = 0;
+      }
+    }
   }
-  Cost(int dim = 3)
-      : Cost(std::vector<double>(dim, 0))
-  {
-  }
+  Cost() {}
   double operator*(const Config& conf) const;
 
   Cost operator+(const Cost& c) const
   {
     std::vector<double> newValues;
-    for (size_t i = 0; i < values.size(); ++i) {
+    for (size_t i = 0; i < dim; ++i) {
       newValues.push_back(values[i] + c.values[i]);
     }
     return newValues;
@@ -65,7 +68,7 @@ struct Cost {
   Cost operator-(const Cost& c) const
   {
     std::vector<double> newValues;
-    for (size_t i = 0; i < values.size(); ++i) {
+    for (size_t i = 0; i < dim; ++i) {
       newValues.push_back(values[i] - c.values[i]);
     }
     return newValues;

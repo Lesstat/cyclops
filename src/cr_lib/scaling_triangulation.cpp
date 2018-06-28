@@ -297,9 +297,9 @@ size_t Triangulation::createPoint(const PosVector& p, Dijkstra& d)
   Route r;
   if (lengthFac) {
     Config c = p;
-    c.length = LengthConfig{ c.length * *lengthFac };
-    c.height = HeightConfig{ c.height * *heightFac };
-    c.unsuitability = UnsuitabilityConfig{ c.unsuitability * *unsuitFac };
+    c.values[0] *= *lengthFac;
+    c.values[1] *= *heightFac;
+    c.values[2] *= *unsuitFac;
     r = *d.findBestRoute(from, to, c);
   } else {
     r = *d.findBestRoute(from, to, p);

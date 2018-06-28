@@ -101,14 +101,18 @@ Edge& Edge::getMutEdge(EdgeId id) { return edges.at(id); }
 
 double Cost::operator*(const Config& conf) const
 {
-  double combinedCost = this->values[0] * conf.length + this->values[1] * conf.height
-      + this->values[2] * conf.unsuitability;
+  double combinedCost = 0;
+
+  for (size_t i = 0; i < dim; ++i) {
+    combinedCost += values[i] * conf.values[i];
+  }
 
   if (!(combinedCost >= 0)) {
-    std::cout << "length " << this->values[0] << " * " << conf.length << '\n'
-              << "height " << this->values[1] << " * " << conf.height << '\n'
-              << "unsuit " << this->values[2] << " * " << conf.unsuitability << '\n';
-    assert(false);
+    std::cout << "Cost < 0 detected" << '\n';
+    for (size_t i = 0; i < dim; ++i) {
+      std::cout << "metric " << i << ": " << values[i] << " * " << conf.values[i] << '\n';
+    }
+    throw std::invalid_argument("cost < 0");
   }
   if (combinedCost == 0) {
     return std::numeric_limits<double>::epsilon();

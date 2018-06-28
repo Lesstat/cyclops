@@ -112,8 +112,8 @@ class ContractingThread {
   bool finished = false;
   NormalDijkstra d;
   std::vector<Edge> shortcuts;
-  bool routeIncluded = false;
   Cost shortcutCost;
+  Cost currentCost;
 
   public:
   ContractingThread(MultiQueue& queue, Graph& g, bool printStatistics)
@@ -128,11 +128,11 @@ class ContractingThread {
 
   bool addConstraint(const RouteWithCount& route)
   {
-    Cost c2 = route.costs;
+    currentCost = route.costs;
 
     bool dominated = true;
-    for (size_t i = 0; i <= c2.values.size(); i++) {
-      if (c2.values[i] > shortcutCost.values[i]) {
+    for (size_t i = 0; i <= Cost::dim; i++) {
+      if (currentCost.values[i] > shortcutCost.values[i]) {
         dominated = false;
         break;
       }
@@ -140,9 +140,9 @@ class ContractingThread {
     if (dominated)
       return false;
 
-    Cost newCost = shortcutCost - c2;
+    Cost newCost = shortcutCost - currentCost;
 
-    lp.addConstraint(newCost.values, std::numeric_limits<double>::max(), 0.0);
+    lp.addConstraint(newCost.values, 0.0);
     return true;
   }
 
@@ -151,7 +151,6 @@ class ContractingThread {
     for (auto optRoute = routes.next(); optRoute; optRoute = routes.next()) {
       auto route = *optRoute;
       if (route.edges.size() == 2 && route.edges[0] == in->id && route.edges[1] == out->id) {
-        routeIncluded = true;
         continue;
       }
       if (!addConstraint(route)) {
@@ -176,11 +175,13 @@ class ContractingThread {
 
     if (!foundRoute || foundRoute->edges.empty()) {
       stats.recordMaxValues(lpCount, lp.constraintCount());
+      finished = true;
       return true;
     }
 
-    if (isShortest || foundRoute->costs * c >= shortcutCost * c - 0.0001) {
+    if ((isShortest && foundRoute->pathCount == 1)) {
       storeShortcut(StatisticsCollector::CountType::shortestPath);
+      finished = true;
       return true;
     }
     // auto routes = d.routeIter(in->end, out->end);
@@ -199,24 +200,21 @@ class ContractingThread {
       msg = queue.receive();
       try {
         auto pair = std::any_cast<EdgePair>(msg);
+        bool warm = false;
+
         in = &pair.in;
         out = &pair.out;
-        bool warm = false;
 
         lpCount = 0;
         lp = LinearProgram{ 3 };
         lp.objective({ 1.0, 1.0, 1.0 });
         lp.addConstraint({ 1.0, 1.0, 1.0 }, 1.0, 1.0);
-        lp.addConstraint({ 1.0, 0.0, 0.0 }, 1.0, 0.001);
-        lp.addConstraint({ 0.0, 1.0, 0.0 }, 1.0, 0.001);
-        lp.addConstraint({ 0.0, 0.0, 1.0 }, 1.0, 0.001);
 
         config = Config{ LengthConfig{ 0.33 }, HeightConfig{ 0.33 }, UnsuitabilityConfig{ 0.33 } };
         shortcutCost = in->cost + out->cost;
 
         finished = false;
 
-        routeIncluded = false;
         while (!finished) {
           if (!warm) {
             warm = true;
@@ -233,7 +231,7 @@ class ContractingThread {
             break;
           }
 
-          if (lp.constraintCount() > 150) {
+          if (lp.constraintCount() > 18) {
             storeShortcut(StatisticsCollector::CountType::toManyConstraints);
             break;
           }
@@ -249,10 +247,8 @@ class ContractingThread {
           Config newConfig{ LengthConfig{ values[0] }, HeightConfig{ values[1] },
             UnsuitabilityConfig{ values[2] } };
           if (config == newConfig) {
-            if (routeIncluded) {
+            if (!(currentCost * config >= shortcutCost * config - 0.0001)) {
               storeShortcut(StatisticsCollector::CountType::repeatingConfig);
-            } else {
-              finished = true;
             }
             break;
           }
@@ -313,23 +309,24 @@ std::set<NodePos> Contractor::independentSet(const Graph& g)
       set.insert(pos);
     }
   }
-
+  std::cout << "..."
+            << "calculated greedy independent set of " << set.size() << "\n";
   return set;
 }
 
 std::set<NodePos> Contractor::reduce(std::set<NodePos>& set, const Graph& g)
 {
-  std::vector<std::pair<NodePos, size_t>> metric{};
+  std::vector<std::pair<size_t, NodePos>> metric{};
   metric.reserve(set.size());
 
   std::transform(set.begin(), set.end(), std::back_inserter(metric), [&g](NodePos p) {
     auto inEdges = g.getIngoingEdgesOf(p);
     auto outEdges = g.getOutgoingEdgesOf(p);
     size_t count = (inEdges.end() - inEdges.begin()) * (outEdges.end() - outEdges.begin());
-    return std::make_pair(p, count);
+    return std::make_pair(count, p);
   });
 
-  auto median = metric.begin() + (metric.size() == 1 ? 1 : metric.size() / 2);
+  auto median = metric.begin() + (metric.size() < 4 ? metric.size() : metric.size() / 4);
 
   std::nth_element(metric.begin(), median, metric.end());
 
@@ -337,6 +334,8 @@ std::set<NodePos> Contractor::reduce(std::set<NodePos>& set, const Graph& g)
   std::transform(metric.begin(), median, std::inserter(result, result.begin()),
       [](auto pair) { return std::get<NodePos>(pair); });
 
+  std::cout << "..."
+            << "reduced greedy independent set to " << result.size() << "\n";
   return result;
 }
 
@@ -387,16 +386,15 @@ Graph Contractor::contract(Graph& g)
     }
   }
 
-  std::sort(begin(nodesToContract), end(nodesToContract), [&g](const auto& pos1, const auto& pos2) {
-    return g.getInTimesOutDegree(pos1) > g.getInTimesOutDegree(pos2);
-  });
-
   size_t edgePairCount = 0;
   for (const auto& node : nodesToContract) {
     const auto& inEdges = g.getIngoingEdgesOf(node);
     const auto& outEdges = g.getOutgoingEdgesOf(node);
     for (const auto& in : inEdges) {
       for (const auto& out : outEdges) {
+        if (in.end == out.end) {
+          continue;
+        }
         q.send(EdgePair{ in, out });
         ++edgePairCount;
       }
@@ -404,7 +402,7 @@ Graph Contractor::contract(Graph& g)
   }
 
   if (printStatistics) {
-    std::cout << edgePairCount << " edge pairs to contract" << '\n';
+    std::cout << "..." << edgePairCount << " edge pairs to contract" << '\n';
     StatisticsCollector::printHeader();
   }
 
@@ -426,9 +424,11 @@ Graph Contractor::contract(Graph& g)
   auto end = std::chrono::high_resolution_clock::now();
 
   using s = std::chrono::seconds;
-  std::cout << "Last contraction step took " << std::chrono::duration_cast<s>(end - start).count()
+  std::cout << "..."
+            << "Last contraction step took " << std::chrono::duration_cast<s>(end - start).count()
             << "s" << '\n';
-  std::cout << "Created " << shortcuts.size() << " shortcuts." << '\n';
+  std::cout << "..."
+            << "Created " << shortcuts.size() << " shortcuts." << '\n';
   shortcuts.clear();
 
   return Graph{ std::move(nodes), std::move(edges) };
@@ -465,7 +465,8 @@ Graph Contractor::contractCompletely(Graph& g, double rest)
   Graph intermedG = contract(g);
   double uncontractedNodesPercent
       = std::round(intermedG.getNodeCount() * 10000.0 / g.getNodeCount()) / 100;
-  std::cout << 100 - uncontractedNodesPercent << "% of the graph is contracted" << '\n'
+  std::cout << 100 - uncontractedNodesPercent << "% of the graph is contracted ("
+            << intermedG.getNodeCount() << " nodes left)" << '\n'
             << std::flush;
   while (uncontractedNodesPercent > rest) {
     intermedG = contract(intermedG);

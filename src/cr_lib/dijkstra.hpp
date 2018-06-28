@@ -29,9 +29,7 @@ using HeightConfig = NamedType<double, struct HeightConfigParameter>;
 using UnsuitabilityConfig = NamedType<double, struct UnsuitabilityConfigParameter>;
 
 struct Config {
-  LengthConfig length;
-  HeightConfig height;
-  UnsuitabilityConfig unsuitability;
+  double values[Cost::dim];
 
   template <class configType> void asureNonNegativity(configType& c)
   {
@@ -46,24 +44,39 @@ struct Config {
   }
 
   Config(LengthConfig l, HeightConfig h, UnsuitabilityConfig u)
-      : length(l)
-      , height(h)
-      , unsuitability(u)
   {
-    asureNonNegativity(length);
-    asureNonNegativity(height);
-    asureNonNegativity(unsuitability);
+    values[0] = l;
+    values[1] = h;
+    values[2] = u;
+    asureNonNegativity(values[0]);
+    asureNonNegativity(values[1]);
+    asureNonNegativity(values[2]);
   }
+  Config(const std::vector<double>& values)
+  {
+    for (size_t i = 0; i < Cost::dim; ++i) {
+      this->values[i] = values[i];
+      asureNonNegativity(this->values[i]);
+    }
+  }
+
   bool operator==(Config& other)
   {
-    return length == other.length && height == other.height && unsuitability == other.unsuitability;
+    for (size_t i = 0; i < Cost::dim; ++i) {
+      if (values[i] != other.values[i]) {
+        return false;
+      }
+    }
+    return true;
   }
 
   Config integerValues() const
   {
-    return Config{ LengthConfig{ std::round(length * 100) },
-      HeightConfig{ std::round(height * 100) },
-      UnsuitabilityConfig{ std::round(unsuitability * 100) } };
+    std::vector<double> intValues;
+    for (size_t i = 0; i < Cost::dim; ++i) {
+      intValues.push_back(std::round(values[i] * 100));
+    }
+    return intValues;
   }
 };
 

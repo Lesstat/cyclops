@@ -22,11 +22,12 @@
 LinearProgram::LinearProgram(size_t cols)
     : columnCount(cols)
 {
+  constraints.reserve(10);
 }
 
 LinearProgram::~LinearProgram() noexcept = default;
 
-void LinearProgram::addConstraint(const std::vector<double>& coeff, double max, double min)
+void LinearProgram::addConstraint(const double (&coeff)[Cost::dim], double max, double min)
 {
   constraints.emplace_back(coeff, max, min);
 }
@@ -35,15 +36,15 @@ void LinearProgram::objective(const std::vector<double>& coeff) { objective_ = c
 
 bool LinearProgram::solve()
 {
-  if (!lp) {
-    lp = ClpSimplex();
-    lp->setLogLevel(0);
+  lp = ClpSimplex();
+  lp->setLogLevel(0);
 
-    lp->resize(0, columnCount);
-    for (size_t i = 0; i < columnCount; ++i) {
-      lp->setColLower(i, 0.0);
-    }
+  lp->resize(0, columnCount);
+  for (size_t i = 0; i < columnCount; ++i) {
+    lp->setColLower(i, 0.0);
+    lp->setColUpper(i, 1.0);
   }
+
   if (objective_) {
     lp->setOptimizationDirection(1);
     for (size_t i = 0; i < objective_->size(); ++i) {
@@ -54,8 +55,8 @@ bool LinearProgram::solve()
   if (!constraints.empty()) {
 
     for (auto& c : constraints) {
-      std::vector<int> ind(c.coeff.size());
-      std::vector<double> value(c.coeff.size());
+      std::vector<int> ind(Cost::dim);
+      std::vector<double> value(Cost::dim);
 
       int i = 0;
       for (const auto& val : c.coeff) {
@@ -65,7 +66,6 @@ bool LinearProgram::solve()
       }
       lp->addRow(ind.size(), ind.data(), value.data(), c.min, c.max);
     }
-    constraints.clear();
   }
   lp->primal();
   return lp->primalFeasible();

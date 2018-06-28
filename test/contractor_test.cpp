@@ -204,7 +204,7 @@ Route findRouteBetweenIds(Graph& g, NodeId from, NodeId to)
 
 void compareRoutes(Route& routeA, Route& routeB)
 {
-  for (size_t i = 0; i < routeA.costs.values.size(); ++i) {
+  for (size_t i = 0; i < Cost::dim; ++i) {
     REQUIRE(routeA.costs.values[i] == routeB.costs.values[i]);
   }
 }

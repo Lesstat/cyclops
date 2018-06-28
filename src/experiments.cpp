@@ -316,8 +316,8 @@ int main(int argc, char* argv[])
           continue;
         }
         auto route = *optRoute;
-        output << from << "," << to << "," << conf.length << "," << conf.height << ","
-               << conf.unsuitability << "," << route.costs.values[0] << "," << route.costs.values[1]
+        output << from << "," << to << "," << conf.values[0] << "," << conf.values[1] << ","
+               << conf.values[2] << "," << route.costs.values[0] << "," << route.costs.values[1]
                << "," << route.costs.values[2] << "," << route.edges.size() << "," << d.pqPops
                << "," << time << '\n';
         curRoute++;

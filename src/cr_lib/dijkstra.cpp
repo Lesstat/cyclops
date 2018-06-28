@@ -261,7 +261,12 @@ bool Dijkstra::stallOnDemand(const NodePos& node, double cost, Direction dir)
 
 std::ostream& operator<<(std::ostream& stream, const Config& c)
 {
-  stream << c.length << "/" << c.height << "/" << c.unsuitability;
+  for (size_t i = 0; i < Cost::dim; ++i) {
+    if (i > 0) {
+      stream << "/";
+    }
+    stream << c.values[i];
+  }
   return stream;
 }
 
