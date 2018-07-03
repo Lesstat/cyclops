@@ -32,6 +32,9 @@ class MultiQueue {
   void send(const std::any&);
   std::any receive();
   bool try_receive(std::any&);
+  size_t receive_some(std::vector<std::any>& container, size_t some);
+  void close();
+  bool closed();
 
   protected:
   private:
@@ -40,4 +43,5 @@ class MultiQueue {
   std::condition_variable_any non_full;
   std::deque<std::any> fifo;
   size_t size;
+  bool closed_ = false;
 };

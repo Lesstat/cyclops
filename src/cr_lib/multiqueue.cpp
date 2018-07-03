@@ -33,7 +33,10 @@ void MultiQueue::send(const std::any& value)
 std::any MultiQueue::receive()
 {
   std::unique_lock guard(key);
-  non_empty.wait(guard, [this] { return !fifo.empty(); });
+  non_empty.wait(guard, [this] { return !fifo.empty() || closed_; });
+  if (fifo.empty() && closed_) {
+    return std::any();
+  }
   auto value = fifo.front();
   fifo.pop_front();
   non_full.notify_one();
@@ -49,4 +52,27 @@ bool MultiQueue::try_receive(std::any& value)
   value = fifo.front();
   fifo.pop_front();
   return true;
+}
+
+size_t MultiQueue::receive_some(std::vector<std::any>& container, size_t some)
+{
+  std::unique_lock<std::mutex> guard(key);
+  non_empty.wait(guard, [this] { return !fifo.empty() || closed_; });
+  while (!fifo.empty() && container.size() < some) {
+    container.push_back(fifo.front());
+    fifo.pop_front();
+  }
+  return container.size();
+}
+
+void MultiQueue::close()
+{
+  std::lock_guard guard(key);
+  closed_ = true;
+}
+
+bool MultiQueue::closed()
+{
+  std::lock_guard guard(key);
+  return closed_;
 }

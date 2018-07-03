@@ -314,7 +314,7 @@ int testGraph(Graph& g)
   size_t route = 0;
   size_t noRoute = 0;
 
-  for (int i = 0; i < 1000; ++i) {
+  for (int i = 0; i < 100; ++i) {
     NodePos from{ dist(rd) };
     NodePos to{ dist(rd) };
 

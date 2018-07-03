@@ -23,7 +23,6 @@
 #include <chrono>
 #include <iostream>
 #include <memory>
-#include <thread>
 
 class StatisticsCollector {
   public:
@@ -106,14 +105,14 @@ class ContractingThread {
   StatisticsCollector stats;
   Config config{ LengthConfig{ 0.33 }, HeightConfig{ 0.33 }, UnsuitabilityConfig{ 0.33 } };
   LinearProgram lp;
-  HalfEdge* in = nullptr;
-  HalfEdge* out = nullptr;
+  HalfEdge in;
+  HalfEdge out;
   size_t lpCount = 0;
-  bool finished = false;
   NormalDijkstra d;
   std::vector<Edge> shortcuts;
   Cost shortcutCost;
   Cost currentCost;
+  std::vector<Cost> constraints;
 
   public:
   ContractingThread(MultiQueue& queue, Graph& g, bool printStatistics)
@@ -126,112 +125,119 @@ class ContractingThread {
     shortcuts.reserve(graph.getNodeCount());
   }
 
-  bool addConstraint(const RouteWithCount& route)
+  bool isDominated(const Cost& costs)
   {
-    currentCost = route.costs;
-
     bool dominated = true;
     for (size_t i = 0; i <= Cost::dim; i++) {
-      if (currentCost.values[i] > shortcutCost.values[i]) {
+      if (costs.values[i] > shortcutCost.values[i]) {
         dominated = false;
         break;
       }
     }
     if (dominated)
-      return false;
-
-    Cost newCost = shortcutCost - currentCost;
-
-    lp.addConstraint(newCost.values, 0.0);
-    return true;
+      return true;
+    return false;
   }
 
-  bool extractRoutesAndAddConstraints(RouteIterator& routes)
+  void addConstraint(const Cost& costs)
+  {
+    Cost newCost = shortcutCost - costs;
+    lp.addConstraint(newCost.values, 0.0);
+  }
+
+  void extractRoutesAndAddConstraints(RouteIterator& routes)
   {
     for (auto optRoute = routes.next(); optRoute; optRoute = routes.next()) {
       auto route = *optRoute;
-      if (route.edges.size() == 2 && route.edges[0] == in->id && route.edges[1] == out->id) {
+      if (route.edges.size() == 2 && route.edges[0] == in.id && route.edges[1] == out.id) {
         continue;
       }
-      if (!addConstraint(route)) {
-        return false;
-      }
+      addConstraint(route.costs);
       optRoute = routes.next();
     }
-    return true;
   }
 
   void storeShortcut(StatisticsCollector::CountType type)
   {
-    finished = true;
     stats.countShortcut(type);
     stats.recordMaxValues(lpCount, lp.constraintCount());
-    shortcuts.push_back(Contractor::createShortcut(Edge::getEdge(in->id), Edge::getEdge(out->id)));
+    shortcuts.push_back(Contractor::createShortcut(Edge::getEdge(in.id), Edge::getEdge(out.id)));
   };
 
-  bool testConfig(Config c)
+  bool testConfig(const Config& c)
   {
-    auto [isShortest, foundRoute] = checkShortestPath(d, *in, *out, c);
+    auto [isShortest, foundRoute] = checkShortestPath(d, in, out, c);
 
     if (!foundRoute || foundRoute->edges.empty()) {
       stats.recordMaxValues(lpCount, lp.constraintCount());
-      finished = true;
       return true;
     }
 
     if ((isShortest && foundRoute->pathCount == 1)) {
       storeShortcut(StatisticsCollector::CountType::shortestPath);
-      finished = true;
       return true;
     }
-    // auto routes = d.routeIter(in->end, out->end);
-    if (!addConstraint(*foundRoute)) {
-      finished = true;
+    currentCost = foundRoute->costs;
+    constraints.push_back(currentCost);
+
+    if (isDominated(currentCost)) {
       return true;
     }
     return false;
   }
 
-  void operator()()
+  std::vector<Edge> operator()()
   {
-    std::any msg;
-
+    std::vector<std::any> messages;
     while (true) {
-      msg = queue.receive();
-      try {
+      messages.clear();
+      if (queue.receive_some(messages, 20) == 0 && queue.closed()) {
+        return shortcuts;
+      }
+      for (auto& msg : messages) {
         auto pair = std::any_cast<EdgePair>(msg);
         bool warm = false;
+        if (pair.in.end == in.end && pair.out.end == out.end) {
+          warm = true;
+        } else {
+          constraints.clear();
+        }
 
-        in = &pair.in;
-        out = &pair.out;
+        in = pair.in;
+        out = pair.out;
+
+        config = Config{ LengthConfig{ 0.33 }, HeightConfig{ 0.33 }, UnsuitabilityConfig{ 0.33 } };
+        shortcutCost = in.cost + out.cost;
+
+        if (!warm) {
+          warm = true;
+          if (testConfig(Config{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } })
+              || testConfig(
+                     Config{ LengthConfig{ 0 }, HeightConfig{ 1 }, UnsuitabilityConfig{ 0 } })
+              || testConfig(
+                     Config{ LengthConfig{ 0 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 1 } })) {
+            continue;
+          }
+        }
+
+        for (auto c : constraints) {
+          if (isDominated(c))
+            continue;
+        }
 
         lpCount = 0;
         lp = LinearProgram{ 3 };
         lp.objective({ 1.0, 1.0, 1.0 });
         lp.addConstraint({ 1.0, 1.0, 1.0 }, 1.0, 1.0);
+        while (true) {
 
-        config = Config{ LengthConfig{ 0.33 }, HeightConfig{ 0.33 }, UnsuitabilityConfig{ 0.33 } };
-        shortcutCost = in->cost + out->cost;
-
-        finished = false;
-
-        while (!finished) {
-          if (!warm) {
-            warm = true;
-            if (testConfig(Config{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } })
-                || testConfig(
-                       Config{ LengthConfig{ 0 }, HeightConfig{ 1 }, UnsuitabilityConfig{ 0 } })
-                || testConfig(
-                       Config{ LengthConfig{ 0 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 1 } })) {
-              break;
-            }
+          for (auto& c : constraints) {
+            addConstraint(c);
           }
-
           if (testConfig(config)) {
             break;
           }
-
-          if (lp.constraintCount() > 18) {
+          if (lpCount > 10) {
             storeShortcut(StatisticsCollector::CountType::toManyConstraints);
             break;
           }
@@ -239,26 +245,14 @@ class ContractingThread {
           ++lpCount;
           if (!lp.solve()) {
             stats.recordMaxValues(lpCount, lp.constraintCount());
-            finished = true;
             break;
           }
           auto values = lp.variableValues();
 
           Config newConfig{ LengthConfig{ values[0] }, HeightConfig{ values[1] },
             UnsuitabilityConfig{ values[2] } };
-          if (config == newConfig) {
-            if (!(currentCost * config >= shortcutCost * config - 0.0001)) {
-              storeShortcut(StatisticsCollector::CountType::repeatingConfig);
-            }
-            break;
-          }
           config = newConfig;
         }
-
-      } catch (std::bad_any_cast e) {
-        auto responder = std::any_cast<std::shared_ptr<MultiQueue>>(msg);
-        responder->send(shortcuts);
-        return;
       }
     }
   }
@@ -285,21 +279,33 @@ Edge Contractor::createShortcut(const Edge& e1, const Edge& e2)
   return shortcut;
 }
 
-void Contractor::contract(MultiQueue& queue, Graph& g)
+std::future<std::vector<Edge>> Contractor::contract(MultiQueue& queue, Graph& g)
 {
-  std::thread t{ ContractingThread{ queue, g, printStatistics } };
-  t.detach();
+  return std::async(std::launch::async, ContractingThread{ queue, g, printStatistics });
 }
 
 std::set<NodePos> Contractor::independentSet(const Graph& g)
 {
   std::set<NodePos> set;
+  std::vector<std::pair<size_t, NodePos>> nodes;
   size_t nodeCount = g.getNodeCount();
+  nodes.reserve(nodeCount);
+
+  for (size_t i = 0; i < nodeCount; ++i) {
+    NodePos p{ i };
+    auto inEdges = g.getIngoingEdgesOf(p);
+    auto outEdges = g.getOutgoingEdgesOf(p);
+    size_t count = (inEdges.end() - inEdges.begin()) * (outEdges.end() - outEdges.begin());
+    nodes.emplace_back(count, p);
+  }
+  std::sort(nodes.begin(), nodes.end());
+
   std::vector<bool> selected(nodeCount, true);
 
   for (size_t i = 0; i < nodeCount; ++i) {
-    NodePos pos{ i };
-    if (selected[i]) {
+    NodePos pos = nodes[i].second;
+
+    if (selected[pos]) {
       for (const auto& inEdge : g.getIngoingEdgesOf(pos)) {
         selected[inEdge.end] = false;
       }
@@ -325,8 +331,9 @@ std::set<NodePos> Contractor::reduce(std::set<NodePos>& set, const Graph& g)
     size_t count = (inEdges.end() - inEdges.begin()) * (outEdges.end() - outEdges.begin());
     return std::make_pair(count, p);
   });
-
-  auto median = metric.begin() + (metric.size() < 4 ? metric.size() : metric.size() / 4);
+  size_t divider = 4;
+  auto median
+      = metric.begin() + (metric.size() < divider ? metric.size() : metric.size() / divider);
 
   std::nth_element(metric.begin(), median, metric.end());
 
@@ -355,8 +362,9 @@ Graph Contractor::contract(Graph& g)
   const int THREAD_COUNT
       = std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1;
   MultiQueue q{};
+  std::vector<std::future<std::vector<Edge>>> futures;
   for (int i = 0; i < THREAD_COUNT; ++i) {
-    contract(q, g);
+    futures.push_back(contract(q, g));
   }
 
   ++level;
@@ -400,21 +408,16 @@ Graph Contractor::contract(Graph& g)
       }
     }
   }
+  q.close();
 
   if (printStatistics) {
     std::cout << "..." << edgePairCount << " edge pairs to contract" << '\n';
     StatisticsCollector::printHeader();
   }
 
-  auto back = std::make_shared<MultiQueue>();
-  for (int i = 0; i < THREAD_COUNT; ++i) {
-    q.send(back);
-  }
-
   std::vector<Edge> shortcuts{};
   for (int i = 0; i < THREAD_COUNT; ++i) {
-    std::any msg = back->receive();
-    auto shortcutsMsg = std::any_cast<std::vector<Edge>>(msg);
+    auto shortcutsMsg = futures[i].get();
     std::move(shortcutsMsg.begin(), shortcutsMsg.end(), std::back_inserter(shortcuts));
   }
   Edge::administerEdges(shortcuts);
@@ -472,6 +475,9 @@ Graph Contractor::contractCompletely(Graph& g, double rest)
     intermedG = contract(intermedG);
     uncontractedNodesPercent
         = std::round(intermedG.getNodeCount() * 10000.0 / g.getNodeCount()) / 100;
+    std::cout << "..."
+              << "total number of edges: " << intermedG.getEdgeCount() + contractedEdges.size()
+              << "\n";
     std::cout << 100 - uncontractedNodesPercent << "% of the graph is contracted ("
               << intermedG.getNodeCount() << " nodes left)" << '\n'
               << std::flush;
