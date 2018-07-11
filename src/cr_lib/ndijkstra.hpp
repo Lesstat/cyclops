@@ -25,6 +25,7 @@ struct RouteWithCount {
   Cost costs;
   size_t pathCount = 1;
   std::deque<EdgeId> edges;
+  RouteWithCount& operator=(const RouteWithCount& rhs) = default;
 };
 
 class RouteIterator;
@@ -52,6 +53,8 @@ class NormalDijkstra {
   std::optional<RouteWithCount> findBestRoute(NodePos from, NodePos to, const Config& config);
   RouteIterator routeIter(NodePos from, NodePos to);
 
+  void saveDotGraph(const EdgeId& inId, const EdgeId& outId);
+
   friend RouteIterator;
 
   private:
@@ -62,6 +65,8 @@ class NormalDijkstra {
   std::vector<NodePos> touched;
   std::vector<size_t> paths;
   std::vector<std::vector<HalfEdge>> previousEdge;
+
+  NodePos from, to;
 
   Cost pathCost;
   size_t pathCount;
@@ -91,7 +96,7 @@ struct BiggerRouteCost {
 
 class RouteIterator {
   public:
-  RouteIterator(NormalDijkstra* dijkstra, NodePos from, NodePos to, size_t maxHeapSize = 1000);
+  RouteIterator(NormalDijkstra* dijkstra, NodePos from, NodePos to, size_t maxHeapSize = 500);
   ~RouteIterator() = default;
 
   std::optional<RouteWithCount> next();

@@ -103,17 +103,14 @@ TEST_CASE("Test if edges form shortest path")
 
 std::vector<Edge> contractNode(Graph& g, NodePos pos, Contractor& c)
 {
-  MultiQueue to{};
-  auto back = std::make_shared<MultiQueue>();
+  MultiQueue<EdgePair> to{};
   for (const auto& in : g.getIngoingEdgesOf(pos)) {
     for (const auto& out : g.getOutgoingEdgesOf(pos)) {
       to.send(EdgePair{ in, out });
     }
   }
   to.close();
-  std::any msg = c.contract(to, g).get();
-
-  return std::any_cast<std::vector<Edge>>(msg);
+  return c.contract(to, g).get();
 }
 
 TEST_CASE("Contracting a Node")
@@ -186,7 +183,10 @@ TEST_CASE("Finding and reducing independent sets")
     auto nodeSetWithTwoNodes = c.independentSet(fourNodeG);
     REQUIRE(nodeSetWithTwoNodes.size() == 2);
 
-    auto onlyOneNode = c.reduce(nodeSetWithTwoNodes, fourNodeG);
+    // Reduction now reduces to 1/4 the size or size with the set has less than four elements.
+    // We test it with a Set of size four instead
+    std::set<NodePos> fourNodes = { NodePos{ 0 }, NodePos{ 1 }, NodePos{ 2 }, NodePos{ 3 } };
+    auto onlyOneNode = c.reduce(fourNodes, fourNodeG);
     REQUIRE(onlyOneNode.size() == 1);
   }
 }
@@ -194,11 +194,11 @@ TEST_CASE("Finding and reducing independent sets")
 Route findRouteBetweenIds(Graph& g, NodeId from, NodeId to)
 {
   Config c{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } };
-  NodePos id1Pos = g.nodePosById(from).value();
-  NodePos id3Pos = g.nodePosById(to).value();
+  NodePos fromPos = g.nodePosById(from).value();
+  NodePos toPos = g.nodePosById(to).value();
 
   auto dijkstra = g.createDijkstra();
-  return dijkstra.findBestRoute(id1Pos, id3Pos, c).value();
+  return dijkstra.findBestRoute(fromPos, toPos, c).value();
 }
 
 void compareRoutes(Route& routeA, Route& routeB)
@@ -228,18 +228,17 @@ TEST_CASE("Contracting one level of Graph")
 
 )!!" };
   Graph initialG = graphFromString(fourNodeGraph);
-  auto routeInitialGraph = findRouteBetweenIds(initialG, NodeId{ 1 }, NodeId{ 3 });
+  auto routeInitialGraph = findRouteBetweenIds(initialG, NodeId{ 1 }, NodeId{ 2 });
 
   Graph intermedG = c.contract(initialG);
-  auto routeIntermedGraph = findRouteBetweenIds(intermedG, NodeId{ 1 }, NodeId{ 3 });
+  auto routeIntermedGraph = findRouteBetweenIds(intermedG, NodeId{ 1 }, NodeId{ 2 });
 
   SECTION("New Graph has correct set of nodes")
   {
-    REQUIRE(intermedG.getNodeCount() == 3);
+    REQUIRE(intermedG.getNodeCount() == 2);
     REQUIRE(intermedG.getNode(NodePos{ 0 }).id() == 1);
     REQUIRE(intermedG.getNode(NodePos{ 1 }).id() == 2);
-    REQUIRE(intermedG.getNode(NodePos{ 2 }).id() == 3);
-    REQUIRE(intermedG.getEdgeCount() == 3);
+    REQUIRE(intermedG.getEdgeCount() == 1);
   }
 
   auto finalG = c.mergeWithContracted(intermedG);
@@ -254,7 +253,7 @@ TEST_CASE("Contracting one level of Graph")
   SECTION("Distances stay the same in all intermediate steps")
   {
 
-    auto routeFinalGraph = findRouteBetweenIds(finalG, NodeId{ 1 }, NodeId{ 3 });
+    auto routeFinalGraph = findRouteBetweenIds(finalG, NodeId{ 1 }, NodeId{ 2 });
 
     compareRoutes(routeInitialGraph, routeIntermedGraph);
     compareRoutes(routeIntermedGraph, routeFinalGraph);
@@ -270,9 +269,9 @@ TEST_CASE("Fully contract graph")
   Graph ch = c.contractCompletely(initialG);
 
   REQUIRE(ch.getLevelOf(NodePos{ 0 }) == 1);
-  REQUIRE(ch.getLevelOf(NodePos{ 1 }) == 2);
-  REQUIRE(ch.getLevelOf(NodePos{ 2 }) == 3);
-  REQUIRE(ch.getLevelOf(NodePos{ 3 }) == 4);
+  REQUIRE(ch.getLevelOf(NodePos{ 1 }) == 1);
+  REQUIRE(ch.getLevelOf(NodePos{ 2 }) == 2);
+  REQUIRE(ch.getLevelOf(NodePos{ 3 }) == 3);
 }
 
 TEST_CASE("Give max level to not contracted nodes")
@@ -312,13 +311,13 @@ TEST_CASE("Give max level to not contracted nodes")
   auto ch = c.contractCompletely(g);
 
   REQUIRE(ch.getLevelOf(NodePos{ 0 }) == 1);
-  REQUIRE(ch.getLevelOf(NodePos{ 1 }) == 1);
-  REQUIRE(ch.getLevelOf(NodePos{ 2 }) == 2);
-  REQUIRE(ch.getLevelOf(NodePos{ 3 }) == 2);
-  REQUIRE(ch.getLevelOf(NodePos{ 4 }) == 3);
-  REQUIRE(ch.getLevelOf(NodePos{ 5 }) == 4);
+  REQUIRE(ch.getLevelOf(NodePos{ 1 }) == 2);
+  REQUIRE(ch.getLevelOf(NodePos{ 2 }) == 3);
+  REQUIRE(ch.getLevelOf(NodePos{ 3 }) == 4);
+  REQUIRE(ch.getLevelOf(NodePos{ 4 }) == 5);
+  REQUIRE(ch.getLevelOf(NodePos{ 5 }) == 5);
   REQUIRE(ch.getLevelOf(NodePos{ 6 }) == 5);
   REQUIRE(ch.getLevelOf(NodePos{ 7 }) == 6);
-  REQUIRE(ch.getLevelOf(NodePos{ 8 }) == 7);
-  REQUIRE(ch.getLevelOf(NodePos{ 9 }) == 8);
+  REQUIRE(ch.getLevelOf(NodePos{ 8 }) == 6);
+  REQUIRE(ch.getLevelOf(NodePos{ 9 }) == 7);
 }

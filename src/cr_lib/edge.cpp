@@ -36,6 +36,14 @@ Edge::Edge(NodeId source, NodeId dest, ReplacedEdge edgeA, ReplacedEdge edgeB)
     , edgeB(std::move(edgeB))
 {
   assert(source != dest);
+  if (edges.size() > 0 && (edgeA || edgeB)) {
+    auto& e1 = Edge::getEdge(*edgeA);
+    auto& e2 = Edge::getEdge(*edgeB);
+    if (e1.getSourceId() == e2.getSourceId()) {
+      std::cerr << "Same starting point" << '\n';
+      std::terminate();
+    }
+  }
 }
 
 NodeId Edge::getSourceId() const { return source; }
@@ -58,7 +66,9 @@ Edge Edge::createFromText(const std::string& text)
   }
   e.cost = Cost({ length, height, unsuitability });
   for (double c : e.cost.values) {
-    assert(0 <= c);
+    if (0 > c) {
+      throw std::invalid_argument("Cost below zero: " + std::to_string(c));
+    }
   }
   return e;
 }
@@ -113,9 +123,6 @@ double Cost::operator*(const Config& conf) const
       std::cout << "metric " << i << ": " << values[i] << " * " << conf.values[i] << '\n';
     }
     throw std::invalid_argument("cost < 0");
-  }
-  if (combinedCost == 0) {
-    return std::numeric_limits<double>::epsilon();
   }
   return combinedCost;
 }

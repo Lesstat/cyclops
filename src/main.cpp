@@ -314,7 +314,7 @@ int testGraph(Graph& g)
   size_t route = 0;
   size_t noRoute = 0;
 
-  for (int i = 0; i < 100; ++i) {
+  for (int i = 0; i < 1000; ++i) {
     NodePos from{ dist(rd) };
     NodePos to{ dist(rd) };
 
@@ -340,6 +340,14 @@ int testGraph(Graph& g)
                   << ", nUnsuitability: " << nRoute->costs.values[2] << '\n';
         std::cout << "total cost d: " << dRoute->costs * c
                   << ", total cost n: " << nRoute->costs * c << '\n';
+        if (nRoute->edges.size() > 10) {
+          std::cout << "Route to long (" << nRoute->edges.size() << "), skipping ..."
+                    << "\n";
+          continue;
+        }
+        std::ofstream wholeRoute{ "/tmp/whole-" + std::to_string(from) + "-" + std::to_string(to)
+          + ".dot" };
+        printRoutes(wholeRoute, g, *nRoute, *dRoute, c);
 
         std::unordered_set<NodeId> nodeIds;
         std::transform(nRoute->edges.begin(), nRoute->edges.end(),
@@ -356,65 +364,89 @@ int testGraph(Graph& g)
               return idToPos[edge.getSourceId()];
             });
 
-        for (size_t i = 2; i < nodeLevels.size(); ++i) {
-          auto nextToLast = nodeLevels[i - 2];
-          auto last = nodeLevels[i - 1];
+        for (size_t i = 1; i < nodeLevels.size(); ++i) {
+          // auto nextToLast = nodeLevels[i - 2];
+          // auto last = nodeLevels[i - 1];
           auto current = nodeLevels[i];
 
-          if (nextToLast->getLevel() > last->getLevel() && last->getLevel() < current->getLevel()) {
-            auto nextToLastPos = g.getNodePos(nextToLast);
-            auto lastPos = g.getNodePos(last);
-            auto currentPos = g.getNodePos(current);
-            const auto dTest = d.findBestRoute(nextToLastPos, currentPos, c);
-            const auto nTest = n.findBestRoute(nextToLastPos, currentPos, c);
-            if (!(dTest->costs * c <= nTest->costs * c)) {
-              std::cout << "did not find correct subpath between " << nextToLastPos << " and "
-                        << currentPos << " at index " << i << '\n';
+          // auto nextToLastPos = g.getNodePos(nextToLast);
+          // auto lastPos = g.getNodePos(last);
+          auto currentPos = g.getNodePos(current);
+          auto dTest = d.findBestRoute(from, currentPos, c);
+          auto nTest = n.findBestRoute(from, currentPos, c);
+          if (!(dTest->costs * c <= nTest->costs * c)) {
+            for (int j = i - 1; j > 0; --j) {
+              auto backward = nodeLevels[j];
+              auto backPos = g.getNodePos(backward);
+              dTest = d.findBestRoute(backPos, currentPos, c);
+              nTest = n.findBestRoute(backPos, currentPos, c);
+              if (!(dTest->costs * c <= nTest->costs * c)) {
+                std::cout << "did not find correct subpath between " << from << " and "
+                          << currentPos << " at index " << i << '\n';
 
-              std::cout << '\n'
-                        << "Normal dijkstra needs length " << nTest->costs.values[0] << " height "
-                        << nTest->costs.values[1] << " road " << nTest->costs.values[2] << '\n';
+                std::cout << '\n'
+                          << "Normal dijkstra needs length " << nTest->costs.values[0] << " height "
+                          << nTest->costs.values[1] << " road " << nTest->costs.values[2] << '\n';
 
-              std::cout << "CH dijkstra needs     length " << dTest->costs.values[0] << " height "
-                        << dTest->costs.values[1] << " road " << dTest->costs.values[2] << '\n';
+                std::cout << "CH dijkstra needs     length " << dTest->costs.values[0] << " height "
+                          << dTest->costs.values[1] << " road " << dTest->costs.values[2] << '\n';
 
-              std::cout << nextToLastPos << " has level " << nextToLast->getLevel() << '\n';
-              std::cout << lastPos << " has level " << last->getLevel() << '\n';
-              std::cout << currentPos << " has level " << current->getLevel() << '\n';
+                std::cout << from << " has level " << g.getLevelOf(from) << '\n';
+                // std::cout << lastPos << " has level " << last->getLevel() << '\n';
+                std::cout << currentPos << " has level " << current->getLevel() << '\n';
 
-              auto outEdges = g.getOutgoingEdgesOf(nextToLastPos);
-              std::cout << "Outgoing edges of " << nextToLastPos << '\n';
-              for (const auto& edge : outEdges) {
-                std::cout << "Id " << edge.id << " Target " << edge.end << " length "
-                          << edge.cost.values[0] << ", height " << edge.cost.values[1]
-                          << ", road: " << edge.cost.values[2] << '\n';
+                std::cout << "------------------ ROUTES --------------------" << '\n';
+                std::cout << "Normal Route " << '\n';
+                for (const auto& e : nTest->edges) {
+                  const auto edge = Edge::getEdge(e);
+                  std::cout << edge.destPos() << "\n";
+                  std::cout << "length " << edge.getCost().values[0] << " height "
+                            << edge.getCost().values[1] << " road " << edge.getCost().values[2]
+                            << '\n';
+                }
+
+                std::cout << "CH Route" << '\n';
+                for (const auto& edge : dTest->edges) {
+                  std::cout << edge.destPos() << '\n';
+                  std::cout << "length " << edge.getCost().values[0] << " height "
+                            << edge.getCost().values[1] << " road " << edge.getCost().values[2]
+                            << '\n';
+                }
+
+                std::ofstream falsePart{ "/tmp/false-" + std::to_string(from) + "-"
+                  + std::to_string(to) + ".dot" };
+                printRoutes(falsePart, g, *nTest, *dTest, c);
+
+                return -1;
               }
-              outEdges = g.getOutgoingEdgesOf(g.getNodePos(last));
-              std::cout << "Outgoing edges of " << g.getNodePos(last) << '\n';
-              for (const auto& edge : outEdges) {
-                std::cout << "Id " << edge.id << " Target " << edge.end << " length "
-                          << edge.cost.values[0] << ", height " << edge.cost.values[1]
-                          << ", road: " << edge.cost.values[2] << '\n';
-              }
-
-              std::cout << "------------------ ROUTES --------------------" << '\n';
-              std::cout << "Normal Route " << '\n';
-              for (const auto& e : nTest->edges) {
-                const auto edge = Edge::getEdge(e);
-                std::cout << "length " << edge.getCost().values[0] << " height "
-                          << edge.getCost().values[1] << " road " << edge.getCost().values[2]
-                          << '\n';
-              }
-
-              std::cout << "CH Route" << '\n';
-              for (const auto& edge : dTest->edges) {
-                std::cout << "length " << edge.getCost().values[0] << " height "
-                          << edge.getCost().values[1] << " road " << edge.getCost().values[2]
-                          << '\n';
-              }
-
-              return -1;
             }
+
+            // auto outEdges = g.getOutgoingEdgesOf(nextToLastPos);
+            // std::cout << "Outgoing edges of " << nextToLastPos << '\n';
+            // for (const auto& edge : outEdges) {
+            //   std::cout << "Id " << edge.id << " Target " << edge.end << " length "
+            //             << edge.cost.values[0] << ", height " << edge.cost.values[1]
+            //             << ", road: " << edge.cost.values[2];
+            //   if (Edge::getEdge(edge.id).getEdgeA()) {
+            //     std::cout << " (shortcut edge)";
+            //   } else {
+            //     std::cout << " (normal edge)";
+            //   }
+            //   std::cout << '\n';
+            // }
+            // outEdges = g.getOutgoingEdgesOf(g.getNodePos(last));
+            // std::cout << "Outgoing edges of " << g.getNodePos(last) << '\n';
+            // for (const auto& edge : outEdges) {
+            //   std::cout << "Id " << edge.id << " Target " << edge.end << " length "
+            //             << edge.cost.values[0] << ", height " << edge.cost.values[1]
+            //             << ", road: " << edge.cost.values[2];
+            //   if (Edge::getEdge(edge.id).getEdgeA()) {
+            //     std::cout << " (shortcut edge)";
+            //   } else {
+            //     std::cout << " (normal edge)";
+            //   }
+            //   std::cout << "\n";
+            // }
           }
         }
 

@@ -15,33 +15,90 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include <any>
+
+#ifndef MULTIQUEUE_H
+#define MULTIQUEUE_H
+
 #include <condition_variable>
 #include <deque>
 #include <mutex>
 
-class MultiQueue {
+template <class T> class MultiQueue {
   public:
-  MultiQueue(size_t size = 5000000);
+  MultiQueue(size_t size = 5000000)
+      : size(size)
+  {
+  }
   MultiQueue(const MultiQueue& other) = default;
   MultiQueue(MultiQueue&& other) = default;
   virtual ~MultiQueue() noexcept = default;
   MultiQueue& operator=(const MultiQueue& other) = default;
   MultiQueue& operator=(MultiQueue&& other) = default;
 
-  void send(const std::any&);
-  std::any receive();
-  bool try_receive(std::any&);
-  size_t receive_some(std::vector<std::any>& container, size_t some);
-  void close();
-  bool closed();
+  void send(const T& value)
+  {
+    std::unique_lock guard(key);
+    non_full.wait(guard, [this] { return size > fifo.size(); });
+    fifo.push_back(value);
+    non_empty.notify_one();
+  }
+
+  T receive()
+  {
+    std::unique_lock guard(key);
+    non_empty.wait(guard, [this] { return !fifo.empty() || closed_; });
+    if (fifo.empty() && closed_) {
+      std::invalid_argument("Queue Closed and empty");
+    }
+    auto value = fifo.front();
+    fifo.pop_front();
+    non_full.notify_one();
+    return value;
+  }
+
+  bool try_receive(T& value)
+  {
+    std::lock_guard guard(key);
+    if (fifo.empty()) {
+      return false;
+    }
+    value = fifo.front();
+    fifo.pop_front();
+    return true;
+  }
+
+  size_t receive_some(std::vector<T>& container, size_t some)
+  {
+    std::unique_lock<std::mutex> guard(key);
+    non_empty.wait(guard, [this] { return !fifo.empty() || closed_; });
+    while (!fifo.empty() && container.size() < some) {
+      container.push_back(fifo.front());
+      fifo.pop_front();
+    }
+    return container.size();
+  }
+
+  void close()
+  {
+    std::lock_guard guard(key);
+    closed_ = true;
+    non_empty.notify_all();
+  }
+
+  bool closed()
+  {
+    std::lock_guard guard(key);
+    return closed_;
+  }
 
   protected:
   private:
   std::mutex key;
   std::condition_variable_any non_empty;
   std::condition_variable_any non_full;
-  std::deque<std::any> fifo;
+  std::deque<T> fifo;
   size_t size;
   bool closed_ = false;
 };
+
+#endif /* MULTIQUEUE_H */

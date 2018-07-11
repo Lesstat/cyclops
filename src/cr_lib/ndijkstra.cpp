@@ -7,7 +7,7 @@
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
 
-  This program is distributed in the hope that it will be useful,
+  This program is distributed in the hope that it will be useul,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
@@ -16,6 +16,7 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "ndijkstra.hpp"
+#include <fstream>
 #include <unordered_set>
 
 NormalDijkstra::NormalDijkstra(Graph* g, size_t nodeCount, bool unpack)
@@ -35,6 +36,8 @@ std::optional<RouteWithCount> NormalDijkstra::findBestRoute(
 {
 
   usedConfig = config;
+  this->from = from;
+  this->to = to;
   clearState();
   heap.push(std::make_tuple(from, 0));
   touched.push_back(from);
@@ -56,6 +59,9 @@ std::optional<RouteWithCount> NormalDijkstra::findBestRoute(
 
     const auto& outEdges = graph->getOutgoingEdgesOf(node);
     for (const auto& edge : outEdges) {
+      if (unpack && Edge::getEdge(edge.id).getEdgeA()) {
+        continue;
+      }
       const NodePos& nextNode = edge.end;
       double nextCost = pathCost + edge.costByConfiguration(config);
       if (nextCost < cost[nextNode]) {
@@ -174,6 +180,9 @@ std::optional<RouteWithCount> RouteIterator::next()
     }
     for (const auto& edge : dijkstra->previousEdge[hTo]) {
       const auto& source = edge.begin;
+      if (std::find(hRoute.edges.begin(), hRoute.edges.end(), edge.id) != hRoute.edges.end()) {
+        continue;
+      }
       RouteWithCount newRoute = hRoute;
       newRoute.costs = newRoute.costs + edge.cost;
       if (std::abs(dijkstra->cost[source] + edge.costByConfiguration(dijkstra->usedConfig)
@@ -188,4 +197,37 @@ std::optional<RouteWithCount> RouteIterator::next()
   }
   outputCount = dijkstra->pathCount;
   return {};
+}
+
+void NormalDijkstra::saveDotGraph(const EdgeId& inId, const EdgeId& outId)
+{
+
+  std::ofstream dotFile{ "/tmp/" + std::to_string(from) + "-" + std::to_string(to) + ".dot" };
+  dotFile << "digraph G{" << '\n';
+  dotFile << "rankdir=LR;" << '\n';
+  dotFile << "size=8;" << '\n';
+  dotFile << "node[ shape = doublecircle color = red]; " << from << " " << to << ";" << '\n';
+  dotFile << "node[ shape = circle color = black]; " << '\n';
+
+  for (auto& node : touched) {
+    for (auto& edge : graph->getOutgoingEdgesOf(node)) {
+      dotFile << node << " -> " << edge.end << " [label = \"";
+      bool first = true;
+      for (auto& c : edge.cost.values) {
+        if (!first)
+          dotFile << ", ";
+        dotFile << c;
+        first = false;
+      }
+      dotFile << " | " << edge.cost * usedConfig << "\"";
+      dotFile << " color = ";
+      if (edge.id == inId || edge.id == outId) {
+        dotFile << "blue";
+      } else {
+        dotFile << "black";
+      }
+      dotFile << " ]" << '\n';
+    }
+  }
+  dotFile << "}" << '\n';
 }

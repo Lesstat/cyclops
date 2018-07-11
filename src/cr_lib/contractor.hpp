@@ -21,7 +21,12 @@
 #include <future>
 #include <set>
 
-class MultiQueue;
+template <class T> class MultiQueue;
+
+struct EdgePair {
+  HalfEdge in;
+  HalfEdge out;
+};
 
 class Contractor {
 
@@ -39,7 +44,7 @@ class Contractor {
   std::pair<bool, std::optional<RouteWithCount>> isShortestPath(
       NormalDijkstra& d, const HalfEdge& startEdge, const HalfEdge& destEdge, const Config& conf);
 
-  std::future<std::vector<Edge>> contract(MultiQueue& queue, Graph& g);
+  std::future<std::vector<Edge>> contract(MultiQueue<EdgePair>& queue, Graph& g);
   Graph contract(Graph& g);
   Graph mergeWithContracted(Graph& g);
   Graph contractCompletely(Graph& g, double rest = 2);
@@ -50,15 +55,10 @@ class Contractor {
 
   protected:
   private:
-  std::optional<RouteWithCount> foundRoute;
   size_t level = 0;
   std::vector<Node> contractedNodes;
   std::vector<EdgeId> contractedEdges;
   bool printStatistics = false;
 };
 
-struct EdgePair {
-  HalfEdge in;
-  HalfEdge out;
-};
 #endif /* CONTRACTOR_H */

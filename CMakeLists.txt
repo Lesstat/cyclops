@@ -21,7 +21,7 @@ find_package(glpk REQUIRED)
 find_package(Boost 1.58 REQUIRED COMPONENTS serialization program_options filesystem)
 find_package (Threads)
 
-
+find_package(glpk REQUIRED) 
 
 # Actual Implementation of project in static library
 file(GLOB lib_src src/cr_lib/*.cpp )
@@ -48,6 +48,10 @@ target_include_directories(catch INTERFACE vendor/catch)
 
 add_executable(cr_expr src/experiments.cpp)
 target_link_libraries(cr_expr cr_lib)
+
+
+add_executable(cr_lp src/lpsolver.cpp)
+target_link_libraries(cr_lp ${GLPK_LIBRARIES})
 
 # Testing executable links against catch and cr_lib
 file(GLOB test_src test/*.cpp)

@@ -24,7 +24,9 @@
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/serialization/unordered_map.hpp>
 #include <boost/serialization/vector.hpp>
+#include <fstream>
 #include <optional>
+#include <set>
 #include <unordered_set>
 #include <vector>
 
@@ -54,22 +56,36 @@ struct Cost {
       }
     }
   }
-  Cost() {}
+  Cost()
+  {
+    for (size_t i = 0; i < Cost::dim; ++i) {
+      values[i] = 0;
+    }
+  }
+  Cost(const double values[Cost::dim])
+  {
+    for (size_t i = 0; i < dim; ++i) {
+      this->values[i] = values[i];
+      if (std::abs(this->values[i]) < 0.0001) {
+        this->values[i] = 0;
+      }
+    }
+  }
   double operator*(const Config& conf) const;
 
   Cost operator+(const Cost& c) const
   {
-    std::vector<double> newValues;
+    double newValues[Cost::dim];
     for (size_t i = 0; i < dim; ++i) {
-      newValues.push_back(values[i] + c.values[i]);
+      newValues[i] = values[i] + c.values[i];
     }
     return newValues;
   };
   Cost operator-(const Cost& c) const
   {
-    std::vector<double> newValues;
+    double newValues[Cost::dim];
     for (size_t i = 0; i < dim; ++i) {
-      newValues.push_back(values[i] - c.values[i]);
+      newValues[i] = values[i] - c.values[i];
     }
     return newValues;
   };
@@ -324,4 +340,9 @@ class EdgeRange {
   iterator end_;
 };
 
+struct RouteWithCount;
+struct Route;
+
+void printRoutes(std::ofstream& dotFile, const Graph& graph, const RouteWithCount& route1,
+    const Route& route2, const Config& config);
 #endif /* GRAPH_H */
