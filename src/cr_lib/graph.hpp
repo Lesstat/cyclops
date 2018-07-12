@@ -159,6 +159,7 @@ class Edge {
   void destPos(NodePos dest);
 
   EdgeId getId() const;
+  void setId(EdgeId id);
   const Cost& getCost() const;
   double costByConfiguration(const Config& conf) const;
   void setCost(Cost c);
@@ -166,7 +167,7 @@ class Edge {
   HalfEdge makeHalfEdge(NodePos begin, NodePos end) const;
 
   static Edge createFromText(const std::string& text);
-  static void administerEdges(const std::vector<Edge>& edges);
+  static void administerEdges(std::vector<Edge>& edges);
   static const Edge& getEdge(EdgeId id);
   static Edge& getMutEdge(EdgeId id);
 
@@ -187,7 +188,6 @@ class Edge {
   NodePos sourcePos_;
   NodePos destPos_;
 
-  static std::atomic<size_t> lastId;
   static std::vector<Edge> edges;
 
   template <class Archive> void serialize(Archive& ar, const unsigned int /*version*/)

@@ -20,7 +20,6 @@
 #include <algorithm>
 #include <cassert>
 
-std::atomic<size_t> Edge::lastId = 0;
 std::vector<Edge> Edge::edges{};
 
 Edge::Edge(NodeId source, NodeId dest)
@@ -29,8 +28,7 @@ Edge::Edge(NodeId source, NodeId dest)
 }
 
 Edge::Edge(NodeId source, NodeId dest, ReplacedEdge edgeA, ReplacedEdge edgeB)
-    : internalId(lastId++)
-    , source(source)
+    : source(source)
     , destination(dest)
     , edgeA(std::move(edgeA))
     , edgeB(std::move(edgeB))
@@ -94,16 +92,15 @@ HalfEdge Edge::makeHalfEdge(NodePos begin, NodePos end) const
   return e;
 }
 
+void Edge::setId(EdgeId id) { this->internalId = id; }
+
 double HalfEdge::costByConfiguration(const Config& conf) const { return cost * conf; }
 
-void Edge::administerEdges(const std::vector<Edge>& edges)
+void Edge::administerEdges(std::vector<Edge>& edges)
 {
-  Edge::edges.reserve(lastId);
-  for (const auto& edge : edges) {
-    while (Edge::edges.size() <= edge.getId()) {
-      Edge::edges.emplace_back(Edge{});
-    }
-    Edge::edges[edge.getId()] = edge;
+  for (auto& edge : edges) {
+    edge.setId(EdgeId{ Edge::edges.size() });
+    Edge::edges.emplace_back(edge);
   }
 }
 const Edge& Edge::getEdge(EdgeId id) { return edges.at(id); }
