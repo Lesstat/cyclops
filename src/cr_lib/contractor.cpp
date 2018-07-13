@@ -116,14 +116,17 @@ class ContractingThread {
   Cost currentCost;
   std::vector<Cost> constraints;
   RouteWithCount route;
+  const std::set<NodePos>& set;
 
   public:
-  ContractingThread(MultiQueue<EdgePair>& queue, Graph& g, bool printStatistics)
+  ContractingThread(
+      MultiQueue<EdgePair>& queue, Graph& g, const std::set<NodePos>& set, bool printStatistics)
       : queue(queue)
       , graph(g)
       , stats(printStatistics)
       , lp(nullptr)
       , d(g.createNormalDijkstra())
+      , set(set)
   {
     shortcuts.reserve(graph.getNodeCount());
   }
@@ -180,28 +183,7 @@ class ContractingThread {
     route = *foundRoute;
     constraints.push_back(currentCost);
 
-    if (isShortest) {
-      if (foundRoute->pathCount == 1) {
-        storeShortcut(StatisticsCollector::CountType::shortestPath);
-        return true;
-      }
-      auto routeIter = d.routeIter(in.end, out.end);
-      size_t routeCount = 0;
-
-      while (!routeIter.finished()) {
-        auto route = routeIter.next();
-        routeCount++;
-        if (!route) {
-          break;
-        }
-
-        bool isShortest
-            = route->edges.size() == 2 && Edge::getEdge(route->edges[0]).destPos() == out.begin;
-        if (!isShortest) {
-          constraints.push_back(route->costs);
-          return false;
-        }
-      }
+    if (isShortest && foundRoute->pathCount == 1) {
       storeShortcut(StatisticsCollector::CountType::shortestPath);
       return true;
     }
@@ -308,13 +290,29 @@ class ContractingThread {
             UnsuitabilityConfig{ values[2] } };
           if (newConfig == config) {
             sameCount++;
-            // if (sameCount < 5) {
-            //   config = generateRandomConfig();
-            //   continue;
-            // }
 
             if (currentCost * config >= shortcutCost * config - 0.000001) {
-              storeShortcut(StatisticsCollector::CountType::repeatingConfig);
+
+              auto routeIter = d.routeIter(in.end, out.end);
+
+              bool shortcutNecessary = true;
+              while (!routeIter.finished()) {
+                auto route = routeIter.next();
+                if (!route) {
+                  break;
+                }
+
+                if (std::all_of(route->edges.begin(), route->edges.end(), [this](const auto& id) {
+                      auto node = Edge::getEdge(id).destPos();
+                      return set.count(node) == 0;
+                    })) {
+                  shortcutNecessary = false;
+                  break;
+                }
+              }
+              if (shortcutNecessary) {
+                storeShortcut(StatisticsCollector::CountType::repeatingConfig);
+              }
             } else if (false) {
               std::ofstream dotFile{ "/tmp/" + std::to_string(in.id) + "-" + std::to_string(out.id)
                 + ".dot" };
@@ -353,9 +351,10 @@ Edge Contractor::createShortcut(const Edge& e1, const Edge& e2)
   return shortcut;
 }
 
-std::future<std::vector<Edge>> Contractor::contract(MultiQueue<EdgePair>& queue, Graph& g)
+std::future<std::vector<Edge>> Contractor::contract(
+    MultiQueue<EdgePair>& queue, Graph& g, const std::set<NodePos>& set)
 {
-  return std::async(std::launch::async, ContractingThread{ queue, g, printStatistics });
+  return std::async(std::launch::async, ContractingThread{ queue, g, set, printStatistics });
 }
 
 std::set<NodePos> Contractor::independentSet(const Graph& g)
@@ -436,13 +435,13 @@ Graph Contractor::contract(Graph& g)
   const int THREAD_COUNT
       = std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1;
   MultiQueue<EdgePair> q{};
-  std::vector<std::future<std::vector<Edge>>> futures;
-  for (int i = 0; i < THREAD_COUNT; ++i) {
-    futures.push_back(contract(q, g));
-  }
 
   ++level;
   auto set = reduce(independentSet(g), g);
+  std::vector<std::future<std::vector<Edge>>> futures;
+  for (int i = 0; i < THREAD_COUNT; ++i) {
+    futures.push_back(contract(q, g, set));
+  }
   std::vector<Node> nodes{};
   std::vector<EdgeId> edges{};
   std::vector<NodePos> nodesToContract{};

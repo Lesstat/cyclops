@@ -44,7 +44,8 @@ class Contractor {
   std::pair<bool, std::optional<RouteWithCount>> isShortestPath(
       NormalDijkstra& d, const HalfEdge& startEdge, const HalfEdge& destEdge, const Config& conf);
 
-  std::future<std::vector<Edge>> contract(MultiQueue<EdgePair>& queue, Graph& g);
+  std::future<std::vector<Edge>> contract(
+      MultiQueue<EdgePair>& queue, Graph& g, const std::set<NodePos>& set);
   Graph contract(Graph& g);
   Graph mergeWithContracted(Graph& g);
   Graph contractCompletely(Graph& g, double rest = 2);

@@ -104,13 +104,14 @@ TEST_CASE("Test if edges form shortest path")
 std::vector<Edge> contractNode(Graph& g, NodePos pos, Contractor& c)
 {
   MultiQueue<EdgePair> to{};
+  std::set<NodePos> set{ pos };
   for (const auto& in : g.getIngoingEdgesOf(pos)) {
     for (const auto& out : g.getOutgoingEdgesOf(pos)) {
       to.send(EdgePair{ in, out });
     }
   }
   to.close();
-  return c.contract(to, g).get();
+  return c.contract(to, g, set).get();
 }
 
 TEST_CASE("Contracting a Node")
