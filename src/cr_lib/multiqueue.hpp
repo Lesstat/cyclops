@@ -64,6 +64,7 @@ template <class T> class MultiQueue {
     }
     value = fifo.front();
     fifo.pop_front();
+    non_full.notify_one();
     return true;
   }
 
@@ -75,6 +76,7 @@ template <class T> class MultiQueue {
       container.push_back(fifo.front());
       fifo.pop_front();
     }
+    non_full.notify_one();
     return container.size();
   }
 
