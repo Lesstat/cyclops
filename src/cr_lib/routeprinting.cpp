@@ -18,12 +18,30 @@
 #include "graph.hpp"
 #include "ndijkstra.hpp"
 
+void printNode(std::ofstream& dotFile, const Graph& graph, const NodePos& pos)
+{
+  dotFile << '"' << pos << "(" << graph.getLevelOf(pos) << ")" << '"';
+}
+
 void printEdge(std::ofstream& dotFile, const HalfEdge& edge, const std::set<EdgeId>& route1Edges,
     const std::set<EdgeId>& route2Edges, const Config& config, const Graph& g)
 {
-  dotFile << '"' << edge.begin << "(" << g.getLevelOf(edge.begin) << ")" << '"';
+
+  std::string color;
+  bool partOfShortcut = route2Edges.count(edge.id) > 0;
+  bool partOfRoute = route1Edges.count(edge.id) > 0;
+  if (partOfRoute && partOfShortcut) {
+    color = "green";
+  } else if (partOfShortcut) {
+    color = "blue";
+  } else if (partOfRoute) {
+    color = "yellow";
+  } else {
+    color = "black";
+  }
+  printNode(dotFile, g, edge.begin);
   dotFile << " -> ";
-  dotFile << '"' << edge.end << "(" << g.getLevelOf(edge.end) << ")" << '"';
+  printNode(dotFile, g, edge.end);
   dotFile << " [label = \"";
   bool first = true;
   for (auto& c : edge.cost.values) {
@@ -33,23 +51,13 @@ void printEdge(std::ofstream& dotFile, const HalfEdge& edge, const std::set<Edge
     first = false;
   }
   dotFile << " | " << edge.cost * config << "\"";
-  dotFile << " color = ";
-  bool partOfShortcut = route2Edges.count(edge.id) > 0;
-  bool partOfRoute = route1Edges.count(edge.id) > 0;
-  if (partOfRoute && partOfShortcut) {
-    dotFile << "green";
-  } else if (partOfShortcut) {
-    dotFile << "blue";
-  } else if (partOfRoute) {
-    dotFile << "yellow";
-  } else {
-    dotFile << "black";
-  }
+  dotFile << ",color=" << color;
+  dotFile << ",labelfontcolor=" << color;
   dotFile << " ]" << '\n';
 }
 
 void printRoutes(std::ofstream& dotFile, const Graph& graph, const RouteWithCount& route1,
-    const Route& route2, const Config& config)
+    const Route& route2, const Config& config, const std::set<NodePos>& set)
 {
   dotFile << "digraph G{" << '\n';
   dotFile << "rankdir=LR;" << '\n';
@@ -57,10 +65,15 @@ void printRoutes(std::ofstream& dotFile, const Graph& graph, const RouteWithCoun
 
   auto from = Edge::getEdge(route1.edges.front()).sourcePos();
   auto to = Edge::getEdge(route1.edges.back()).destPos();
-  dotFile << "node[ shape = doublecircle color = red]; " << '"' << from << "("
-          << graph.getLevelOf(from) << ")" << '"';
-  dotFile << " " << '"' << to << "(" << graph.getLevelOf(to) << ")" << '"' << ";" << '\n';
+  dotFile << "node[ shape = doublecircle color = red]; ";
+  printNode(dotFile, graph, from);
+  dotFile << " ";
+  printNode(dotFile, graph, to);
+  dotFile << ";" << '\n';
+
   dotFile << "node[ shape = circle color = black]; " << '\n';
+
+  std::set<NodePos> printedNodes;
 
   std::set<EdgeId> printedEdges;
   std::set<EdgeId> route1Edges;
@@ -78,11 +91,13 @@ void printRoutes(std::ofstream& dotFile, const Graph& graph, const RouteWithCoun
     for (auto& edge : graph.getOutgoingEdgesOf(node)) {
       if (printedEdges.count(edge.id) == 0) {
         printedEdges.insert(edge.id);
+        printedNodes.insert(edge.end);
         printEdge(dotFile, edge, route1Edges, route2Edges, config, graph);
       }
       for (auto& edge2 : graph.getOutgoingEdgesOf(edge.end)) {
         if (printedEdges.count(edge2.id) == 0) {
           printedEdges.insert(edge2.id);
+          printedNodes.insert(edge2.end);
           printEdge(dotFile, edge2, route1Edges, route2Edges, config, graph);
         }
       }
@@ -92,6 +107,7 @@ void printRoutes(std::ofstream& dotFile, const Graph& graph, const RouteWithCoun
   for (auto& edge : graph.getIngoingEdgesOf(to)) {
     if (printedEdges.count(edge.id) == 0) {
       printedEdges.insert(edge.id);
+      printedNodes.insert(edge.end);
       HalfEdge e;
       e.id = edge.id;
       e.begin = edge.end;
@@ -105,14 +121,23 @@ void printRoutes(std::ofstream& dotFile, const Graph& graph, const RouteWithCoun
     for (auto& edge : graph.getOutgoingEdgesOf(routeEdge.sourcePos())) {
       if (printedEdges.count(edge.id) == 0) {
         printedEdges.insert(edge.id);
+        printedNodes.insert(edge.end);
         printEdge(dotFile, edge, route1Edges, route2Edges, config, graph);
       }
       for (auto& edge2 : graph.getOutgoingEdgesOf(edge.end)) {
         if (printedEdges.count(edge2.id) == 0) {
           printedEdges.insert(edge2.id);
+          printedNodes.insert(edge2.end);
           printEdge(dotFile, edge2, route1Edges, route2Edges, config, graph);
         }
       }
+    }
+  }
+
+  for (auto& node : printedNodes) {
+    if (set.count(node) > 0) {
+      printNode(dotFile, graph, node);
+      dotFile << " [ shape = circle color = blue];\n";
     }
   }
   dotFile << "}" << '\n';

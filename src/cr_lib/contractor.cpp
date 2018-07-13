@@ -296,6 +296,7 @@ class ContractingThread {
               auto routeIter = d.routeIter(in.end, out.end);
 
               bool shortcutNecessary = true;
+              RouteWithCount reason;
               while (!routeIter.finished()) {
                 auto route = routeIter.next();
                 if (!route) {
@@ -307,19 +308,20 @@ class ContractingThread {
                       return set.count(node) == 0;
                     })) {
                   shortcutNecessary = false;
+                  reason = *route;
                   break;
                 }
               }
               if (shortcutNecessary) {
                 storeShortcut(StatisticsCollector::CountType::repeatingConfig);
+              } else if (false) { // Printing rejected shortcuts for debugging purposes
+                std::ofstream dotFile{ "/tmp/" + std::to_string(in.id) + "-"
+                  + std::to_string(out.id) + ".dot" };
+                Route shortcut;
+                shortcut.edges.push_back(Edge::getEdge(in.id));
+                shortcut.edges.push_back(Edge::getEdge(out.id));
+                printRoutes(dotFile, graph, reason, shortcut, config, set);
               }
-            } else if (false) {
-              std::ofstream dotFile{ "/tmp/" + std::to_string(in.id) + "-" + std::to_string(out.id)
-                + ".dot" };
-              Route shortcut;
-              shortcut.edges.push_back(Edge::getEdge(in.id));
-              shortcut.edges.push_back(Edge::getEdge(out.id));
-              printRoutes(dotFile, graph, route, shortcut, config);
             }
             break;
           }

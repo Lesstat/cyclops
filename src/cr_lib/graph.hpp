@@ -344,5 +344,5 @@ struct RouteWithCount;
 struct Route;
 
 void printRoutes(std::ofstream& dotFile, const Graph& graph, const RouteWithCount& route1,
-    const Route& route2, const Config& config);
+    const Route& route2, const Config& config, const std::set<NodePos>& set = {});
 #endif /* GRAPH_H */
