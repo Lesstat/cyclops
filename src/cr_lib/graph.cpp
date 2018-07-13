@@ -17,6 +17,7 @@
 */
 #include "grid.hpp"
 #include "ndijkstra.hpp"
+#include <future>
 
 void Graph::connectEdgesToNodes(const std::vector<Node>& nodes, const std::vector<EdgeId>& edges)
 {
@@ -115,9 +116,10 @@ void Graph::init(std::vector<Node>&& nodes, std::vector<EdgeId>&& edges)
     offsets.emplace_back(NodeOffset{});
   }
 
-  calculateOffsets(outEdges, offsets, Pos::source, *this);
-
+  auto fut = std::async(
+      std::launch::async, [&]() { calculateOffsets(outEdges, offsets, Pos::source, *this); });
   calculateOffsets(inEdges, offsets, Pos::dest, *this);
+  fut.wait();
 }
 
 std::ostream& operator<<(std::ostream& s, const Graph& g)
