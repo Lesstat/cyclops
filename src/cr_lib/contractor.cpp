@@ -23,7 +23,6 @@
 #include <chrono>
 #include <iostream>
 #include <memory>
-
 class StatisticsCollector {
   public:
   enum class CountType { shortestPath, repeatingConfig, toManyConstraints };
@@ -134,15 +133,17 @@ class ContractingThread {
   bool isDominated(const Cost& costs)
   {
     bool dominated = true;
+    bool allSame = true;
     for (size_t i = 0; i <= Cost::dim; i++) {
       if (costs.values[i] > shortcutCost.values[i]) {
         dominated = false;
+        allSame = false;
         break;
       }
+      if (costs.values[i] != shortcutCost.values[i])
+        allSame = false;
     }
-    if (dominated)
-      return true;
-    return false;
+    return dominated && !allSame;
   }
 
   void addConstraint(const Cost& costs)
@@ -315,12 +316,12 @@ class ContractingThread {
               if (shortcutNecessary) {
                 storeShortcut(StatisticsCollector::CountType::repeatingConfig);
               } else if (false) { // Printing rejected shortcuts for debugging purposes
-                std::ofstream dotFile{ "/tmp/" + std::to_string(in.id) + "-"
-                  + std::to_string(out.id) + ".dot" };
-                Route shortcut;
-                shortcut.edges.push_back(Edge::getEdge(in.id));
-                shortcut.edges.push_back(Edge::getEdge(out.id));
-                printRoutes(dotFile, graph, reason, shortcut, config, set);
+                // std::ofstream dotFile{ "/tmp/" + std::to_string(in.id) + "-"
+                //   + std::to_string(out.id) + ".dot" };
+                // Route shortcut;
+                // shortcut.edges.push_back(Edge::getEdge(in.id));
+                // shortcut.edges.push_back(Edge::getEdge(out.id));
+                // printRoutes(dotFile, graph, reason, shortcut, config, set);
               }
             }
             break;

@@ -340,11 +340,6 @@ int testGraph(Graph& g)
                   << ", nUnsuitability: " << nRoute->costs.values[2] << '\n';
         std::cout << "total cost d: " << dRoute->costs * c
                   << ", total cost n: " << nRoute->costs * c << '\n';
-        if (nRoute->edges.size() > 10) {
-          std::cout << "Route to long (" << nRoute->edges.size() << "), skipping ..."
-                    << "\n";
-          continue;
-        }
         std::ofstream wholeRoute{ "/tmp/whole-" + std::to_string(from) + "-" + std::to_string(to)
           + ".dot" };
         printRoutes(wholeRoute, g, *nRoute, *dRoute, c);
