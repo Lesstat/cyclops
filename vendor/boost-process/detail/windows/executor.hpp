@@ -11,10 +11,10 @@
 #ifndef BOOST_PROCESS_WINDOWS_EXECUTOR_HPP
 #define BOOST_PROCESS_WINDOWS_EXECUTOR_HPP
 
-#include <boost/process/detail/child_decl.hpp>
-#include <boost/process/detail/windows/is_running.hpp>
-#include <boost/process/detail/traits.hpp>
-#include <boost/process/error.hpp>
+#include "detail/child_decl.hpp"
+#include "detail/windows/is_running.hpp"
+#include "detail/traits.hpp"
+#include "error.hpp"
 #include <boost/fusion/algorithm/iteration/for_each.hpp>
 #include <boost/winapi/handles.hpp>
 #include <boost/winapi/process.hpp>

@@ -6,16 +6,16 @@
 #ifndef BOOST_PROCESS_EXTENSIONS_HPP_
 #define BOOST_PROCESS_EXTENSIONS_HPP_
 
-#include <boost/process/detail/handler.hpp>
+#include "detail/handler.hpp"
 
 #if defined(BOOST_WINDOWS_API)
-#include <boost/process/detail/windows/executor.hpp>
-#include <boost/process/detail/windows/async_handler.hpp>
-#include <boost/process/detail/windows/asio_fwd.hpp>
+#include "detail/windows/executor.hpp"
+#include "detail/windows/async_handler.hpp"
+#include "detail/windows/asio_fwd.hpp"
 #else
-#include <boost/process/detail/posix/executor.hpp>
-#include <boost/process/detail/posix/async_handler.hpp>
-#include <boost/process/detail/posix/asio_fwd.hpp>
+#include "detail/posix/executor.hpp"
+#include "detail/posix/async_handler.hpp"
+#include "detail/posix/asio_fwd.hpp"
 #endif
 
 

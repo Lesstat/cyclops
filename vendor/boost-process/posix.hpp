@@ -5,10 +5,10 @@
 #ifndef BOOST_PROCESS_POSIX_HPP_
 #define BOOST_PROCESS_POSIX_HPP_
 
-#include <boost/process/detail/posix/fd.hpp>
-#include <boost/process/detail/posix/handler.hpp>
-#include <boost/process/detail/posix/use_vfork.hpp>
-#include <boost/process/detail/posix/signal.hpp>
+#include "detail/posix/fd.hpp"
+#include "detail/posix/handler.hpp"
+#include "detail/posix/use_vfork.hpp"
+#include "detail/posix/signal.hpp"
 
 
 /** \file boost/process/posix.hpp

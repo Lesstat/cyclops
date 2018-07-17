@@ -10,10 +10,10 @@
 #ifndef BOOST_PROCESS_DETAIL_POSIX_ASYNC_IN_HPP
 #define BOOST_PROCESS_DETAIL_POSIX_ASYNC_IN_HPP
 
-#include <boost/process/detail/handler_base.hpp>
-#include <boost/process/detail/posix/async_handler.hpp>
+#include "detail/handler_base.hpp"
+#include "detail/posix/async_handler.hpp"
 #include <boost/asio/write.hpp>
-#include <boost/process/async_pipe.hpp>
+#include "async_pipe.hpp"
 #include <memory>
 #include <future>
 

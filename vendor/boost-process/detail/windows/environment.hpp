@@ -13,9 +13,9 @@
 #include <boost/winapi/environment.hpp>
 #include <boost/winapi/get_current_process.hpp>
 #include <boost/winapi/get_current_process_id.hpp>
-#include <boost/process/detail/config.hpp>
+#include "detail/config.hpp"
 #include <algorithm>
-#include <boost/process/locale.hpp>
+#include "locale.hpp"
 
 namespace boost { namespace process { namespace detail { namespace windows {
 

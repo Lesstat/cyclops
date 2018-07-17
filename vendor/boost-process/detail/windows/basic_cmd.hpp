@@ -9,8 +9,8 @@
 
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/replace.hpp>
-#include <boost/process/shell.hpp>
-#include <boost/process/detail/windows/handler.hpp>
+#include "shell.hpp"
+#include "detail/windows/handler.hpp"
 
 #include <vector>
 #include <string>

@@ -10,9 +10,9 @@
 #ifndef BOOST_PROCESS_DETAIL_POSIX_NULL_IN_HPP
 #define BOOST_PROCESS_DETAIL_POSIX_NULL_IN_HPP
 
-#include <boost/process/pipe.hpp>
-#include <boost/process/detail/posix/handler.hpp>
-#include <boost/process/detail/posix/file_descriptor.hpp>
+#include "pipe.hpp"
+#include "detail/posix/handler.hpp"
+#include "detail/posix/file_descriptor.hpp"
 #include <unistd.h>
 
 namespace boost { namespace process { namespace detail { namespace posix {

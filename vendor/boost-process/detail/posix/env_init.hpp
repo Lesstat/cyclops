@@ -8,9 +8,9 @@
 #define BOOST_PROCESS_DETAIL_POSIX_ENV_INIT_HPP_
 
 
-#include <boost/process/detail/config.hpp>
-#include <boost/process/detail/posix/handler.hpp>
-#include <boost/process/environment.hpp>
+#include "detail/config.hpp"
+#include "detail/posix/handler.hpp"
+#include "environment.hpp"
 
 namespace boost { namespace process { namespace detail { namespace posix {
 

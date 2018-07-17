@@ -12,16 +12,16 @@
 #define BOOST_PROCESS_PIPE_HPP
 
 #include <boost/config.hpp>
-#include <boost/process/detail/config.hpp>
+#include "detail/config.hpp"
 #include <streambuf>
 #include <istream>
 #include <ostream>
 #include <vector>
 
 #if defined(BOOST_POSIX_API)
-#include <boost/process/detail/posix/basic_pipe.hpp>
+#include "detail/posix/basic_pipe.hpp"
 #elif defined(BOOST_WINDOWS_API)
-#include <boost/process/detail/windows/basic_pipe.hpp>
+#include "detail/windows/basic_pipe.hpp"
 #endif
 
 namespace boost { namespace process {

@@ -16,13 +16,13 @@
 #ifndef BOOST_PROCESS_SEARCH_PATH_HPP
 #define BOOST_PROCESS_SEARCH_PATH_HPP
 
-#include <boost/process/detail/config.hpp>
-#include <boost/process/environment.hpp>
+#include "detail/config.hpp"
+#include "environment.hpp"
 
 #if defined(BOOST_POSIX_API)
-#include <boost/process/detail/posix/search_path.hpp>
+#include "detail/posix/search_path.hpp"
 #elif defined(BOOST_WINDOWS_API)
-#include <boost/process/detail/windows/search_path.hpp>
+#include "detail/windows/search_path.hpp"
 #endif
 
 

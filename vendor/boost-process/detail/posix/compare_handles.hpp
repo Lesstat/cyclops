@@ -7,7 +7,7 @@
 #define BOOST_PROCESS_DETAIL_POSIX_COMPARE_HANDLES_HPP_
 
 
-#include <boost/process/detail/config.hpp>
+#include "detail/config.hpp"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>

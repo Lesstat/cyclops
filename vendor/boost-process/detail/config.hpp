@@ -21,7 +21,7 @@
 #include <system_error>
 #include <boost/system/api_config.hpp>
 
-#include <boost/process/exception.hpp>
+#include "exception.hpp"
 
 #if defined(BOOST_POSIX_API)
 #include <errno.h>

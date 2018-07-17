@@ -6,13 +6,13 @@
 #ifndef BOOST_PROCESS_DETAIL_ENV_HPP_
 #define BOOST_PROCESS_DETAIL_ENV_HPP_
 
-#include <boost/process/environment.hpp>
+#include "environment.hpp"
 #include <boost/none.hpp>
 
 #if defined(BOOST_POSIX_API)
-#include <boost/process/detail/posix/env_init.hpp>
+#include "detail/posix/env_init.hpp"
 #elif defined(BOOST_WINDOWS_API)
-#include <boost/process/detail/windows/env_init.hpp>
+#include "detail/windows/env_init.hpp"
 #endif
 
 /** \file boost/process/env.hpp

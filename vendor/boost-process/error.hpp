@@ -11,14 +11,14 @@
 #ifndef BOOST_PROCESS_DETAIL_ERROR_HPP
 #define BOOST_PROCESS_DETAIL_ERROR_HPP
 
-#include <boost/process/detail/config.hpp>
-#include <boost/process/detail/traits.hpp>
+#include "detail/config.hpp"
+#include "detail/traits.hpp"
 
 
 #if defined(BOOST_POSIX_API)
-#include <boost/process/detail/posix/handler.hpp>
+#include "detail/posix/handler.hpp"
 #elif defined(BOOST_WINDOWS_API)
-#include <boost/process/detail/windows/handler.hpp>
+#include "detail/windows/handler.hpp"
 #endif
 
 #include <system_error>

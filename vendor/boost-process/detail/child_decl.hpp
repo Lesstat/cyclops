@@ -17,7 +17,7 @@
 #ifndef BOOST_PROCESS_CHILD_DECL_HPP
 #define BOOST_PROCESS_CHILD_DECL_HPP
 
-#include <boost/process/detail/config.hpp>
+#include "detail/config.hpp"
 #include <chrono>
 #include <memory>
 
@@ -25,15 +25,15 @@
 #include <atomic>
 
 #if defined(BOOST_POSIX_API)
-#include <boost/process/detail/posix/child_handle.hpp>
-#include <boost/process/detail/posix/terminate.hpp>
-#include <boost/process/detail/posix/wait_for_exit.hpp>
-#include <boost/process/detail/posix/is_running.hpp>
+#include "detail/posix/child_handle.hpp"
+#include "detail/posix/terminate.hpp"
+#include "detail/posix/wait_for_exit.hpp"
+#include "detail/posix/is_running.hpp"
 #elif defined(BOOST_WINDOWS_API)
-#include <boost/process/detail/windows/child_handle.hpp>
-#include <boost/process/detail/windows/terminate.hpp>
-#include <boost/process/detail/windows/wait_for_exit.hpp>
-#include <boost/process/detail/windows/is_running.hpp>
+#include "detail/windows/child_handle.hpp"
+#include "detail/windows/terminate.hpp"
+#include "detail/windows/wait_for_exit.hpp"
+#include "detail/windows/is_running.hpp"
 
 #endif
 namespace boost {

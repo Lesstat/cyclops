@@ -12,12 +12,12 @@
 #define BOOST_PROCESS_ASYNC_PIPE_HPP
 
 #include <boost/config.hpp>
-#include <boost/process/detail/config.hpp>
+#include "detail/config.hpp"
 
 #if defined(BOOST_POSIX_API)
-#include <boost/process/detail/posix/async_pipe.hpp>
+#include "detail/posix/async_pipe.hpp"
 #elif defined(BOOST_WINDOWS_API)
-#include <boost/process/detail/windows/async_pipe.hpp>
+#include "detail/windows/async_pipe.hpp"
 #endif
 
 namespace boost { namespace process {

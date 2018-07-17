@@ -9,10 +9,10 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include <boost/process/detail/config.hpp>
+#include "detail/config.hpp"
 #include <algorithm>
 #include <cstdlib>
-#include <boost/process/locale.hpp>
+#include "locale.hpp"
 
 
 namespace boost { namespace process { namespace detail { namespace posix {

@@ -7,8 +7,8 @@
 #ifndef BOOST_PROCESS_DETAIL_TRAITS_GROUP_HPP_
 #define BOOST_PROCESS_DETAIL_TRAITS_GROUP_HPP_
 
-#include <boost/process/detail/config.hpp>
-#include <boost/process/detail/traits/decl.hpp>
+#include "detail/config.hpp"
+#include "detail/traits/decl.hpp"
 
 
 

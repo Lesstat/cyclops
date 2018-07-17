@@ -10,7 +10,7 @@
 #ifndef BOOST_PROCESS_POSIX_SEARCH_PATH_HPP
 #define BOOST_PROCESS_POSIX_SEARCH_PATH_HPP
 
-#include <boost/process/detail/config.hpp>
+#include "detail/config.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/tokenizer.hpp>
 #include <string>

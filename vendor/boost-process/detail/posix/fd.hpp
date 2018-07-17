@@ -10,7 +10,7 @@
 #ifndef BOOST_PROCESS_DETAIL_POSIX_FD_HPP
 #define BOOST_PROCESS_DETAIL_POSIX_FD_HPP
 
-#include <boost/process/detail/posix/handler.hpp>
+#include "detail/posix/handler.hpp"
 #include <unistd.h>
 
 namespace boost { namespace process { namespace detail { namespace posix {

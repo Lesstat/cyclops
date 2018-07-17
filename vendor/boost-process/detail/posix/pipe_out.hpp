@@ -11,8 +11,8 @@
 #ifndef BOOST_PROCESS_DETAIL_POSIX_PIPE_OUT_HPP
 #define BOOST_PROCESS_DETAIL_POSIX_PIPE_OUT_HPP
 
-#include <boost/process/pipe.hpp>
-#include <boost/process/detail/posix/handler.hpp>
+#include "pipe.hpp"
+#include "detail/posix/handler.hpp"
 #include <unistd.h>
 
 namespace boost { namespace process { namespace detail { namespace posix {

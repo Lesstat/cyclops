@@ -15,8 +15,8 @@
 #include <boost/winapi/handle_info.hpp>
 #include <boost/winapi/error_codes.hpp>
 #include <boost/asio/read.hpp>
-#include <boost/process/detail/handler_base.hpp>
-#include <boost/process/detail/windows/asio_fwd.hpp>
+#include "detail/handler_base.hpp"
+#include "detail/windows/asio_fwd.hpp"
 
 #include <istream>
 #include <memory>

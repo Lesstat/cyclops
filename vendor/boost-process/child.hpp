@@ -17,12 +17,12 @@
 #ifndef BOOST_PROCESS_CHILD_HPP
 #define BOOST_PROCESS_CHILD_HPP
 
-#include <boost/process/detail/config.hpp>
-#include <boost/process/detail/child_decl.hpp>
-#include <boost/process/detail/execute_impl.hpp>
+#include "detail/config.hpp"
+#include "detail/child_decl.hpp"
+#include "detail/execute_impl.hpp"
 
 #if defined(BOOST_POSIX_API)
-#include <boost/process/posix.hpp>
+#include "posix.hpp"
 #endif
 
 namespace boost {

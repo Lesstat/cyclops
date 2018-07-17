@@ -7,11 +7,11 @@
 #ifndef BOOST_PROCESS_TRAITS_HPP_
 #define BOOST_PROCESS_TRAITS_HPP_
 
-#include <boost/process/detail/traits/decl.hpp>
-#include <boost/process/detail/traits/async.hpp>
-#include <boost/process/detail/traits/cmd_or_exe.hpp>
-#include <boost/process/detail/traits/env.hpp>
-#include <boost/process/detail/traits/error.hpp>
-#include <boost/process/detail/traits/wchar_t.hpp>
+#include "detail/traits/decl.hpp"
+#include "detail/traits/async.hpp"
+#include "detail/traits/cmd_or_exe.hpp"
+#include "detail/traits/env.hpp"
+#include "detail/traits/error.hpp"
+#include "detail/traits/wchar_t.hpp"
 
 #endif /* BOOST_PROCESS_TRAITS_HPP_ */

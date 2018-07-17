@@ -6,8 +6,8 @@
 #ifndef BOOST_PROCESS_DETAIL_POSIX_GROUP_HPP_
 #define BOOST_PROCESS_DETAIL_POSIX_GROUP_HPP_
 
-#include <boost/process/detail/config.hpp>
-#include <boost/process/detail/posix/child_handle.hpp>
+#include "detail/config.hpp"
+#include "detail/posix/child_handle.hpp"
 #include <system_error>
 #include <unistd.h>
 

@@ -17,17 +17,17 @@
 #ifndef BOOST_PROCESS_SYSTEM_HPP
 #define BOOST_PROCESS_SYSTEM_HPP
 
-#include <boost/process/detail/config.hpp>
-#include <boost/process/detail/on_exit.hpp>
-#include <boost/process/child.hpp>
-#include <boost/process/detail/async_handler.hpp>
-#include <boost/process/detail/execute_impl.hpp>
+#include "detail/config.hpp"
+#include "detail/on_exit.hpp"
+#include "child.hpp"
+#include "detail/async_handler.hpp"
+#include "detail/execute_impl.hpp"
 #include <type_traits>
 #include <mutex>
 #include <condition_variable>
 
 #if defined(BOOST_POSIX_API)
-#include <boost/process/posix.hpp>
+#include "posix.hpp"
 #endif
 
 namespace boost {

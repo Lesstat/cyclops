@@ -16,10 +16,10 @@
 #include <boost/winapi/error_codes.hpp>
 
 #include <boost/asio/write.hpp>
-#include <boost/process/detail/handler_base.hpp>
-#include <boost/process/detail/windows/async_handler.hpp>
-#include <boost/process/detail/windows/asio_fwd.hpp>
-#include <boost/process/async_pipe.hpp>
+#include "detail/handler_base.hpp"
+#include "detail/windows/async_handler.hpp"
+#include "detail/windows/asio_fwd.hpp"
+#include "async_pipe.hpp"
 #include <memory>
 #include <future>
 

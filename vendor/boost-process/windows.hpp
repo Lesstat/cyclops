@@ -5,7 +5,7 @@
 #ifndef BOOST_PROCESS_WINDOWS_HPP_
 #define BOOST_PROCESS_WINDOWS_HPP_
 
-#include <boost/process/detail/windows/show_window.hpp>
+#include "detail/windows/show_window.hpp"
 
 /** \file boost/process/windows.hpp
  *

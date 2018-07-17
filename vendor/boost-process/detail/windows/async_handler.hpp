@@ -7,7 +7,7 @@
 #ifndef BOOST_PROCESS_WINDOWS_ASYNC_HANDLER_HPP_
 #define BOOST_PROCESS_WINDOWS_ASYNC_HANDLER_HPP_
 
-#include <boost/process/detail/windows/handler.hpp>
+#include "detail/windows/handler.hpp"
 #include <type_traits>
 
 namespace boost { namespace process { namespace detail { namespace windows {

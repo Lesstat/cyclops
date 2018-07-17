@@ -10,8 +10,8 @@
 #ifndef BOOST_PROCESS_DETAIL_POSIX_WAIT_GROUP_HPP
 #define BOOST_PROCESS_DETAIL_POSIX_WAIT_GROUP_HPP
 
-#include <boost/process/detail/config.hpp>
-#include <boost/process/detail/posix/group_handle.hpp>
+#include "detail/config.hpp"
+#include "detail/posix/group_handle.hpp"
 #include <chrono>
 #include <system_error>
 #include <sys/types.h>

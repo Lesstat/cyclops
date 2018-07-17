@@ -18,7 +18,8 @@
 #ifndef CONTRACTIONLP_H
 #define CONTRACTIONLP_H
 
-#include <boost/process.hpp>
+#include "child.hpp"
+#include "io.hpp"
 
 namespace bp = boost::process;
 class ContractionLp {

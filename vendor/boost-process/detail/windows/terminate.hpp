@@ -10,7 +10,7 @@
 #ifndef BOOST_PROCESS_WINDOWS_TERMINATE_HPP
 #define BOOST_PROCESS_WINDOWS_TERMINATE_HPP
 
-#include <boost/process/detail/config.hpp>
+#include "detail/config.hpp"
 #include <system_error>
 #include <cstdlib>
 #include <boost/winapi/process.hpp>

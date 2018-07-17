@@ -11,8 +11,8 @@
 #ifndef BOOST_PROCESS_POSIX_FILE_OUT_HPP
 #define BOOST_PROCESS_POSIX_FILE_OUT_HPP
 
-#include <boost/process/detail/posix/handler.hpp>
-#include <boost/process/detail/posix/file_descriptor.hpp>
+#include "detail/posix/handler.hpp"
+#include "detail/posix/file_descriptor.hpp"
 
 #include <unistd.h>
 namespace boost { namespace process { namespace detail { namespace posix {

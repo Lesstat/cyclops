@@ -17,8 +17,8 @@
 #ifndef BOOST_PROCESS_GROUP_HPP
 #define BOOST_PROCESS_GROUP_HPP
 
-#include <boost/process/detail/config.hpp>
-#include <boost/process/child.hpp>
+#include "detail/config.hpp"
+#include "child.hpp"
 #include <chrono>
 #include <memory>
 
@@ -27,13 +27,13 @@
 
 
 #if defined(BOOST_POSIX_API)
-#include <boost/process/detail/posix/group_handle.hpp>
-#include <boost/process/detail/posix/group_ref.hpp>
-#include <boost/process/detail/posix/wait_group.hpp>
+#include "detail/posix/group_handle.hpp"
+#include "detail/posix/group_ref.hpp"
+#include "detail/posix/wait_group.hpp"
 #elif defined(BOOST_WINDOWS_API)
-#include <boost/process/detail/windows/group_handle.hpp>
-#include <boost/process/detail/windows/group_ref.hpp>
-#include <boost/process/detail/windows/wait_group.hpp>
+#include "detail/windows/group_handle.hpp"
+#include "detail/windows/group_ref.hpp"
+#include "detail/windows/wait_group.hpp"
 #endif
 
 namespace boost {

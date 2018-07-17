@@ -11,7 +11,7 @@
 #define BOOST_PROCESS_DETAIL_WINDOWS_START_DIR_HPP
 
 #include <string>
-#include <boost/process/detail/windows/handler.hpp>
+#include "detail/windows/handler.hpp"
 
 namespace boost { namespace process { namespace detail { namespace windows {
 

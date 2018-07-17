@@ -11,13 +11,13 @@
 #ifndef BOOST_PROCESS_SHELL_PATH_HPP
 #define BOOST_PROCESS_SHELL_PATH_HPP
 
-#include <boost/process/detail/config.hpp>
-#include <boost/process/detail/traits/wchar_t.hpp>
+#include "detail/config.hpp"
+#include "detail/traits/wchar_t.hpp"
 
 #if defined(BOOST_POSIX_API)
-#include <boost/process/detail/posix/shell_path.hpp>
+#include "detail/posix/shell_path.hpp"
 #elif defined(BOOST_WINDOWS_API)
-#include <boost/process/detail/windows/shell_path.hpp>
+#include "detail/windows/shell_path.hpp"
 #endif
 
 /** \file boost/process/shell.hpp

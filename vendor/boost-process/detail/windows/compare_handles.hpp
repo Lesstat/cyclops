@@ -8,7 +8,7 @@
 
 #include <boost/winapi/handles.hpp>
 #include <boost/winapi/file_management.hpp>
-#include <boost/process/detail/config.hpp>
+#include "detail/config.hpp"
 
 namespace boost { namespace process { namespace detail { namespace windows {
 

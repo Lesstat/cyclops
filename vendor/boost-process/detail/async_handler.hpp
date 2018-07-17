@@ -11,12 +11,12 @@
 #include <type_traits>
 
 #if defined(BOOST_POSIX_API)
-#include <boost/process/posix.hpp>
-#include <boost/process/detail/posix/async_handler.hpp>
-#include <boost/process/detail/posix/asio_fwd.hpp>
+#include "posix.hpp"
+#include "detail/posix/async_handler.hpp"
+#include "detail/posix/asio_fwd.hpp"
 #else
-#include <boost/process/detail/windows/async_handler.hpp>
-#include <boost/process/detail/windows/asio_fwd.hpp>
+#include "detail/windows/async_handler.hpp"
+#include "detail/windows/asio_fwd.hpp"
 #endif
 
 namespace boost {

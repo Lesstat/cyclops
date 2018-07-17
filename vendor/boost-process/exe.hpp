@@ -11,7 +11,7 @@
 #ifndef BOOST_PROCESS_EXE_HPP
 #define BOOST_PROCESS_EXE_HPP
 
-#include <boost/process/detail/basic_cmd.hpp>
+#include "detail/basic_cmd.hpp"
 
 /** \file boost/process/exe.hpp
  *

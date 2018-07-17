@@ -6,8 +6,8 @@
 #ifndef BOOST_PROCESS_WINDOWS_IO_SERVICE_REF_HPP_
 #define BOOST_PROCESS_WINDOWS_IO_SERVICE_REF_HPP_
 
-#include <boost/process/detail/handler_base.hpp>
-#include <boost/process/detail/windows/async_handler.hpp>
+#include "detail/handler_base.hpp"
+#include "detail/windows/async_handler.hpp"
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/windows/object_handle.hpp>
 #include <boost/winapi/process.hpp>

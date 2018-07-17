@@ -9,7 +9,7 @@
 #define BOOST_PROCESS_DETAIL_POSIX_USE_VFORK_HPP_
 
 
-#include <boost/process/detail/posix/handler.hpp>
+#include "detail/posix/handler.hpp"
 #include <boost/fusion/sequence/intrinsic/has_key.hpp>
 #include <boost/fusion/container/set/convert.hpp>
 

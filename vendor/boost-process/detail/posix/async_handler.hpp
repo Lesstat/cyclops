@@ -7,7 +7,7 @@
 #ifndef BOOST_PROCESS_POSIX_ASYNC_HANDLER_HPP_
 #define BOOST_PROCESS_POSIX_ASYNC_HANDLER_HPP_
 
-#include <boost/process/detail/posix/handler.hpp>
+#include "detail/posix/handler.hpp"
 #include <type_traits>
 
 namespace boost { namespace process { namespace detail { namespace posix {

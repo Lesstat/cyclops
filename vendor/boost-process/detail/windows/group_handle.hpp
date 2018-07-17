@@ -6,10 +6,10 @@
 #ifndef BOOST_PROCESS_DETAIL_WINDOWS_GROUP_HPP_
 #define BOOST_PROCESS_DETAIL_WINDOWS_GROUP_HPP_
 
-#include <boost/process/detail/windows/handler.hpp>
+#include "detail/windows/handler.hpp"
 #include <boost/winapi/jobs.hpp>
-#include <boost/process/detail/windows/child_handle.hpp>
-#include <boost/process/detail/windows/job_workaround.hpp>
+#include "detail/windows/child_handle.hpp"
+#include "detail/windows/job_workaround.hpp"
 #include <system_error>
 
 namespace boost { namespace process { namespace detail { namespace windows {

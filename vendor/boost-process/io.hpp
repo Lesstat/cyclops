@@ -10,31 +10,31 @@
 #include <cstdio>
 #include <functional>
 #include <utility>
-#include <boost/process/detail/config.hpp>
-#include <boost/process/pipe.hpp>
+#include "detail/config.hpp"
+#include "pipe.hpp"
 
 #include <future>
 
 #if defined(BOOST_POSIX_API)
-#include <boost/process/detail/posix/asio_fwd.hpp>
-#include <boost/process/detail/posix/close_in.hpp>
-#include <boost/process/detail/posix/close_out.hpp>
-#include <boost/process/detail/posix/null_in.hpp>
-#include <boost/process/detail/posix/null_out.hpp>
-#include <boost/process/detail/posix/file_in.hpp>
-#include <boost/process/detail/posix/file_out.hpp>
-#include <boost/process/detail/posix/pipe_in.hpp>
-#include <boost/process/detail/posix/pipe_out.hpp>
+#include "detail/posix/asio_fwd.hpp"
+#include "detail/posix/close_in.hpp"
+#include "detail/posix/close_out.hpp"
+#include "detail/posix/null_in.hpp"
+#include "detail/posix/null_out.hpp"
+#include "detail/posix/file_in.hpp"
+#include "detail/posix/file_out.hpp"
+#include "detail/posix/pipe_in.hpp"
+#include "detail/posix/pipe_out.hpp"
 #elif defined(BOOST_WINDOWS_API)
-#include <boost/process/detail/windows/asio_fwd.hpp>
-#include <boost/process/detail/windows/close_in.hpp>
-#include <boost/process/detail/windows/close_out.hpp>
-#include <boost/process/detail/windows/null_in.hpp>
-#include <boost/process/detail/windows/null_out.hpp>
-#include <boost/process/detail/windows/file_in.hpp>
-#include <boost/process/detail/windows/file_out.hpp>
-#include <boost/process/detail/windows/pipe_in.hpp>
-#include <boost/process/detail/windows/pipe_out.hpp>
+#include "detail/windows/asio_fwd.hpp"
+#include "detail/windows/close_in.hpp"
+#include "detail/windows/close_out.hpp"
+#include "detail/windows/null_in.hpp"
+#include "detail/windows/null_out.hpp"
+#include "detail/windows/file_in.hpp"
+#include "detail/windows/file_out.hpp"
+#include "detail/windows/pipe_in.hpp"
+#include "detail/windows/pipe_out.hpp"
 #endif
 
 /** \file boost/process/io.hpp

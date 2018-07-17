@@ -7,7 +7,7 @@
 #define BOOST_PROCESS_DETAIL_TRAITS_ENV_HPP_
 
 
-#include <boost/process/detail/traits/decl.hpp>
+#include "detail/traits/decl.hpp"
 
 
 namespace boost { namespace process {

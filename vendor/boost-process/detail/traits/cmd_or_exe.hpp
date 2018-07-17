@@ -12,7 +12,7 @@
 #include <type_traits>
 #include <initializer_list>
 #include <boost/filesystem/path.hpp>
-#include <boost/process/detail/traits/decl.hpp>
+#include "detail/traits/decl.hpp"
 namespace boost { namespace process { namespace detail {
 
 template<typename Char>

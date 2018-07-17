@@ -10,8 +10,8 @@
 #ifndef BOOST_PROCESS_DETAIL_POSIX_TERMINATE_HPP
 #define BOOST_PROCESS_DETAIL_POSIX_TERMINATE_HPP
 
-#include <boost/process/detail/config.hpp>
-#include <boost/process/detail/posix/child_handle.hpp>
+#include "detail/config.hpp"
+#include "detail/posix/child_handle.hpp"
 #include <system_error>
 #include <signal.h>
 #include <sys/wait.h>

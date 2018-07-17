@@ -10,7 +10,7 @@
 #ifndef BOOST_PROCESS_WINDOWS_SEARCH_PATH_HPP
 #define BOOST_PROCESS_WINDOWS_SEARCH_PATH_HPP
 
-#include <boost/process/detail/config.hpp>
+#include "detail/config.hpp"
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/system/error_code.hpp>
@@ -20,7 +20,7 @@
 #include <atomic>
 #include <cstdlib>
 #include <boost/winapi/shell.hpp>
-#include <boost/process/environment.hpp>
+#include "environment.hpp"
 
 namespace boost { namespace process { namespace detail { namespace windows {
 

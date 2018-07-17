@@ -14,7 +14,7 @@
 #include <boost/winapi/get_last_error.hpp>
 #include <boost/winapi/access_rights.hpp>
 #include <boost/winapi/process.hpp>
-#include <boost/process/detail/windows/compare_handles.hpp>
+#include "detail/windows/compare_handles.hpp"
 #include <system_error>
 #include <string>
 

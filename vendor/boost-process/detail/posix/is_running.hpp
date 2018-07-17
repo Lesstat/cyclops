@@ -6,8 +6,8 @@
 #ifndef BOOST_PROCESS_DETAIL_POSIX_IS_RUNNING_HPP
 #define BOOST_PROCESS_DETAIL_POSIX_IS_RUNNING_HPP
 
-#include <boost/process/detail/config.hpp>
-#include <boost/process/detail/posix/child_handle.hpp>
+#include "detail/config.hpp"
+#include "detail/posix/child_handle.hpp"
 #include <system_error>
 #include <sys/wait.h>
 

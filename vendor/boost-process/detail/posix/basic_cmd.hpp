@@ -7,10 +7,10 @@
 #ifndef BOOST_PROCESS_DETAIL_POSIX_BASIC_CMD_HPP_
 #define BOOST_PROCESS_DETAIL_POSIX_BASIC_CMD_HPP_
 
-#include <boost/process/detail/posix/handler.hpp>
-#include <boost/process/detail/posix/cmd.hpp>
+#include "detail/posix/handler.hpp"
+#include "detail/posix/cmd.hpp"
 #include <boost/algorithm/string/replace.hpp>
-#include <boost/process/shell.hpp>
+#include "shell.hpp"
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <string>

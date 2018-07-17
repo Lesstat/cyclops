@@ -30,7 +30,7 @@ namespace boost {
  */
 
 
-#include <boost/process/detail/basic_cmd.hpp>
+#include "detail/basic_cmd.hpp"
 #include <iterator>
 
 namespace boost { namespace process { namespace detail {

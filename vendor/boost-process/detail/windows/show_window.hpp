@@ -13,7 +13,7 @@
 
 #include <boost/winapi/process.hpp>
 #include <boost/winapi/show_window.hpp>
-#include <boost/process/detail/handler_base.hpp>
+#include "detail/handler_base.hpp"
 
 
 namespace boost { namespace process { namespace detail { namespace windows {

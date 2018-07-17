@@ -7,14 +7,14 @@
 #ifndef BOOST_PROCESS_DETAIL_TRAITS_DECL_HPP_
 #define BOOST_PROCESS_DETAIL_TRAITS_DECL_HPP_
 
-#include <boost/process/detail/config.hpp>
+#include "detail/config.hpp"
 #include <boost/none.hpp>
 #include <type_traits>
 
 #if defined(BOOST_POSIX_API)
-#include <boost/process/detail/posix/handler.hpp>
+#include "detail/posix/handler.hpp"
 #elif defined(BOOST_WINDOWS_API)
-#include <boost/process/detail/windows/handler.hpp>
+#include "detail/windows/handler.hpp"
 #endif
 
 

@@ -7,16 +7,16 @@
 #ifndef BOOST_PROCESS_ENVIRONMENT_HPP_
 #define BOOST_PROCESS_ENVIRONMENT_HPP_
 
-#include <boost/process/detail/config.hpp>
+#include "detail/config.hpp"
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/filesystem/path.hpp>
 
 #if defined(BOOST_POSIX_API)
-#include <boost/process/detail/posix/environment.hpp>
+#include "detail/posix/environment.hpp"
 #elif defined(BOOST_WINDOWS_API)
-#include <boost/process/detail/windows/environment.hpp>
+#include "detail/windows/environment.hpp"
 #endif
 
 namespace boost { namespace process {

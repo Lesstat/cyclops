@@ -11,10 +11,10 @@
 #define BOOST_PROCESS_DETAIL_POSIX_ASYNC_OUT_HPP
 
 
-#include <boost/process/detail/posix/handler.hpp>
+#include "detail/posix/handler.hpp"
 #include <boost/asio/posix/stream_descriptor.hpp>
 #include <boost/asio/read.hpp>
-#include <boost/process/async_pipe.hpp>
+#include "async_pipe.hpp"
 #include <istream>
 #include <memory>
 #include <exception>

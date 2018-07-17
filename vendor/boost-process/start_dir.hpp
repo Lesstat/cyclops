@@ -10,17 +10,17 @@
 #ifndef BOOST_PROCESS_START_IN_DIR_HPP
 #define BOOST_PROCESS_START_IN_DIR_HPP
 
-#include <boost/process/detail/config.hpp>
-#include <boost/process/detail/handler.hpp>
-#include <boost/process/locale.hpp>
+#include "detail/config.hpp"
+#include "detail/handler.hpp"
+#include "locale.hpp"
 
 #if defined (BOOST_POSIX_API)
-#include <boost/process/detail/posix/start_dir.hpp>
+#include "detail/posix/start_dir.hpp"
 #elif defined (BOOST_WINDOWS_API)
-#include <boost/process/detail/windows/start_dir.hpp>
+#include "detail/windows/start_dir.hpp"
 #endif
 
-#include <boost/process/detail/config.hpp>
+#include "detail/config.hpp"
 #include <string>
 #include <boost/filesystem/path.hpp>
 

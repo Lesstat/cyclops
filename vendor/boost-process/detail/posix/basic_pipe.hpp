@@ -12,7 +12,7 @@
 
 
 #include <boost/filesystem.hpp>
-#include <boost/process/detail/posix/compare_handles.hpp>
+#include "detail/posix/compare_handles.hpp"
 #include <system_error>
 #include <array>
 #include <unistd.h>

@@ -11,8 +11,8 @@
 #ifndef BOOST_PROCESS_DETAIL_INITIALIZERS_THROW_ON_ERROR_HPP
 #define BOOST_PROCESS_DETAIL_INITIALIZERS_THROW_ON_ERROR_HPP
 
-#include <boost/process/detail/config.hpp>
-#include <boost/process/detail/handler_base.hpp>
+#include "detail/config.hpp"
+#include "detail/handler_base.hpp"
 
 namespace boost { namespace process { namespace detail {
 

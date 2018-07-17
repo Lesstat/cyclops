@@ -6,9 +6,9 @@
 #ifndef BOOST_PROCESS_DETAIL_POSIX_GROUP_REF_HPP_
 #define BOOST_PROCESS_DETAIL_POSIX_GROUP_REF_HPP_
 
-#include <boost/process/detail/config.hpp>
-#include <boost/process/detail/posix/group_handle.hpp>
-#include <boost/process/detail/posix/handler.hpp>
+#include "detail/config.hpp"
+#include "detail/posix/group_handle.hpp"
+#include "detail/posix/handler.hpp"
 #include <unistd.h>
 
 

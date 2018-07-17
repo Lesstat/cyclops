@@ -10,7 +10,7 @@
 #ifndef BOOST_PROCESS_DETAIL_POSIX_START_DIR_HPP
 #define BOOST_PROCESS_DETAIL_POSIX_START_DIR_HPP
 
-#include <boost/process/detail/posix/handler.hpp>
+#include "detail/posix/handler.hpp"
 #include <string>
 #include <unistd.h>
 

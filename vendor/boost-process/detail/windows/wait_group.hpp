@@ -6,7 +6,7 @@
 #ifndef BOOST_PROCESS_DETAIL_WINDOWS_WAIT_GROUP_HPP_
 #define BOOST_PROCESS_DETAIL_WINDOWS_WAIT_GROUP_HPP_
 
-#include <boost/process/detail/config.hpp>
+#include "detail/config.hpp"
 #include <boost/winapi/jobs.hpp>
 #include <boost/winapi/wait.hpp>
 #include <chrono>

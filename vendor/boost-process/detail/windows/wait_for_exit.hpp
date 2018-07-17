@@ -11,11 +11,11 @@
 #ifndef BOOST_PROCESS_WINDOWS_WAIT_FOR_EXIT_HPP
 #define BOOST_PROCESS_WINDOWS_WAIT_FOR_EXIT_HPP
 
-#include <boost/process/detail/config.hpp>
+#include "detail/config.hpp"
 #include <system_error>
 #include <boost/winapi/synchronization.hpp>
 #include <boost/winapi/process.hpp>
-#include <boost/process/detail/windows/child_handle.hpp>
+#include "detail/windows/child_handle.hpp"
 #include <chrono>
 
 namespace boost { namespace process { namespace detail { namespace windows {

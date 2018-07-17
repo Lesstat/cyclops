@@ -11,9 +11,9 @@
 #include <boost/winapi/process.hpp>
 
 
-#include <boost/process/detail/config.hpp>
-#include <boost/process/detail/handler_base.hpp>
-#include <boost/process/environment.hpp>
+#include "detail/config.hpp"
+#include "detail/handler_base.hpp"
+#include "environment.hpp"
 
 namespace boost { namespace process { namespace detail { namespace windows {
 

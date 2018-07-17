@@ -6,10 +6,10 @@
 #ifndef BOOST_PROCESS_DETAIL_WINDOWS_GROUP_REF_HPP_
 #define BOOST_PROCESS_DETAIL_WINDOWS_GROUP_REF_HPP_
 
-#include <boost/process/detail/config.hpp>
-#include <boost/process/detail/windows/group_handle.hpp>
+#include "detail/config.hpp"
+#include "detail/windows/group_handle.hpp"
 #include <boost/winapi/process.hpp>
-#include <boost/process/detail/windows/handler.hpp>
+#include "detail/windows/handler.hpp"
 
 namespace boost { namespace process {
 

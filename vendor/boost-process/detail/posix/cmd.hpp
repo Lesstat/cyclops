@@ -7,8 +7,8 @@
 #ifndef BOOST_PROCESS_DETAIL_POSIX_CMD_HPP_
 #define BOOST_PROCESS_DETAIL_POSIX_CMD_HPP_
 
-#include <boost/process/detail/config.hpp>
-#include <boost/process/detail/posix/handler.hpp>
+#include "detail/config.hpp"
+#include "detail/posix/handler.hpp"
 #include <string>
 #include <vector>
 

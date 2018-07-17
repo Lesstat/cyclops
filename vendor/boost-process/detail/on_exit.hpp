@@ -6,12 +6,12 @@
 #ifndef BOOST_PROCESS_DETAIL_ON_EXIT_HPP_
 #define BOOST_PROCESS_DETAIL_ON_EXIT_HPP_
 
-#include <boost/process/detail/config.hpp>
+#include "detail/config.hpp"
 
 #if defined(BOOST_POSIX_API)
-#include <boost/process/detail/posix/on_exit.hpp>
+#include "detail/posix/on_exit.hpp"
 #elif defined(BOOST_WINDOWS_API)
-#include <boost/process/detail/windows/on_exit.hpp>
+#include "detail/windows/on_exit.hpp"
 #endif
 
 #include <future>

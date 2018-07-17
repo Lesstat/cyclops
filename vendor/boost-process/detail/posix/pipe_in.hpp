@@ -10,8 +10,8 @@
 #ifndef BOOST_PROCESS_POSIX_PIPE_IN_HPP
 #define BOOST_PROCESS_POSIX_PIPE_IN_HPP
 
-#include <boost/process/pipe.hpp>
-#include <boost/process/detail/posix/handler.hpp>
+#include "pipe.hpp"
+#include "detail/posix/handler.hpp"
 #include <unistd.h>
 
 

@@ -11,7 +11,7 @@
 #ifndef BOOST_PROCESS_POSIX_SIGNAL_HPP
 #define BOOST_PROCESS_POSIX_SIGNAL_HPP
 
-#include <boost/process/detail/posix/handler.hpp>
+#include "detail/posix/handler.hpp"
 #include <signal.h>
 
 namespace boost { namespace process { namespace detail { namespace posix {

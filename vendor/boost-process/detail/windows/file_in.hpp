@@ -12,8 +12,8 @@
 
 #include <boost/winapi/process.hpp>
 #include <boost/winapi/handles.hpp>
-#include <boost/process/detail/handler_base.hpp>
-#include <boost/process/detail/windows/file_descriptor.hpp>
+#include "detail/handler_base.hpp"
+#include "detail/windows/file_descriptor.hpp"
 #include <io.h>
 
 namespace boost { namespace process { namespace detail { namespace windows {

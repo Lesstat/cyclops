@@ -17,17 +17,17 @@
 #ifndef BOOST_PROCESS_EXECUTE_HPP
 #define BOOST_PROCESS_EXECUTE_HPP
 
-#include <boost/process/detail/config.hpp>
-#include <boost/process/detail/traits.hpp>
+#include "detail/config.hpp"
+#include "detail/traits.hpp"
 
 #if defined(BOOST_POSIX_API)
-#include <boost/process/detail/posix/executor.hpp>
+#include "detail/posix/executor.hpp"
 #elif defined(BOOST_WINDOWS_API)
-#include <boost/process/detail/windows/executor.hpp>
+#include "detail/windows/executor.hpp"
 #endif
 
-#include <boost/process/detail/basic_cmd.hpp>
-#include <boost/process/detail/handler.hpp>
+#include "detail/basic_cmd.hpp"
+#include "detail/handler.hpp"
 
 #include <boost/fusion/view.hpp>
 #include <boost/fusion/container.hpp>

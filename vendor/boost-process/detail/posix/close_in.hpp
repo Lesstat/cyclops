@@ -11,7 +11,7 @@
 #define BOOST_PROCESS_WINDOWS_INITIALIZERS_CLOSE_IN_HPP
 
 
-#include <boost/process/detail/posix/handler.hpp>
+#include "detail/posix/handler.hpp"
 
 namespace boost { namespace process { namespace detail { namespace posix {
 

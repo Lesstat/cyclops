@@ -23,6 +23,10 @@ find_package (Threads)
 
 find_package(glpk REQUIRED) 
 
+
+add_library(process INTERFACE)
+target_include_directories(process INTERFACE vendor/boost-process)
+
 # Actual Implementation of project in static library
 file(GLOB lib_src src/cr_lib/*.cpp )
 add_library(cr_lib STATIC ${lib_src})
@@ -33,6 +37,7 @@ target_link_libraries(cr_lib -lCoinUtils)
 target_link_libraries(cr_lib ${Boost_LIBRARIES})
 target_link_libraries(cr_lib -lm)
 target_link_libraries(cr_lib ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(cr_lib process)
 
 add_subdirectory(vendor/Simple-Web-Server)
 

@@ -7,10 +7,10 @@
 #define BOOST_PROCESS_LOCALE_HPP_
 
 #include <system_error>
-#include <boost/process/detail/config.hpp>
+#include "detail/config.hpp"
 
 #if defined(BOOST_WINDOWS_API)
-#include <boost/process/detail/windows/locale.hpp>
+#include "detail/windows/locale.hpp"
 # elif defined(macintosh) || defined(__APPLE__) || defined(__APPLE_CC__) \
 || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__HAIKU__)
 #include <codecvt>

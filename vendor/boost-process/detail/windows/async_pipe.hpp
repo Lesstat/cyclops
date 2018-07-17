@@ -13,7 +13,7 @@
 #include <boost/winapi/get_last_error.hpp>
 #include <boost/winapi/access_rights.hpp>
 #include <boost/winapi/process.hpp>
-#include <boost/process/detail/windows/basic_pipe.hpp>
+#include "detail/windows/basic_pipe.hpp"
 #include <boost/asio/windows/stream_handle.hpp>
 #include <atomic>
 #include <system_error>

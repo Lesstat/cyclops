@@ -6,8 +6,8 @@
 #ifndef BOOST_PROCESS_POSIX_IO_CONTEXT_REF_HPP_
 #define BOOST_PROCESS_POSIX_IO_CONTEXT_REF_HPP_
 
-#include <boost/process/detail/posix/handler.hpp>
-#include <boost/process/detail/posix/async_handler.hpp>
+#include "detail/posix/handler.hpp"
+#include "detail/posix/async_handler.hpp"
 #include <boost/asio/io_context.hpp>
 
 #include <boost/fusion/algorithm/iteration/for_each.hpp>
@@ -17,8 +17,8 @@
 #include <boost/fusion/container/vector/convert.hpp>
 
 
-#include <boost/process/detail/posix/sigchld_service.hpp>
-#include <boost/process/detail/posix/is_running.hpp>
+#include "detail/posix/sigchld_service.hpp"
+#include "detail/posix/is_running.hpp"
 
 #include <functional>
 #include <type_traits>

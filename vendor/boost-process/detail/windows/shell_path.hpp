@@ -10,7 +10,7 @@
 #ifndef BOOST_PROCESS_WINDOWS_SHELL_PATH_HPP
 #define BOOST_PROCESS_WINDOWS_SHELL_PATH_HPP
 
-#include <boost/process/detail/config.hpp>
+#include "detail/config.hpp"
 #include <system_error>
 #include <boost/filesystem/path.hpp>
 #include <boost/winapi/basic_types.hpp>

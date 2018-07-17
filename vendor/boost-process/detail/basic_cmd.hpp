@@ -7,21 +7,21 @@
 #ifndef BOOST_PROCESS_DETAIL_BASIC_CMD_HPP_
 #define BOOST_PROCESS_DETAIL_BASIC_CMD_HPP_
 
-#include <boost/process/detail/config.hpp>
+#include "detail/config.hpp"
 
-#include <boost/process/detail/handler_base.hpp>
-#include <boost/process/detail/traits/cmd_or_exe.hpp>
-#include <boost/process/detail/traits/wchar_t.hpp>
+#include "detail/handler_base.hpp"
+#include "detail/traits/cmd_or_exe.hpp"
+#include "detail/traits/wchar_t.hpp"
 
 #if defined( BOOST_WINDOWS_API )
-#include <boost/process/detail/windows/basic_cmd.hpp>
-#include <boost/process/detail/windows/cmd.hpp>
+#include "detail/windows/basic_cmd.hpp"
+#include "detail/windows/cmd.hpp"
 #elif defined( BOOST_POSIX_API )
-#include <boost/process/detail/posix/basic_cmd.hpp>
-#include <boost/process/detail/posix/cmd.hpp>
+#include "detail/posix/basic_cmd.hpp"
+#include "detail/posix/cmd.hpp"
 #endif
 
-#include <boost/process/shell.hpp>
+#include "shell.hpp"
 
 #include <iterator>
 

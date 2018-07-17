@@ -7,7 +7,7 @@
 #define BOOST_PROCESS_DETAIL_POSIX_ASYNC_PIPE_HPP_
 
 
-#include <boost/process/detail/posix/basic_pipe.hpp>
+#include "detail/posix/basic_pipe.hpp"
 #include <boost/asio/posix/stream_descriptor.hpp>
 #include <system_error>
 #include <string>

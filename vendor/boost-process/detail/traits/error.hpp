@@ -7,9 +7,9 @@
 #ifndef BOOST_PROCESS_DETAIL_TRAITS_ERROR_HPP_
 #define BOOST_PROCESS_DETAIL_TRAITS_ERROR_HPP_
 
-#include <boost/process/detail/config.hpp>
+#include "detail/config.hpp"
 #include <system_error>
-#include <boost/process/detail/traits/decl.hpp>
+#include "detail/traits/decl.hpp"
 
 
 

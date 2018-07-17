@@ -29,8 +29,8 @@ namespace boost {
 #ifndef BOOST_PROCESS_ASYNC_HPP_
 #define BOOST_PROCESS_ASYNC_HPP_
 
-#include <boost/process/detail/traits.hpp>
-#include <boost/process/detail/on_exit.hpp>
+#include "detail/traits.hpp"
+#include "detail/on_exit.hpp"
 
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/streambuf.hpp>
@@ -39,16 +39,16 @@ namespace boost {
 #include <boost/fusion/iterator/deref.hpp>
 
 #if defined(BOOST_POSIX_API)
-#include <boost/process/detail/posix/io_context_ref.hpp>
-#include <boost/process/detail/posix/async_in.hpp>
-#include <boost/process/detail/posix/async_out.hpp>
-#include <boost/process/detail/posix/on_exit.hpp>
+#include "detail/posix/io_context_ref.hpp"
+#include "detail/posix/async_in.hpp"
+#include "detail/posix/async_out.hpp"
+#include "detail/posix/on_exit.hpp"
 
 #elif defined(BOOST_WINDOWS_API)
-#include <boost/process/detail/windows/io_context_ref.hpp>
-#include <boost/process/detail/windows/async_in.hpp>
-#include <boost/process/detail/windows/async_out.hpp>
-#include <boost/process/detail/windows/on_exit.hpp>
+#include "detail/windows/io_context_ref.hpp"
+#include "detail/windows/async_in.hpp"
+#include "detail/windows/async_out.hpp"
+#include "detail/windows/on_exit.hpp"
 #endif
 
 namespace boost { namespace process { namespace detail {

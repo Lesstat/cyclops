@@ -6,9 +6,9 @@
 #ifndef BOOST_PROCESS_POSIX_ON_EXIT_HPP_
 #define BOOST_PROCESS_POSIX_ON_EXIT_HPP_
 
-#include <boost/process/detail/config.hpp>
-#include <boost/process/detail/handler_base.hpp>
-#include <boost/process/detail/posix/async_handler.hpp>
+#include "detail/config.hpp"
+#include "detail/handler_base.hpp"
+#include "detail/posix/async_handler.hpp"
 #include <system_error>
 #include <functional>
 
