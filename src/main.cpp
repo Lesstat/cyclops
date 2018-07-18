@@ -314,7 +314,10 @@ int testGraph(Graph& g)
   size_t route = 0;
   size_t noRoute = 0;
 
-  for (int i = 0; i < 1000; ++i) {
+  size_t dTime = 0;
+  size_t nTime = 0;
+
+  for (int i = 0; i < 200; ++i) {
     NodePos from{ dist(rd) };
     NodePos to{ dist(rd) };
 
@@ -329,6 +332,8 @@ int testGraph(Graph& g)
       auto chTime = std::chrono::duration_cast<ms>(dEnd - dStart).count();
       std::cout << "ND/CH: " << normalTime << "/" << chTime << " = "
                 << (chTime > 0 ? normalTime / chTime : 999999999999999) << '\n';
+      dTime += chTime;
+      nTime += normalTime;
       ++route;
       if (std::abs(dRoute->costs * c - nRoute->costs * c) > 0.1) {
         std::cout << '\n' << "cost differ in route from " << from << " to " << to << '\n';
@@ -459,6 +464,7 @@ int testGraph(Graph& g)
   std::cout << '\n';
   std::cout << "Compared " << route << " routes" << '\n';
   std::cout << "Did not find a route in " << noRoute << " cases" << '\n';
+  std::cout << "average speed up is " << static_cast<double>(nTime) / dTime << '\n';
   return 0;
 }
 
