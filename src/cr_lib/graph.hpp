@@ -302,6 +302,8 @@ class Graph {
     for (const auto& e : inEdges) {
       edges.push_back(Edge::getEdge(e.id));
     }
+    std::sort(edges.begin(), edges.end(),
+        [](const auto& left, const auto& right) { return left.getId() < right.getId(); });
     ar& edges;
   }
 

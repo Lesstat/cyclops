@@ -99,7 +99,11 @@ double HalfEdge::costByConfiguration(const Config& conf) const { return cost * c
 void Edge::administerEdges(std::vector<Edge>& edges)
 {
   for (auto& edge : edges) {
-    edge.setId(EdgeId{ Edge::edges.size() });
+    if (edge.getId() == 0) {
+      edge.setId(EdgeId{ Edge::edges.size() });
+    } else if (edge.getId() != Edge::edges.size()) {
+      std::cerr << "Edge ids dont align" << '\n';
+    }
     Edge::edges.emplace_back(edge);
   }
 }
