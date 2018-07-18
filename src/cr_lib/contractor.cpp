@@ -247,11 +247,16 @@ class ContractingThread {
 
         if (!warm) {
           warm = true;
-          if (testConfig(Config{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } })
-              || testConfig(
-                     Config{ LengthConfig{ 0 }, HeightConfig{ 1 }, UnsuitabilityConfig{ 0 } })
-              || testConfig(
-                     Config{ LengthConfig{ 0 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 1 } })) {
+          bool finished = false;
+          for (size_t i = 0; i < Cost::dim; ++i) {
+            std::vector<double> values(Cost::dim, 0);
+            values[i] = 1;
+            if (testConfig(values)) {
+              finished = true;
+              break;
+            }
+          }
+          if (finished) {
             continue;
           }
         }
@@ -270,12 +275,6 @@ class ContractingThread {
           }
           dedupConstraints();
 
-          // lp.colBound(0, 1, 0);
-          // lp.colBound(1, 1, 0);
-          // lp.colBound(2, 1, 0);
-          // lp.objective({ shortcutCost.values[0], shortcutCost.values[1], shortcutCost.values[2]
-          // }); lp.addConstraint({ 1.0, 1.0, 1.0 }, 1.0, 1.0);
-
           for (auto& c : constraints) {
             addConstraint(c);
           }
@@ -287,8 +286,7 @@ class ContractingThread {
           }
           auto values = lp.variableValues();
 
-          Config newConfig{ LengthConfig{ values[0] }, HeightConfig{ values[1] },
-            UnsuitabilityConfig{ values[2] } };
+          Config newConfig{ values };
           if (newConfig == config) {
             sameCount++;
 

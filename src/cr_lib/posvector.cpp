@@ -65,9 +65,8 @@ void PosVector::checkSizes(const size_t& otherSize) const
 
 PosVector::operator Config() const
 {
-  checkSizes(3);
-  return Config(
-      LengthConfig{ values[0] }, HeightConfig{ values[1] }, UnsuitabilityConfig{ values[2] });
+  checkSizes(Cost::dim);
+  return Config(values);
 }
 
 double PosVector::distance(const PosVector& other) const
