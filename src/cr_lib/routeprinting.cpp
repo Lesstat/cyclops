@@ -30,12 +30,15 @@ void printEdge(std::ofstream& dotFile, const HalfEdge& edge, const std::set<Edge
   std::string color;
   bool partOfShortcut = route2Edges.count(edge.id) > 0;
   bool partOfRoute = route1Edges.count(edge.id) > 0;
+  bool isShortcut = Edge::getEdge(edge.id).getEdgeA().has_value();
   if (partOfRoute && partOfShortcut) {
     color = "green";
   } else if (partOfShortcut) {
     color = "blue";
   } else if (partOfRoute) {
     color = "yellow";
+  } else if (isShortcut) {
+    color = "purple";
   } else {
     color = "black";
   }
@@ -94,13 +97,13 @@ void printRoutes(std::ofstream& dotFile, const Graph& graph, const RouteWithCoun
         printedNodes.insert(edge.end);
         printEdge(dotFile, edge, route1Edges, route2Edges, config, graph);
       }
-      for (auto& edge2 : graph.getOutgoingEdgesOf(edge.end)) {
-        if (printedEdges.count(edge2.id) == 0) {
-          printedEdges.insert(edge2.id);
-          printedNodes.insert(edge2.end);
-          printEdge(dotFile, edge2, route1Edges, route2Edges, config, graph);
-        }
-      }
+      // for (auto& edge2 : graph.getOutgoingEdgesOf(edge.end)) {
+      //   if (printedEdges.count(edge2.id) == 0) {
+      //     printedEdges.insert(edge2.id);
+      //     printedNodes.insert(edge2.end);
+      //     printEdge(dotFile, edge2, route1Edges, route2Edges, config, graph);
+      //   }
+      // }
     }
   }
 
@@ -124,13 +127,13 @@ void printRoutes(std::ofstream& dotFile, const Graph& graph, const RouteWithCoun
         printedNodes.insert(edge.end);
         printEdge(dotFile, edge, route1Edges, route2Edges, config, graph);
       }
-      for (auto& edge2 : graph.getOutgoingEdgesOf(edge.end)) {
-        if (printedEdges.count(edge2.id) == 0) {
-          printedEdges.insert(edge2.id);
-          printedNodes.insert(edge2.end);
-          printEdge(dotFile, edge2, route1Edges, route2Edges, config, graph);
-        }
-      }
+      // for (auto& edge2 : graph.getOutgoingEdgesOf(edge.end)) {
+      //   if (printedEdges.count(edge2.id) == 0) {
+      //     printedEdges.insert(edge2.id);
+      //     printedNodes.insert(edge2.end);
+      //     printEdge(dotFile, edge2, route1Edges, route2Edges, config, graph);
+      //   }
+      // }
     }
   }
 
