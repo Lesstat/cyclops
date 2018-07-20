@@ -90,6 +90,17 @@ struct Cost {
     return newValues;
   };
 
+  bool operator==(const Cost& c) const
+  {
+    for (size_t i = 0; i < Cost::dim; ++i) {
+      if (std::abs(values[i] - c.values[i]) >= 0.0001) {
+        return false;
+      }
+    }
+    return true;
+  };
+  bool operator!=(const Cost& c) const { return !(*this == c); }
+
   private:
   friend class boost::serialization::access;
   template <class Archive> void serialize(Archive& ar, const unsigned int /*version*/)

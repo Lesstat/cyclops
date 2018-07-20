@@ -180,7 +180,9 @@ std::optional<RouteWithCount> RouteIterator::next()
     }
     for (const auto& edge : dijkstra->previousEdge[hTo]) {
       const auto& source = edge.begin;
-      if (std::find(hRoute.edges.begin(), hRoute.edges.end(), edge.id) != hRoute.edges.end()) {
+      if (std::find_if(hRoute.edges.begin(), hRoute.edges.end(),
+              [&source](const auto& e) { return source == Edge::getEdge(e).sourcePos(); })
+          != hRoute.edges.end()) {
         continue;
       }
       RouteWithCount newRoute = hRoute;

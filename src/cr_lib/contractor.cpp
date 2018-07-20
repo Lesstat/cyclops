@@ -94,9 +94,8 @@ std::pair<bool, std::optional<RouteWithCount>> checkShortestPath(
 
   auto shortcutCost = startEdge.cost + destEdge.cost;
   auto route = foundRoute.value();
-  bool isShortest = route.edges.size() == 2
-      && Edge::getEdge(route.edges[0]).destPos() == destEdge.begin
-      && route.costs * conf >= shortcutCost * conf - 0.0001;
+  bool isShortest
+      = route.costs == shortcutCost; // route.costs * conf >= shortcutCost * conf - 0.0001;
   return std::make_pair(isShortest, foundRoute);
 }
 
@@ -133,17 +132,17 @@ class ContractingThread {
   bool isDominated(const Cost& costs)
   {
     bool dominated = true;
-    bool allSame = true;
+    bool someDifferent = false;
     for (size_t i = 0; i <= Cost::dim; i++) {
       if (costs.values[i] > shortcutCost.values[i]) {
         dominated = false;
-        allSame = false;
+        someDifferent = true;
         break;
       }
       if (costs.values[i] != shortcutCost.values[i])
-        allSame = false;
+        someDifferent = true;
     }
-    return dominated && !allSame;
+    return dominated && someDifferent;
   }
 
   void addConstraint(const Cost& costs)
@@ -184,7 +183,7 @@ class ContractingThread {
     route = *foundRoute;
     constraints.push_back(currentCost);
 
-    if (isShortest && foundRoute->pathCount == 1) {
+    if (isShortest) {
       storeShortcut(StatisticsCollector::CountType::shortestPath);
       return true;
     }
@@ -241,8 +240,8 @@ class ContractingThread {
         in = pair.in;
         out = pair.out;
 
-        config = Config{ LengthConfig{ 1.0 / 3.0 }, HeightConfig{ 1.0 / 3.0 },
-          UnsuitabilityConfig{ 1.0 / 3.0 } };
+        std::vector<double> coeff(Cost::dim, 1.0 / Cost::dim);
+        config = Config{ coeff };
         shortcutCost = in.cost + out.cost;
 
         if (!warm) {
@@ -293,7 +292,6 @@ class ContractingThread {
             if (currentCost * config >= shortcutCost * config - 0.000001) {
 
               auto routeIter = d.routeIter(in.end, out.end);
-
               bool shortcutNecessary = true;
               RouteWithCount reason;
               while (!routeIter.finished()) {
@@ -433,16 +431,14 @@ void copyEdgesOfNode(Graph& g, NodePos pos, std::vector<EdgeId>& edges)
 Graph Contractor::contract(Graph& g)
 {
   auto start = std::chrono::high_resolution_clock::now();
-  const int THREAD_COUNT
+  const size_t THREAD_COUNT
       = std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1;
   MultiQueue<EdgePair> q{};
 
   ++level;
   auto set = reduce(independentSet(g), g);
   std::vector<std::future<std::vector<Edge>>> futures;
-  for (int i = 0; i < THREAD_COUNT; ++i) {
-    futures.push_back(contract(q, g, set));
-  }
+  futures.push_back(contract(q, g, set));
   std::vector<Node> nodes{};
   std::vector<EdgeId> edges{};
   std::vector<NodePos> nodesToContract{};
