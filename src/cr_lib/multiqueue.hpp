@@ -26,7 +26,7 @@
 template <class T> class MultiQueue {
   public:
   MultiQueue(size_t size = 5000000)
-      : size(size)
+      : maxSize(size)
   {
   }
   MultiQueue(const MultiQueue& other) = default;
@@ -38,9 +38,24 @@ template <class T> class MultiQueue {
   void send(const T& value)
   {
     std::unique_lock guard(key);
-    non_full.wait(guard, [this] { return size > fifo.size(); });
+    non_full.wait(guard, [this] { return maxSize > fifo.size(); });
     fifo.push_back(value);
     non_empty.notify_one();
+  }
+
+  void send(std::vector<T>& values)
+  {
+    size_t valueSize = values.size();
+    if (valueSize >= maxSize) {
+      std::invalid_argument("Vector to big to add to queue");
+    }
+    std::unique_lock guard(key);
+    non_full.wait(guard, [this, &valueSize] { return maxSize - valueSize > fifo.size(); });
+    for (size_t i = 0; i < valueSize; ++i) {
+      fifo.push_back(values[i]);
+    }
+    values.clear();
+    non_empty.notify_all();
   }
 
   T receive()
@@ -92,6 +107,11 @@ template <class T> class MultiQueue {
     std::lock_guard guard(key);
     return closed_;
   }
+  size_t size()
+  {
+    std::lock_guard guard(key);
+    return fifo.size();
+  }
 
   protected:
   private:
@@ -99,7 +119,7 @@ template <class T> class MultiQueue {
   std::condition_variable_any non_empty;
   std::condition_variable_any non_full;
   std::deque<T> fifo;
-  size_t size;
+  size_t maxSize;
   bool closed_ = false;
 };
 

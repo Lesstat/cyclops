@@ -465,6 +465,9 @@ Graph Contractor::contract(Graph& g)
   }
 
   size_t edgePairCount = 0;
+  size_t batchSize = THREAD_COUNT * 30;
+  std::vector<EdgePair> pairs;
+  pairs.reserve(batchSize);
   for (const auto& node : nodesToContract) {
     const auto& inEdges = g.getIngoingEdgesOf(node);
     const auto& outEdges = g.getOutgoingEdgesOf(node);
@@ -473,11 +476,18 @@ Graph Contractor::contract(Graph& g)
         if (in.end == out.end) {
           continue;
         }
-        q.send(EdgePair{ in, out });
+        if (futures.size() < THREAD_COUNT && q.size() / futures.size() > 10000) {
+          futures.push_back(contract(q, g, set));
+        }
+        pairs.push_back(EdgePair{ in, out });
         ++edgePairCount;
+        if (pairs.size() >= batchSize) {
+          q.send(pairs);
+        }
       }
     }
   }
+  q.send(pairs);
   q.close();
 
   if (printStatistics) {
@@ -486,7 +496,7 @@ Graph Contractor::contract(Graph& g)
   }
 
   std::vector<Edge> shortcuts{};
-  for (int i = 0; i < THREAD_COUNT; ++i) {
+  for (size_t i = 0; i < futures.size(); ++i) {
     auto shortcutsMsg = futures[i].get();
     std::move(shortcutsMsg.begin(), shortcutsMsg.end(), std::back_inserter(shortcuts));
   }
