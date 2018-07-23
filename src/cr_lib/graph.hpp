@@ -324,6 +324,8 @@ class Graph {
     std::vector<Edge> edges;
     ar& nodes;
     ar& edges;
+    std::sort(edges.begin(), edges.end(),
+        [](const auto& left, const auto& right) { return left.getId() < right.getId(); });
     *this = Graph(std::move(nodes), std::move(edges));
   }
   BOOST_SERIALIZATION_SPLIT_MEMBER()

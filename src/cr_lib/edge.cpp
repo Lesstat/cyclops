@@ -102,7 +102,8 @@ void Edge::administerEdges(std::vector<Edge>& edges)
     if (edge.getId() == 0) {
       edge.setId(EdgeId{ Edge::edges.size() });
     } else if (edge.getId() != Edge::edges.size()) {
-      std::cerr << "Edge ids dont align" << '\n';
+      std::cerr << "Edge ids dont align: " << '\n';
+      std::terminate();
     }
     Edge::edges.emplace_back(edge);
   }
