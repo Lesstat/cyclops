@@ -16,6 +16,7 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "catch.hpp"
+#include "contractionLP.hpp"
 #include "contractor.hpp"
 #include "dijkstra.hpp"
 #include "multiqueue.hpp"
@@ -28,7 +29,7 @@ Graph graphFromString(const std::string& s)
 
 TEST_CASE("Shortcut creation")
 {
-  Contractor c{};
+  Contractor c{ false };
   Edge e1 = Edge::createFromText("10 15 13.2 5 2 -1 -1");
   Edge e2 = Edge::createFromText("15 22 17.7 2 4 -1 -1");
   SECTION("Creating a shortcut from 2 Edges")
@@ -85,7 +86,7 @@ TEST_CASE("Test if edges form shortest path")
   const auto& outEdges = g.getOutgoingEdgesOf(nodePos1);
   auto& edge1 = *outEdges.begin();
 
-  Contractor c{};
+  Contractor c{ false };
   auto d = g.createNormalDijkstra();
 
   SECTION("With config where the edges form shortest path")
@@ -111,14 +112,15 @@ std::vector<Edge> contractNode(Graph& g, NodePos pos, Contractor& c)
     }
   }
   to.close();
-  return c.contract(to, g, set).get();
+  ContractionLp lp;
+  return c.contract(to, g, &lp, set).get();
 }
 
 TEST_CASE("Contracting a Node")
 {
 
   auto g = graphFromString(threeNodeGraph);
-  Contractor c{};
+  Contractor c{ false };
 
   SECTION("Where no shortcuts need to be created")
   {
@@ -155,7 +157,7 @@ TEST_CASE("Detect cycles when contracting a Node")
 )!!" };
   auto g = graphFromString(cycleGraph);
 
-  Contractor c{};
+  Contractor c{ false };
 
   auto shortcuts = contractNode(g, NodePos{ 0 }, c);
 
@@ -165,7 +167,7 @@ TEST_CASE("Detect cycles when contracting a Node")
 TEST_CASE("Finding and reducing independent sets")
 {
   auto g = graphFromString(threeNodeGraph);
-  Contractor c{};
+  Contractor c{ false };
 
   SECTION("In a three Node Graph")
   {
@@ -211,7 +213,7 @@ void compareRoutes(Route& routeA, Route& routeB)
 
 TEST_CASE("Contracting one level of Graph")
 {
-  Contractor c{};
+  Contractor c{ false };
 
   const std::string fourNodeGraph{ R"!!(# Build by: pbfextractor
 # Build on: SystemTime { tv_sec: 1512985452, tv_nsec: 881838750 }
@@ -265,7 +267,7 @@ TEST_CASE("Fully contract graph")
 {
   auto iss = std::istringstream(fourNodeGraph);
   Graph initialG = Graph::createFromStream(iss);
-  Contractor c{};
+  Contractor c{ false };
 
   Graph ch = c.contractCompletely(initialG);
 
@@ -307,7 +309,7 @@ TEST_CASE("Give max level to not contracted nodes")
   auto iss = std::istringstream(tenNodeGraph);
   auto g = Graph::createFromStream(iss);
 
-  Contractor c{};
+  Contractor c{ false };
 
   auto ch = c.contractCompletely(g);
 

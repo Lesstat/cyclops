@@ -25,7 +25,7 @@ find_package(glpk REQUIRED)
 
 
 add_library(process INTERFACE)
-target_include_directories(process INTERFACE vendor/boost-process)
+target_include_directories(process SYSTEM INTERFACE vendor/boost-process)
 
 # Actual Implementation of project in static library
 file(GLOB lib_src src/cr_lib/*.cpp )

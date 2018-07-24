@@ -17,11 +17,14 @@
 */
 #ifndef CONTRACTOR_H
 #define CONTRACTOR_H
+
 #include "ndijkstra.hpp"
 #include <future>
 #include <set>
 
 template <class T> class MultiQueue;
+
+class ContractionLp;
 
 struct EdgePair {
   HalfEdge in;
@@ -31,11 +34,11 @@ struct EdgePair {
 class Contractor {
 
   public:
-  Contractor() = default;
+  Contractor() = delete;
   Contractor(bool printStatistics);
   Contractor(const Contractor& other) = default;
   Contractor(Contractor&& other) = default;
-  virtual ~Contractor() noexcept = default;
+  virtual ~Contractor() noexcept;
   Contractor& operator=(const Contractor& other) = delete;
   Contractor& operator=(Contractor&& other) = delete;
 
@@ -45,7 +48,7 @@ class Contractor {
       NormalDijkstra& d, const HalfEdge& startEdge, const HalfEdge& destEdge, const Config& conf);
 
   std::future<std::vector<Edge>> contract(
-      MultiQueue<EdgePair>& queue, Graph& g, const std::set<NodePos>& set);
+      MultiQueue<EdgePair>& queue, Graph& g, ContractionLp* lp, const std::set<NodePos>& set);
   Graph contract(Graph& g);
   Graph mergeWithContracted(Graph& g);
   Graph contractCompletely(Graph& g, double rest = 2);
@@ -60,6 +63,9 @@ class Contractor {
   std::vector<Node> contractedNodes;
   std::vector<EdgeId> contractedEdges;
   bool printStatistics = false;
+  const size_t THREAD_COUNT
+      = std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1;
+  std::vector<std::unique_ptr<ContractionLp>> lps;
 };
 
 #endif /* CONTRACTOR_H */

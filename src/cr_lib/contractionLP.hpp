@@ -19,6 +19,7 @@
 #define CONTRACTIONLP_H
 
 #include "child.hpp"
+#include "graph.hpp"
 #include "io.hpp"
 
 namespace bp = boost::process;
@@ -28,7 +29,13 @@ class ContractionLp {
       : lp("./build/cr_lp", std::to_string(Cost::dim), bp::std_out > lpOutput,
             bp::std_in < lpInput){};
   ContractionLp(const ContractionLp& other) = delete;
-  ContractionLp(ContractionLp&& other) = default;
+  ContractionLp(ContractionLp&& other)
+  {
+    lpOutput = std::move(other.lpOutput);
+    lpInput = std::move(other.lpInput);
+    lp = std::move(other.lp);
+    lpResult = std::move(other.lpResult);
+  }
   virtual ~ContractionLp() noexcept = default;
   ContractionLp& operator=(const ContractionLp& other) = delete;
   ContractionLp& operator=(ContractionLp&& other) = default;
@@ -69,6 +76,23 @@ class ContractionLp {
   bp::opstream lpInput;
   bp::child lp;
   std::string lpResult;
+};
+
+class ContractionLpContainer {
+  public:
+  ContractionLpContainer() = delete;
+  ContractionLpContainer(size_t count)
+  {
+    while (lps.size() < count) {
+      lps.emplace_back();
+    }
+  }
+  virtual ~ContractionLpContainer() = default;
+
+  ContractionLp& operator[](size_t index) { return lps[index]; }
+
+  private:
+  std::vector<ContractionLp> lps;
 };
 
 #endif /* CONTRACTIONLP_H */
