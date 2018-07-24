@@ -78,21 +78,4 @@ class ContractionLp {
   std::string lpResult;
 };
 
-class ContractionLpContainer {
-  public:
-  ContractionLpContainer() = delete;
-  ContractionLpContainer(size_t count)
-  {
-    while (lps.size() < count) {
-      lps.emplace_back();
-    }
-  }
-  virtual ~ContractionLpContainer() = default;
-
-  ContractionLp& operator[](size_t index) { return lps[index]; }
-
-  private:
-  std::vector<ContractionLp> lps;
-};
-
 #endif /* CONTRACTIONLP_H */

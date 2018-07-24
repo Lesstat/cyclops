@@ -309,13 +309,6 @@ class ContractingThread {
               }
               if (shortcutNecessary) {
                 storeShortcut(StatisticsCollector::CountType::repeatingConfig);
-              } else if (false) { // Printing rejected shortcuts for debugging purposes
-                // std::ofstream dotFile{ "/tmp/" + std::to_string(in.id) + "-"
-                //   + std::to_string(out.id) + ".dot" };
-                // Route shortcut;
-                // shortcut.edges.push_back(Edge::getEdge(in.id));
-                // shortcut.edges.push_back(Edge::getEdge(out.id));
-                // printRoutes(dotFile, graph, reason, shortcut, config, set);
               }
             }
             break;
