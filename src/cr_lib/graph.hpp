@@ -44,8 +44,10 @@ class Dijkstra;
 class NormalDijkstra;
 struct Config;
 
+const size_t DIMENSION = 3;
+
 struct Cost {
-  static const size_t dim = 3;
+  static const size_t dim = DIMENSION;
   double values[dim];
   Cost(const std::vector<double>& values)
   {

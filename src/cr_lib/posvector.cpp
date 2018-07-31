@@ -17,6 +17,7 @@
 */
 
 #include "posvector.hpp"
+#include "graph.hpp"
 #include <cmath>
 
 PosVector::PosVector(std::vector<double>&& values)
@@ -65,7 +66,7 @@ void PosVector::checkSizes(const size_t& otherSize) const
 
 PosVector::operator Config() const
 {
-  checkSizes(Cost::dim);
+  checkSizes(DIMENSION);
   return Config(values);
 }
 

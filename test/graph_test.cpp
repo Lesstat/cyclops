@@ -62,6 +62,7 @@ TEST_CASE("Read small file into graph")
 # OriginType : maxspeed
 
 3
+3
 2
 0 470552 49.3413737 7.3014905 0 0
 1 470553 49.3407609 7.3007752 0 0

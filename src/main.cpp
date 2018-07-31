@@ -15,11 +15,12 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include "contractor.hpp"
+
 #include "dijkstra.hpp"
 #include "graph_loading.hpp"
 #include "grid.hpp"
 #include "loginfo.hpp"
+#include "ndijkstra.hpp"
 #include "routeComparator.hpp"
 #include "scaling_triangulation.hpp"
 #include "server_http.hpp"
@@ -30,18 +31,6 @@
 #include <chrono>
 #include <fstream>
 #include <random>
-
-Graph contractGraph(Graph& g, double rest, bool printStats)
-{
-  Contractor c{ printStats };
-  auto start = std::chrono::high_resolution_clock::now();
-  Graph ch = c.contractCompletely(g, rest);
-  auto end = std::chrono::high_resolution_clock::now();
-  using m = std::chrono::minutes;
-  std::cout << "contracting the graph took " << std::chrono::duration_cast<m>(end - start).count()
-            << " minutes" << '\n';
-  return ch;
-}
 
 void saveToBinaryFile(Graph& ch, std::string& filename)
 {
@@ -426,7 +415,6 @@ int main(int argc, char* argv[])
 
   std::string loadFileName{};
   std::string saveFileName{};
-  double contractionPercent;
 
   po::options_description loading{ "loading options" };
   loading.add_options()(
@@ -435,10 +423,6 @@ int main(int argc, char* argv[])
       "multi,m", po::value<std::string>(&loadFileName), "load graph from multiple files");
 
   po::options_description action{ "actions" };
-  action.add_options()("contract,c", "contract graph");
-  action.add_options()("percent,p", po::value<double>(&contractionPercent)->default_value(98),
-      "How far the graph should be contracted");
-  action.add_options()("stats", "print statistics while contracting");
   action.add_options()("dijkstra,d", "start interactive dijkstra in cli");
   action.add_options()("web,w", "start webserver for interaction via browser");
   action.add_options()("save", po::value<std::string>(&saveFileName), "save graph to binary file");
@@ -467,12 +451,6 @@ int main(int argc, char* argv[])
     std::cout << "No input file given" << '\n';
     std::cout << all << '\n';
     return 0;
-  }
-
-  if (vm.count("contract") > 0) {
-    bool printStats = vm.count("stats") > 0;
-    std::cout << "Start contracting" << '\n';
-    g = contractGraph(g, 100 - contractionPercent, printStats);
   }
 
   if (!saveFileName.empty()) {

@@ -51,7 +51,8 @@ struct Config {
     asureNonNegativity(values[0]);
     asureNonNegativity(values[1]);
     asureNonNegativity(values[2]);
-  }
+  };
+
   Config(const std::vector<double>& values)
   {
     for (size_t i = 0; i < Cost::dim; ++i) {
