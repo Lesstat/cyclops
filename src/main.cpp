@@ -17,6 +17,7 @@
 */
 
 #include "dijkstra.hpp"
+#include "enumerate_optimals.hpp"
 #include "graph_loading.hpp"
 #include "grid.hpp"
 #include "loginfo.hpp"
@@ -119,6 +120,7 @@ void runWebServer(Graph& g)
     ifs.read(&buffer[0], length);
     response->write(buffer);
   };
+
   server.resource["^/node_at"]["GET"] = [&grid](Response response, Request request) {
     Logger::initLogger();
     const double IMPOSSIBLE_VALUE = -1000;
@@ -287,12 +289,62 @@ void runWebServer(Graph& g)
     response->write(SimpleWeb::StatusCode::success_ok, result, header);
   };
 
+  server.resource["^/enumerate"]["GET"] = [&g](Response response, Request request) {
+    std::cout << "enumerate request"
+              << "\n";
+    auto log = Logger::initLogger();
+
+    std::optional<size_t> s{}, t{}, dummy{};
+
+    auto queryParams = request->parse_query_string();
+    extractQueryFields(queryParams, s, t, dummy, dummy, dummy);
+    if (s > g.getNodeCount() || t > g.getNodeCount()) {
+      response->write(
+          SimpleWeb::StatusCode::client_error_bad_request, "Request contains illegal node ids");
+      return;
+    }
+    if (!(s && t)) {
+      response->write(SimpleWeb::StatusCode::client_error_bad_request,
+          "Request needs to contain the parameters: s, t");
+      return;
+    }
+    *log << "from " << *s << " to " << *t << "\\n";
+
+    std::cout << "starting computation"
+              << "\n";
+    auto [routes, configs] = EnumerateOptimals(g).find(NodePos{ *s }, NodePos{ *t });
+    std::stringstream result;
+
+    std::cout << "building json for " << routes.size() << " routes" << '\n';
+
+    result << "{ \"points\": [";
+    for (size_t i = 0; i < routes.size(); ++i) {
+      if (i > 0) {
+        result << ",";
+      }
+      result << "{ \"conf\": \"" << configs[i] << "\",";
+      result << "\"route\":" << routeToJson(routes[i], g) << ",";
+      result << "\"selected\": "
+             << "true";
+      result << "}";
+    }
+    result << "],";
+    result << "\"debug\":\"" << log->getInfo() << "\" ";
+
+    result << "}";
+
+    SimpleWeb::CaseInsensitiveMultimap header;
+    header.emplace("Content-Type", "application/json");
+    response->write(SimpleWeb::StatusCode::success_ok, result, header);
+  };
+
   std::cout << "Starting web server at http://localhost:" << server.config.port << '\n';
   server.start();
 }
 
 int testGraph(Graph& g)
 {
+
   Dijkstra d = g.createDijkstra();
   NormalDijkstra n = g.createNormalDijkstra(true);
   std::random_device rd{};

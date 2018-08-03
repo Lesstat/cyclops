@@ -20,7 +20,6 @@
 #include <queue>
 
 const double dmax = std::numeric_limits<double>::max();
-const short smax = std::numeric_limits<short>::max();
 const Cost maxCost{ std::vector<double>(Cost::dim, dmax) };
 
 Dijkstra::Dijkstra(Graph* g, size_t nodeCount)
