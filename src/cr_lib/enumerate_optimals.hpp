@@ -31,24 +31,23 @@
 class FullCellId {
   private:
   static int currentId;
-  static std::map<int, int> alive_;
+  static std::vector<int> alive_;
+  static std::vector<bool> checked_;
 
   int id_;
-  bool checked_ = false;
 
   public:
   FullCellId()
       : id_(currentId++)
   {
-    alive_[id_]++;
-    //    std::cout << "const id: " << id_ << " count: " << alive_[id_] << '\n';
+    alive_.push_back(1);
+    checked_.push_back(false);
   }
 
   FullCellId(const FullCellId& other)
       : id_(other.id_)
   {
     alive_[id_]++;
-    //    std::cout << "copy  id: " << id_ << " count: " << alive_[id_] << '\n';
   }
 
   FullCellId& operator=(const FullCellId& rhs)
@@ -60,7 +59,6 @@ class FullCellId {
     alive_[id_]--;
     id_ = rhs.id_;
     alive_[id_]++;
-    //    std::cout << "assign id: " << id_ << " count: " << alive_[id_] << '\n';
     return *this;
   }
 
@@ -72,33 +70,27 @@ class FullCellId {
 
   FullCellId(FullCellId&& other)
   {
-    alive_[id_]--;
     id_ = other.id_;
     alive_[id_]++;
-    //    std::cout << "move id: " << id_ << " count: " << alive_[id_] << '\n';
   }
 
-  ~FullCellId()
-  {
-    alive_[id_]--;
-    //    std::cout << "destr id: " << id_ << " count: " << alive_[id_] << '\n';
-  }
+  ~FullCellId() { alive_[id_]--; }
 
   bool alive() const { return alive_[id_] > 1; }
-  bool checked() const { return checked_; }
-  void checked(bool check) { checked_ = check; }
+  bool checked() const { return checked_[id_]; }
+  void checked(bool check) { checked_[id_] = check; }
   size_t id() const { return id_; }
 
   bool operator==(const FullCellId& other) const { return id_ == other.id_; }
 };
 
 struct VertexData {
-  Config c = std::vector<double>(DIMENSION, 0.0);
-  Route r;
+  size_t id;
 };
 
 int FullCellId::currentId = 0;
-std::map<int, int> FullCellId::alive_ = std::map<int, int>();
+std::vector<int> FullCellId::alive_ = std::vector<int>();
+std::vector<bool> FullCellId::checked_ = std::vector<bool>();
 
 typedef CGAL::Dimension_tag<DIMENSION> Dim;
 typedef CGAL::Epick_d<Dim> Traits;
@@ -115,6 +107,8 @@ class EnumerateOptimals {
 
   Dijkstra d;
   Triangulation tri{ DIMENSION };
+  std::vector<Route> routes;
+  std::vector<Config> configs;
 
   typedef std::unique_ptr<glp_prob, decltype(&glp_delete_prob)> lp_ptr;
 
@@ -194,8 +188,9 @@ class EnumerateOptimals {
     Triangulation::Point p(DIMENSION, &r.costs.values[0], &r.costs.values[DIMENSION]);
     auto vertex = tri.insert(p);
     auto& vertexdata = vertex->data();
-    vertexdata.r = std::move(r);
-    vertexdata.c = std::move(c);
+    routes.push_back(std::move(r));
+    configs.push_back(std::move(c));
+    vertexdata.id = routes.size() - 1;
   }
 
   void includeConvexHullCells(CellSet& set)
@@ -259,11 +254,8 @@ class EnumerateOptimals {
           if (tri.is_infinite(v)) {
             v = f.vertex(1);
           }
-          auto p = v->point();
-          Cost cellCost(std::vector<double>(p.begin(), p.end()));
-          for (size_t i = 0; i < DIMENSION; ++i) {
-          }
 
+          Cost& cellCost = routes[v->data().id].costs;
           if (route->costs * c < cellCost * c) {
             addToTriangulation(std::move(*route), std::move(c));
             workToDo = true;
@@ -295,9 +287,10 @@ class EnumerateOptimals {
       if (tri.is_infinite(*vertex)) {
         vertex = edge.vertex(1);
       }
-      auto& data = vertex->data();
-      routes.push_back(data.r);
-      configs.push_back(data.c);
+      auto& vertexId = vertex->data().id;
+
+      routes.push_back(this->routes[vertexId]);
+      configs.push_back(this->configs[vertexId]);
     }
     return { routes, configs };
   }
