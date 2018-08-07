@@ -580,4 +580,71 @@ function clearOverlays() {
   if (myLineChart.destroy) myLineChart.destroy();
 }
 
+function enumerateRoutes() {
+  clearOverlays();
+  let xmlhttp = new XMLHttpRequest();
+
+  xmlhttp.responseType = "json";
+  xmlhttp.onload = function() {
+    if (xmlhttp.status == 200) {
+      addToDebugLog("enumeration", xmlhttp.response.debug);
+      listOfRoutes = [];
+      drawTriangle(canvas);
+      drawTriangle(canvasRgb);
+
+      let points = xmlhttp.response.points;
+
+      for (let p in points) {
+        if (!points[p].selected) {
+          continue;
+        }
+        let values = points[p].conf.split("/");
+        let col = gradientToColor(values);
+        let coord = configToCoords(values);
+        drawDot(canvas, coord.x, coord.y, rainbow(p));
+        drawDot(canvasRgb, coord.x, coord.y, col);
+
+        let myStyle = {
+          color: col,
+          weight: 4,
+          opacity: 0.7
+        };
+        let geoRoute = L.geoJSON(points[p].route.route.geometry, {
+          style: myStyle
+        });
+        geoJson.addLayer(geoRoute);
+        listOfRoutes.push({
+          point: coord,
+          route: geoRoute,
+          config: values,
+          cost: {
+            length: points[p].route.length,
+            height: points[p].route.height,
+            unsuitability: points[p].route.unsuitability
+          }
+        });
+      }
+    }
+  };
+
+  let s = document.getElementById("start").innerHTML;
+  let t = document.getElementById("end").innerHTML;
+  let maxSplits = document.getElementById("maxSplits").value;
+  let maxOverlap = document.getElementById("maxOverlap").value;
+
+  let uri =
+    "/enumerate" +
+    "?s=" +
+    s +
+    "&t=" +
+    t +
+    "&maxRoutes=" +
+    maxSplits * 3 +
+    "&maxOverlap=" +
+    maxOverlap;
+
+  xmlhttp.open("GET", uri);
+  xmlhttp.send();
+}
+
 overlapChange();

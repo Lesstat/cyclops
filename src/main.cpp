@@ -164,33 +164,17 @@ void runWebServer(Graph& g)
     }
 
     auto dijkstra = g.createDijkstra();
-    auto bestLengthRoute = dijkstra.findBestRoute(NodePos{ *s }, NodePos{ *t },
-        Config{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } });
-    if (!bestLengthRoute) {
-      return;
-    }
-    auto bestHeightRoute = dijkstra.findBestRoute(NodePos{ *s }, NodePos{ *t },
-        Config{ LengthConfig{ 0 }, HeightConfig{ 1 }, UnsuitabilityConfig{ 0 } });
-    auto bestUnsuitabilityRoute = dijkstra.findBestRoute(NodePos{ *s }, NodePos{ *t },
-        Config{ LengthConfig{ 0 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 1 } });
 
-    auto bestLength = bestLengthRoute->costs.values[0];
-    auto bestHeight = bestHeightRoute->costs.values[1];
-    auto bestUnsuitability = bestUnsuitabilityRoute->costs.values[2];
-
-    auto maxConfigParam = std::max({ bestLength, bestHeight, bestUnsuitability });
-
-    auto lengthFactor = maxConfigParam / bestLength;
-    auto heightFactor = maxConfigParam / bestHeight;
-    auto unsuitFactor = maxConfigParam / bestUnsuitability;
+    Dijkstra::ScalingFactor f;
+    dijkstra.calcScalingFactor(NodePos{ *s }, NodePos{ *t }, f);
 
     Config c{ LengthConfig{ (static_cast<double>(*length) / 100.0) },
       HeightConfig{ (static_cast<double>(*height) / 100.0) },
       UnsuitabilityConfig{ (static_cast<double>(*unsuitability) / 100.0) } };
 
-    c.values[0] *= lengthFactor;
-    c.values[2] *= heightFactor;
-    c.values[2] *= unsuitFactor;
+    for (size_t i = 0; i < DIMENSION; ++i) {
+      c.values[i] *= f[i];
+    }
 
     auto start = std::chrono::high_resolution_clock::now();
     auto route = dijkstra.findBestRoute(NodePos{ *s }, NodePos{ *t }, c);
@@ -294,25 +278,33 @@ void runWebServer(Graph& g)
               << "\n";
     auto log = Logger::initLogger();
 
-    std::optional<size_t> s{}, t{}, dummy{};
+    std::optional<size_t> s{}, t{}, dummy{}, maxOverlap{}, maxRoutes{};
 
     auto queryParams = request->parse_query_string();
     extractQueryFields(queryParams, s, t, dummy, dummy, dummy);
+    for (const auto& param : queryParams) {
+      if (param.first == "maxRoutes") {
+        maxRoutes = stoull(param.second);
+      } else if (param.first == "maxOverlap") {
+        maxOverlap = stoull(param.second);
+      }
+    }
     if (s > g.getNodeCount() || t > g.getNodeCount()) {
       response->write(
           SimpleWeb::StatusCode::client_error_bad_request, "Request contains illegal node ids");
       return;
     }
-    if (!(s && t)) {
+    if (!(s && t && maxOverlap && maxRoutes)) {
       response->write(SimpleWeb::StatusCode::client_error_bad_request,
-          "Request needs to contain the parameters: s, t");
+          "Request needs to contain the parameters: s, t, maxOverlap, maxRoutes");
       return;
     }
     *log << "from " << *s << " to " << *t << "\\n";
 
     std::cout << "starting computation"
               << "\n";
-    auto [routes, configs] = EnumerateOptimals(g).find(NodePos{ *s }, NodePos{ *t });
+    auto [routes, configs]
+        = EnumerateOptimals(g, *maxOverlap / 100.0, *maxRoutes).find(NodePos{ *s }, NodePos{ *t });
     std::stringstream result;
 
     std::cout << "building json for " << routes.size() << " routes" << '\n';
@@ -358,7 +350,7 @@ int testGraph(Graph& g)
   size_t dTime = 0;
   size_t nTime = 0;
 
-  for (int i = 0; i < 200; ++i) {
+  for (int i = 0; i < 1000; ++i) {
     NodePos from{ dist(rd) };
     NodePos to{ dist(rd) };
 

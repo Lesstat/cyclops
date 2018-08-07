@@ -280,3 +280,20 @@ Config generateRandomConfig()
 
   return Config{ l, h, u };
 }
+
+void Dijkstra::calcScalingFactor(NodePos from, NodePos to, ScalingFactor& f)
+{
+  double bestValues[DIMENSION];
+
+  for (size_t i = 0; i < DIMENSION; ++i) {
+    std::vector conf(DIMENSION, 0.0);
+    conf[i] = 1.0;
+    auto costs = findBestRoute(from, to, conf)->costs;
+    bestValues[i] = costs.values[i];
+  }
+  double maxCosts = *std::max_element(&bestValues[0], &bestValues[DIMENSION]);
+
+  for (size_t i = 0; i < DIMENSION; ++i) {
+    f[i] = maxCosts / bestValues[i];
+  }
+}

@@ -159,7 +159,8 @@ class EnumerateOptimals {
     for (size_t i = 1; i <= DIMENSION + 1; ++i) {
       ind.push_back(i);
     }
-
+    size_t current_dimension = tri.current_dimension();
+    size_t constraint_count = 0;
     for (auto vertex = f.vertices_begin(); vertex != f.vertices_end(); ++vertex) {
       if (tri.is_infinite(*vertex)) {
         continue;
@@ -173,6 +174,8 @@ class EnumerateOptimals {
       val.push_back(-1);
       glp_set_row_bnds(lp.get(), row, GLP_FX, 0.0, 0.0);
       glp_set_mat_row(lp.get(), row, DIMENSION + 1, &ind[0], &val[0]);
+      if (++constraint_count == current_dimension)
+        break;
     }
 
     // sum(alpha) = 1
@@ -227,6 +230,7 @@ class EnumerateOptimals {
       TDS::Full_cell& c = *handles[i];
 
       if (c.data().prio() < 0.0) {
+        size_t current_dimension = tri.current_dimension();
         std::vector<TDS::Vertex_handle> vertices;
         for (auto v = c.vertices_begin(); v != c.vertices_end(); ++v) {
           auto& vertex = *v;
@@ -234,6 +238,9 @@ class EnumerateOptimals {
             continue;
           }
           vertices.push_back(vertex);
+          if (vertices.size() == current_dimension) {
+            break;
+          }
         }
 
         auto result = 0;
@@ -268,13 +275,22 @@ class EnumerateOptimals {
       throw std::runtime_error(
           "No route found from " + std::to_string(s) + " to " + std::to_string(t));
     }
+
     addToTriangulation(std::move(*route), std::move(c));
+
+    Dijkstra::ScalingFactor factor;
     for (size_t i = 0; i < DIMENSION; ++i) {
       Config c(std::vector(DIMENSION, 0.0));
       c.values[i] = 1.0;
 
       auto route = d.findBestRoute(s, t, c);
+      factor[i] = route->costs.values[i];
       addToTriangulation(std::move(*route), std::move(c));
+    }
+    double maxValue = *std::max_element(&factor[0], &factor[DIMENSION]);
+
+    for (double& value : factor) {
+      value = maxValue / value;
     }
 
     CellContainer q(compare_prio);
@@ -304,6 +320,7 @@ class EnumerateOptimals {
 
           Cost& cellCost = routes[v->data().id].costs;
           if (route->costs * c < cellCost * c) {
+
             addToTriangulation(std::move(*route), std::move(c));
             workToDo = true;
           }
@@ -332,7 +349,18 @@ class EnumerateOptimals {
 
     for (auto id : independent_set) {
       routes.push_back(this->routes[id]);
-      configs.push_back(this->configs[id]);
+
+      auto c = this->configs[id];
+      for (size_t i = 0; i < DIMENSION; ++i) {
+        c.values[i] /= factor[i];
+      }
+      auto sum = std::accumulate(&c.values[0], &c.values[DIMENSION], 0.0);
+
+      for (size_t i = 0; i < DIMENSION; ++i) {
+        c.values[i] /= sum;
+      }
+
+      configs.push_back(std::move(c));
     }
 
     return { routes, configs };

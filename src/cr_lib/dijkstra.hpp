@@ -92,6 +92,8 @@ struct Route {
 
 class Dijkstra {
   public:
+  using ScalingFactor = double[DIMENSION];
+
   Dijkstra(Graph* g, size_t nodeCount);
   Dijkstra(const Dijkstra& other) = default;
   Dijkstra(Dijkstra&& other) noexcept = default;
@@ -100,6 +102,7 @@ class Dijkstra {
   Dijkstra& operator=(Dijkstra&& other) noexcept = default;
 
   std::optional<Route> findBestRoute(NodePos from, NodePos to, Config config);
+  void calcScalingFactor(NodePos from, NodePos to, ScalingFactor& f);
 
   size_t pqPops = 0;
 
