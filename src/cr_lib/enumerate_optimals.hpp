@@ -20,6 +20,8 @@
 
 #include "dijkstra.hpp"
 #include "glpk.h"
+#include "ilp_independent_set.hpp"
+#include "routeComparator.hpp"
 
 #include <CGAL/Epick_d.h>
 #include <CGAL/Triangulation.h>
@@ -33,6 +35,7 @@ class FullCellId {
   static int currentId;
   static std::vector<int> alive_;
   static std::vector<bool> checked_;
+  static std::vector<double> prio_;
 
   int id_;
 
@@ -42,6 +45,7 @@ class FullCellId {
   {
     alive_.push_back(1);
     checked_.push_back(false);
+    prio_.push_back(-1.0);
   }
 
   FullCellId(const FullCellId& other)
@@ -80,6 +84,8 @@ class FullCellId {
   bool checked() const { return checked_[id_]; }
   void checked(bool check) { checked_[id_] = check; }
   size_t id() const { return id_; }
+  double prio() const { return prio_[id_]; }
+  void prio(double p) const { prio_[id_] = p; }
 
   bool operator==(const FullCellId& other) const { return id_ == other.id_; }
 };
@@ -91,6 +97,7 @@ struct VertexData {
 int FullCellId::currentId = 0;
 std::vector<int> FullCellId::alive_ = std::vector<int>();
 std::vector<bool> FullCellId::checked_ = std::vector<bool>();
+std::vector<double> FullCellId::prio_ = std::vector<double>();
 
 typedef CGAL::Dimension_tag<DIMENSION> Dim;
 typedef CGAL::Epick_d<Dim> Traits;
@@ -101,7 +108,9 @@ typedef CGAL::Triangulation<Traits, TDS> Triangulation;
 typedef Triangulation::Facet Facet;
 typedef TDS::Vertex_iterator VertexIter;
 
-typedef std::unordered_map<int, TDS::Full_cell> CellSet;
+auto compare_prio = [](auto left, auto right) { return left.data().prio() < right.data().prio(); };
+typedef std::priority_queue<TDS::Full_cell, std::vector<TDS::Full_cell>, decltype(compare_prio)>
+    CellContainer;
 
 class EnumerateOptimals {
 
@@ -109,6 +118,23 @@ class EnumerateOptimals {
   Triangulation tri{ DIMENSION };
   std::vector<Route> routes;
   std::vector<Config> configs;
+  std::map<std::pair<size_t, size_t>, double> similarities;
+  double maxOverlap;
+  size_t maxRoutes;
+
+  double compare(size_t i, size_t j)
+  {
+    if (i > j) {
+      std::swap(i, j);
+    }
+    std::pair index = { i, j };
+    if (similarities.count(index) > 0) {
+      return similarities[index];
+    }
+    auto similarity = calculateSharing(routes[i], routes[j]);
+    similarities[index] = similarity;
+    return similarity;
+  }
 
   typedef std::unique_ptr<glp_prob, decltype(&glp_delete_prob)> lp_ptr;
 
@@ -193,19 +219,43 @@ class EnumerateOptimals {
     vertexdata.id = routes.size() - 1;
   }
 
-  void includeConvexHullCells(CellSet& set)
+  void includeConvexHullCells(CellContainer& cont)
   {
     std::vector<TDS::Full_cell_handle> handles;
     tri.incident_full_cells(tri.infinite_vertex(), std::back_inserter(handles));
     for (size_t i = 0; i < handles.size(); ++i) {
       TDS::Full_cell& c = *handles[i];
-      set.emplace(std::make_pair(c.data().id(), c));
+
+      if (c.data().prio() < 0.0) {
+        std::vector<TDS::Vertex_handle> vertices;
+        for (auto v = c.vertices_begin(); v != c.vertices_end(); ++v) {
+          auto& vertex = *v;
+          if (tri.is_infinite(vertex)) {
+            continue;
+          }
+          vertices.push_back(vertex);
+        }
+
+        auto result = 0;
+        for (size_t i = 0; i < routes.size(); ++i) {
+          for (auto& vertex : vertices) {
+            auto vertId = vertex->data().id;
+            if (vertId != i && compare(i, vertId) > maxOverlap) {
+              ++result;
+            }
+          }
+        }
+        c.data().prio(result);
+      }
+      cont.emplace(c);
     }
   }
 
   public:
-  EnumerateOptimals(Graph& g)
+  EnumerateOptimals(Graph& g, double maxOverlap, size_t maxRoutes)
       : d(g.createDijkstra())
+      , maxOverlap(maxOverlap)
+      , maxRoutes(maxRoutes)
   {
   }
 
@@ -227,22 +277,19 @@ class EnumerateOptimals {
       addToTriangulation(std::move(*route), std::move(c));
     }
 
-    CellSet q;
+    CellContainer q(compare_prio);
     bool workToDo = true;
-    while (workToDo) {
+    while (workToDo && routes.size() < maxRoutes) {
       includeConvexHullCells(q);
       workToDo = false;
       std::vector<Cost> newPoints;
       std::vector<int> deadCells;
-      for (auto it = q.begin(); it != q.end(); ++it) {
-        auto& f = it->second;
+      while (!q.empty()) {
+        auto f = q.top();
+        q.pop();
         FullCellId& cellData = const_cast<FullCellId&>(f.data());
 
-        if (!cellData.alive()) {
-          deadCells.push_back(cellData.id());
-          continue;
-        }
-        if (cellData.checked()) {
+        if (!cellData.alive() || cellData.checked()) {
           continue;
         }
         cellData.checked(true);
@@ -265,33 +312,29 @@ class EnumerateOptimals {
           continue;
         }
       }
-
-      for (auto cell : deadCells) {
-        q.erase(cell);
-      }
     }
 
-    typedef Triangulation::Face Face;
-    typedef std::vector<Face> Faces;
-    Faces edges;
-    std::back_insert_iterator<Faces> out(edges);
-    tri.tds().incident_faces(tri.infinite_vertex(), 1, out);
+    std::vector<std::pair<size_t, size_t>> edges;
+
+    for (size_t i = 0; i < routes.size(); ++i) {
+      for (size_t j = i + 1; j < routes.size(); ++j) {
+        if (compare(i, j) >= maxOverlap) {
+          edges.emplace_back(i, j);
+        }
+      }
+    }
+    auto independent_set = find_independent_set(routes.size(), edges);
 
     std::vector<Route> routes;
-    routes.reserve(edges.size());
+    routes.reserve(independent_set.size());
     std::vector<Config> configs;
-    configs.reserve(edges.size());
+    configs.reserve(independent_set.size());
 
-    for (auto& edge : edges) {
-      auto vertex = edge.vertex(0);
-      if (tri.is_infinite(*vertex)) {
-        vertex = edge.vertex(1);
-      }
-      auto& vertexId = vertex->data().id;
-
-      routes.push_back(this->routes[vertexId]);
-      configs.push_back(this->configs[vertexId]);
+    for (auto id : independent_set) {
+      routes.push_back(this->routes[id]);
+      configs.push_back(this->configs[id]);
     }
+
     return { routes, configs };
   }
 };
