@@ -20,6 +20,7 @@
 #include "graph_loading.hpp"
 #include "grid.hpp"
 #include "ilp_independent_set.hpp"
+#include "naive_exploration.hpp"
 #include "routeComparator.hpp"
 #include "scaling_triangulation.hpp"
 #include <boost/program_options.hpp>
@@ -230,8 +231,9 @@ int main(int argc, char* argv[])
   po::options_description experiment{ "Experiment to conduct" };
   dataConfiguration.add_options()("dijkstra,d", "Run dijkstra for random s-t queries ")(
       "alt,a", "Run alternative route search for random s-t queries")(
-      "candidates,c", "find candidates for one and more day tours")("commute",
-      "find candidates for commuting tours")("random,r", "explore random configurations");
+      "candidates,c", "find candidates for one and more day tours")(
+      "commute", "find candidates for commuting tours")(
+      "random,r", "explore random configurations")("naive,n", "naive exploraiton");
 
   po::options_description all;
   all.add_options()("help,h", "prints help message");
@@ -342,6 +344,107 @@ int main(int argc, char* argv[])
       explore_random(day, output, d, splitCount, maxSimilarity, "day");
       explore_random(week, output, d, splitCount, maxSimilarity, "week");
       explore_random(commute, output, d, splitCount, maxSimilarity, "commute");
+    }
+  } else if (vm.count("naive") > 0) {
+    output << "type,from,to,maxSplits,maxSimilarity,routeCount,recommendedRouteCount,"
+              "exploreTime,recommendationTime\n";
+
+    for (double epsilon, maxSimilarity; params >> epsilon >> maxSimilarity;) {
+      std::cout << "running config: " << epsilon << " " << maxSimilarity << '\n';
+
+      std::ifstream day{ "daytour" };
+      std::ifstream week{ "weektour" };
+      std::ifstream commute{ "commute" };
+
+      std::cout << "commute ";
+      for (size_t from, to; commute >> from >> to;) {
+        try {
+          auto start = c::high_resolution_clock::now();
+          auto routes = naiveExploration(d, NodePos{ from }, NodePos{ to }, epsilon);
+          auto end = c::high_resolution_clock::now();
+          size_t exploreTime = c::duration_cast<ms>(end - start).count();
+
+          std::vector<std::pair<size_t, size_t>> edges;
+          for (size_t i = 0; i < routes.size(); ++i) {
+            for (size_t j = i + 1; j < routes.size(); ++j) {
+              if (calculateSharing(routes[i], routes[j]) > maxSimilarity) {
+                edges.emplace_back(i, j);
+              }
+            }
+          }
+          start = c::high_resolution_clock::now();
+          auto set = find_independent_set(routes.size(), edges);
+          end = c::high_resolution_clock::now();
+          size_t recommendation_time = c::duration_cast<ms>(end - start).count();
+
+          output << "commute"
+                 << "," << from << "," << to << "," << routes.size() / 3 << "," << maxSimilarity
+                 << "," << routes.size() << "," << set.size() << "," << exploreTime << ","
+                 << recommendation_time << '\n';
+        } catch (...) {
+          continue;
+        }
+      }
+
+      std::cout << "day ";
+      for (size_t from, to; day >> from >> to;) {
+        try {
+          auto start = c::high_resolution_clock::now();
+          auto routes = naiveExploration(d, NodePos{ from }, NodePos{ to }, epsilon);
+          auto end = c::high_resolution_clock::now();
+          size_t exploreTime = c::duration_cast<ms>(end - start).count();
+
+          std::vector<std::pair<size_t, size_t>> edges;
+          for (size_t i = 0; i < routes.size(); ++i) {
+            for (size_t j = i + 1; j < routes.size(); ++j) {
+              if (calculateSharing(routes[i], routes[j]) > maxSimilarity) {
+                edges.emplace_back(i, j);
+              }
+            }
+          }
+          start = c::high_resolution_clock::now();
+          auto set = find_independent_set(routes.size(), edges);
+          end = c::high_resolution_clock::now();
+          size_t recommendation_time = c::duration_cast<ms>(end - start).count();
+
+          output << "day"
+                 << "," << from << "," << to << "," << routes.size() / 3 << "," << maxSimilarity
+                 << "," << routes.size() << "," << set.size() << "," << exploreTime << ","
+                 << recommendation_time << '\n';
+        } catch (...) {
+          continue;
+        }
+      }
+
+      std::cout << "week\n";
+      for (size_t from, to; week >> from >> to;) {
+        try {
+          auto start = c::high_resolution_clock::now();
+          auto routes = naiveExploration(d, NodePos{ from }, NodePos{ to }, epsilon);
+          auto end = c::high_resolution_clock::now();
+          size_t exploreTime = c::duration_cast<ms>(end - start).count();
+
+          std::vector<std::pair<size_t, size_t>> edges;
+          for (size_t i = 0; i < routes.size(); ++i) {
+            for (size_t j = i + 1; j < routes.size(); ++j) {
+              if (calculateSharing(routes[i], routes[j]) > maxSimilarity) {
+                edges.emplace_back(i, j);
+              }
+            }
+          }
+          start = c::high_resolution_clock::now();
+          auto set = find_independent_set(routes.size(), edges);
+          end = c::high_resolution_clock::now();
+          size_t recommendation_time = c::duration_cast<ms>(end - start).count();
+
+          output << "week"
+                 << "," << from << "," << to << "," << routes.size() / 3 << "," << maxSimilarity
+                 << "," << routes.size() << "," << set.size() << "," << exploreTime << ","
+                 << recommendation_time << '\n';
+        } catch (...) {
+          continue;
+        }
+      }
     }
   }
   return 0;
