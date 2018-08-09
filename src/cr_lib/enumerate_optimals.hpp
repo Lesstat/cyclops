@@ -148,23 +148,26 @@ class EnumerateOptimals {
     }
     glp_set_col_bnds(lp.get(), DIMENSION + 1, GLP_LO, 0, 0);
     glp_set_col_kind(lp.get(), DIMENSION + 1, GLP_CV);
-    glp_set_obj_coef(lp.get(), DIMENSION + 1, 1);
+    glp_set_obj_coef(lp.get(), DIMENSION + 1, 0);
   }
 
   void addConstraints(const lp_ptr& lp, const TDS::Full_cell& f)
   {
-
     // Cost * alpha - V = 0 for all paths of f
     std::vector ind(1, 0);
     for (size_t i = 1; i <= DIMENSION + 1; ++i) {
       ind.push_back(i);
     }
-    size_t current_dimension = tri.current_dimension();
     size_t constraint_count = 0;
     for (auto vertex = f.vertices_begin(); vertex != f.vertices_end(); ++vertex) {
-      if (tri.is_infinite(*vertex)) {
+      if (*vertex == TDS::Vertex_const_handle() || tri.is_infinite(*vertex)) {
         continue;
       }
+      int slack = glp_add_cols(lp.get(), 1);
+      glp_set_col_bnds(lp.get(), slack, GLP_LO, 0, 0);
+      glp_set_col_kind(lp.get(), slack, GLP_CV);
+      glp_set_obj_coef(lp.get(), slack, 1);
+
       int row = glp_add_rows(lp.get(), 1);
       std::vector val(1, 0.0);
       auto& p = (*vertex)->point();
@@ -172,10 +175,19 @@ class EnumerateOptimals {
         val.push_back(*comp);
       }
       val.push_back(-1);
+
+      ind.push_back(slack);
+      val.push_back(-1);
+
       glp_set_row_bnds(lp.get(), row, GLP_FX, 0.0, 0.0);
-      glp_set_mat_row(lp.get(), row, DIMENSION + 1, &ind[0], &val[0]);
-      if (++constraint_count == current_dimension)
-        break;
+      glp_set_mat_row(lp.get(), row, ind.size() - 1, &ind[0], &val[0]);
+
+      ind.pop_back();
+      ++constraint_count;
+    }
+
+    if (constraint_count <= 1) {
+      throw std::runtime_error("Could not create enough constraints");
     }
 
     // sum(alpha) = 1
@@ -190,7 +202,6 @@ class EnumerateOptimals {
 
   Config findConfig(const TDS::Full_cell& f)
   {
-
     lp_ptr lp(glp_create_prob(), glp_delete_prob);
     glp_set_obj_dir(lp.get(), GLP_MIN);
     defineVariables(lp);
@@ -209,17 +220,19 @@ class EnumerateOptimals {
       }
       return values;
     } else {
-      throw std::runtime_error("no suitable config found");
+      throw std::runtime_error("no suitable config found. Simplex: " + std::to_string(simplex)
+          + " lp: " + std::to_string(lp_status));
     }
   }
-  void addToTriangulation(Route&& r, Config&& c)
+
+  void addToTriangulation()
   {
-    Triangulation::Point p(DIMENSION, &r.costs.values[0], &r.costs.values[DIMENSION]);
+    auto vertId = routes.size() - 1;
+    auto& routeCosts = routes[vertId].costs;
+    Triangulation::Point p(DIMENSION, &routeCosts.values[0], &routeCosts.values[DIMENSION]);
     auto vertex = tri.insert(p);
     auto& vertexdata = vertex->data();
-    routes.push_back(std::move(r));
-    configs.push_back(std::move(c));
-    vertexdata.id = routes.size() - 1;
+    vertexdata.id = vertId;
   }
 
   void includeConvexHullCells(CellContainer& cont)
