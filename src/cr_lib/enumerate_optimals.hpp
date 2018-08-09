@@ -28,6 +28,7 @@
 #include <CGAL/Triangulation_ds_full_cell.h>
 #include <CGAL/point_generators_d.h>
 #include <CGAL/random_selection.h>
+#include <chrono>
 #include <queue>
 
 class FullCellId {
@@ -241,19 +242,18 @@ class EnumerateOptimals {
     tri.incident_full_cells(tri.infinite_vertex(), std::back_inserter(handles));
     for (size_t i = 0; i < handles.size(); ++i) {
       TDS::Full_cell& c = *handles[i];
+      if (c.data().checked()) {
+        continue;
+      }
 
       if (c.data().prio() < 0.0) {
-        size_t current_dimension = tri.current_dimension();
         std::vector<TDS::Vertex_handle> vertices;
         for (auto v = c.vertices_begin(); v != c.vertices_end(); ++v) {
           auto& vertex = *v;
-          if (tri.is_infinite(vertex)) {
+          if (vertex == TDS::Vertex_const_handle() || tri.is_infinite(vertex)) {
             continue;
           }
           vertices.push_back(vertex);
-          if (vertices.size() == current_dimension) {
-            break;
-          }
         }
 
         auto result = 0;
@@ -272,6 +272,9 @@ class EnumerateOptimals {
   }
 
   public:
+  size_t enumeration_time;
+  size_t recommendation_time;
+
   EnumerateOptimals(Graph& g, double maxOverlap, size_t maxRoutes)
       : d(g.createDijkstra())
       , maxOverlap(maxOverlap)
@@ -279,26 +282,40 @@ class EnumerateOptimals {
   {
   }
 
+  EnumerateOptimals(Dijkstra& d, double maxOverlap, size_t maxRoutes)
+      : d(d)
+      , maxOverlap(maxOverlap)
+      , maxRoutes(maxRoutes)
+  {
+  }
+
   std::tuple<std::vector<Route>, std::vector<Config>> find(NodePos s, NodePos t)
   {
+    namespace c = std::chrono;
 
-    Config c(std::vector(DIMENSION, 1.0 / DIMENSION));
-    auto route = d.findBestRoute(s, t, c);
+    auto start = c::high_resolution_clock::now();
+
+    Config conf(std::vector(DIMENSION, 1.0 / DIMENSION));
+    auto route = d.findBestRoute(s, t, conf);
     if (!route) {
       throw std::runtime_error(
           "No route found from " + std::to_string(s) + " to " + std::to_string(t));
     }
 
-    addToTriangulation(std::move(*route), std::move(c));
+    routes.push_back(std::move(*route));
+    configs.push_back(std::move(conf));
+    addToTriangulation();
 
     Dijkstra::ScalingFactor factor;
     for (size_t i = 0; i < DIMENSION; ++i) {
-      Config c(std::vector(DIMENSION, 0.0));
-      c.values[i] = 1.0;
+      Config conf(std::vector(DIMENSION, 0.0));
+      conf.values[i] = 1.0;
 
-      auto route = d.findBestRoute(s, t, c);
+      auto route = d.findBestRoute(s, t, conf);
       factor[i] = route->costs.values[i];
-      addToTriangulation(std::move(*route), std::move(c));
+      routes.push_back(std::move(*route));
+      configs.push_back(std::move(conf));
+      addToTriangulation();
     }
     double maxValue = *std::max_element(&factor[0], &factor[DIMENSION]);
 
@@ -308,12 +325,10 @@ class EnumerateOptimals {
 
     CellContainer q(compare_prio);
     bool workToDo = true;
-    while (workToDo && routes.size() < maxRoutes) {
+    while (workToDo) {
       includeConvexHullCells(q);
       workToDo = false;
-      std::vector<Cost> newPoints;
-      std::vector<int> deadCells;
-      while (!q.empty()) {
+      while (!q.empty() && tri.number_of_vertices() < maxRoutes) {
         auto f = q.top();
         q.pop();
         FullCellId& cellData = const_cast<FullCellId&>(f.data());
@@ -324,36 +339,85 @@ class EnumerateOptimals {
         cellData.checked(true);
 
         try {
-          Config c = findConfig(f);
-          auto route = d.findBestRoute(s, t, c);
-          auto v = f.vertex(0);
-          if (tri.is_infinite(v)) {
-            v = f.vertex(1);
+          Config conf = findConfig(f);
+          auto route = d.findBestRoute(s, t, conf);
+          TDS::Vertex_handle v;
+          for (auto vertex = f.vertices_begin(); vertex != f.vertices_end(); ++vertex) {
+            if (*vertex == TDS::Vertex_const_handle() || tri.is_infinite(*vertex)) {
+              continue;
+            } else {
+              v = *vertex;
+              break;
+            }
           }
 
-          Cost& cellCost = routes[v->data().id].costs;
-          if (route->costs * c < cellCost * c) {
+          routes.push_back(std::move(*route));
+          configs.push_back(std::move(conf));
 
-            addToTriangulation(std::move(*route), std::move(c));
+          bool include = true;
+          for (size_t i = 0; i < routes.size() - 2; ++i) {
+            auto lastRoute = routes.size() - 1;
+            if (compare(i, lastRoute) == 1.0) {
+              include = false;
+              break;
+            }
+          }
+
+          if (include) {
+            addToTriangulation();
             workToDo = true;
           }
 
         } catch (std::runtime_error& e) {
+        }
+      }
+    }
+
+    auto end = c::high_resolution_clock::now();
+
+    enumeration_time = c::duration_cast<c::milliseconds>(end - start).count();
+
+    start = c::high_resolution_clock::now();
+    std::vector<size_t> vertices;
+
+    if (tri.number_of_vertices() >= DIMENSION) {
+      typedef Triangulation::Face Face;
+      typedef std::vector<Face> Faces;
+      Faces ch_edges;
+      std::back_insert_iterator<Faces> out(ch_edges);
+      tri.tds().incident_faces(tri.infinite_vertex(), 1, out);
+
+      vertices.reserve(ch_edges.size());
+      for (auto& f : ch_edges) {
+        TDS::Vertex_handle v = f.vertex(0);
+        if (tri.is_infinite(v)) {
+          v = f.vertex(1);
+        }
+        vertices.push_back(v->data().id);
+      }
+    } else {
+      for (TDS::Vertex_iterator vertex = tri.vertices_begin(); vertex != tri.vertices_end();
+           ++vertex) {
+        if (vertex == TDS::Vertex_handle() || tri.is_infinite(*vertex)) {
           continue;
         }
+        vertices.push_back(vertex->data().id);
       }
     }
 
     std::vector<std::pair<size_t, size_t>> edges;
 
-    for (size_t i = 0; i < routes.size(); ++i) {
-      for (size_t j = i + 1; j < routes.size(); ++j) {
-        if (compare(i, j) >= maxOverlap) {
+    for (size_t i = 0; i < vertices.size(); ++i) {
+      for (size_t j = i + 1; j < vertices.size(); ++j) {
+        if (compare(vertices[i], vertices[j]) >= maxOverlap) {
           edges.emplace_back(i, j);
         }
       }
     }
-    auto independent_set = find_independent_set(routes.size(), edges);
+    auto independent_set = find_independent_set(vertices.size(), edges);
+
+    end = c::high_resolution_clock::now();
+    recommendation_time = c::duration_cast<c::milliseconds>(end - start).count();
 
     std::vector<Route> routes;
     routes.reserve(independent_set.size());
@@ -361,9 +425,9 @@ class EnumerateOptimals {
     configs.reserve(independent_set.size());
 
     for (auto id : independent_set) {
-      routes.push_back(this->routes[id]);
+      routes.push_back(this->routes[vertices[id]]);
 
-      auto c = this->configs[id];
+      auto c = this->configs[vertices[id]];
       for (size_t i = 0; i < DIMENSION; ++i) {
         c.values[i] /= factor[i];
       }
@@ -378,6 +442,8 @@ class EnumerateOptimals {
 
     return { routes, configs };
   }
+
+  size_t found_route_count() const { return routes.size(); }
 };
 
 #endif /* ENUMERATE_OPTIMALS_H */

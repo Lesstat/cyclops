@@ -17,6 +17,7 @@
 */
 
 #include "dijkstra.hpp"
+#include "enumerate_optimals.hpp"
 #include "graph_loading.hpp"
 #include "grid.hpp"
 #include "ilp_independent_set.hpp"
@@ -110,6 +111,43 @@ void explore_random(std::ifstream& file, std::ofstream& output, Dijkstra& d, siz
       output << type << "," << from << "," << to << "," << splitCount << "," << maxSimilarity << ","
              << routes.size() << "," << set.size() << "," << exploreTime << ","
              << recommendation_time << '\n';
+    } catch (...) {
+      continue;
+    }
+  }
+}
+
+void enumerate(std::ifstream& file, std::ofstream& output, Dijkstra& d, size_t maxRoutes,
+    double maxSimilarity, std::string type)
+{
+  while (!file.eof()) {
+    size_t from;
+    size_t to;
+    file >> from >> to;
+    if (from == to) {
+      continue;
+    }
+    if (file.eof()) {
+      break;
+    }
+    if (!d.findBestRoute(NodePos{ from }, NodePos{ to }, PosVector{ { 1, 0, 0 } })) {
+      std::cout << "did not find routes"
+                << "\n";
+      continue;
+    }
+    try {
+      EnumerateOptimals o(d, maxRoutes, maxSimilarity);
+
+      std::vector<Route> routes;
+      std::tie(routes, std::ignore) = o.find(NodePos{ from }, NodePos{ to });
+
+      auto routes_recommended = routes.size();
+
+      auto routeCount = o.found_route_count();
+
+      output << type << "," << from << "," << to << "," << maxRoutes << "," << maxSimilarity << ","
+             << routeCount << "," << routes_recommended << "," << o.enumeration_time << ","
+             << o.recommendation_time << '\n';
     } catch (...) {
       continue;
     }
@@ -231,9 +269,9 @@ int main(int argc, char* argv[])
   po::options_description experiment{ "Experiment to conduct" };
   dataConfiguration.add_options()("dijkstra,d", "Run dijkstra for random s-t queries ")(
       "alt,a", "Run alternative route search for random s-t queries")(
-      "candidates,c", "find candidates for one and more day tours")(
-      "commute", "find candidates for commuting tours")(
-      "random,r", "explore random configurations")("naive,n", "naive exploraiton");
+      "candidates,c", "find candidates for one and more day tours")("commute",
+      "find candidates for commuting tours")("random,r", "explore random configurations")(
+      "naive,n", "naive exploration")("enumerate,e", "enumerate paths");
 
   po::options_description all;
   all.add_options()("help,h", "prints help message");
@@ -280,8 +318,10 @@ int main(int argc, char* argv[])
   std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
 
   if (vm.count("alt") > 0) {
-    // output << "type,from,to,maxSplits,maxLevel,maxSimilarity,routeCount,recommendedRouteCount,"
-    //           "exploreTime,recommendationTime\n";
+    if (output.tellp() == 0) {
+      output << "type,from,to,maxSplits,maxLevel,maxSimilarity,routeCount,recommendedRouteCount,"
+                "exploreTime,recommendationTime\n";
+    }
     while (!params.eof()) {
       size_t splitCount = 0, maxLevel = 0;
       double maxSimilarity = 1.0;
@@ -296,9 +336,31 @@ int main(int argc, char* argv[])
       explore(week, output, d, splitCount, maxLevel, maxSimilarity, "week");
       explore(commute, output, d, splitCount, maxLevel, maxSimilarity, "commute");
     }
-  } else if (vm.count("dijkstra") > 0) {
-    output
-        << "from,to,alpha1,alpha2,alpha3,length,heigh_gain,unsuitabiltiy,edgeCount,pqPolls,time\n";
+  } else if (vm.count("enumerate") > 0) {
+    if (output.tellp() == 0) {
+      output << "type,from,to,maxRoutes,maxSimilarity,routeCount,recommendedRouteCount,"
+                "exploreTime,recommendationTime\n";
+    }
+    while (!params.eof()) {
+      size_t maxRoutes = 0;
+      double maxSimilarity = 1.0;
+      params >> maxRoutes >> maxSimilarity;
+      std::cout << "Starting Configuration: " << maxRoutes << " " << maxSimilarity << "\n";
+
+      std::ifstream day{ "daytour" };
+      std::ifstream week{ "weektour" };
+      std::ifstream commute{ "commute" };
+      enumerate(day, output, d, maxRoutes, maxSimilarity, "day");
+      enumerate(week, output, d, maxRoutes, maxSimilarity, "week");
+      enumerate(commute, output, d, maxRoutes, maxSimilarity, "commute");
+    }
+  }
+
+  else if (vm.count("dijkstra") > 0) {
+    if (output.tellp() == 0) {
+      output << "from,to,alpha1,alpha2,alpha3,length,heigh_gain,unsuitabiltiy,edgeCount,pqPolls,"
+                "time\n";
+    }
     while (!params.eof()) {
       size_t sampleSize = 0;
       params >> sampleSize;
@@ -330,8 +392,10 @@ int main(int argc, char* argv[])
   } else if (vm.count("commute") > 0) {
     search_commuting_candidates(g);
   } else if (vm.count("random") > 0) {
-    output << "type,from,to,maxSplits,maxSimilarity,routeCount,recommendedRouteCount,"
-              "exploreTime,recommendationTime\n";
+    if (output.tellp() == 0) {
+      output << "type,from,to,maxSplits,maxSimilarity,routeCount,recommendedRouteCount,"
+                "exploreTime,recommendationTime\n";
+    }
     while (!params.eof()) {
       size_t splitCount = 0;
       double maxSimilarity = 1.0;
@@ -346,8 +410,10 @@ int main(int argc, char* argv[])
       explore_random(commute, output, d, splitCount, maxSimilarity, "commute");
     }
   } else if (vm.count("naive") > 0) {
-    output << "type,from,to,maxSplits,maxSimilarity,routeCount,recommendedRouteCount,"
-              "exploreTime,recommendationTime\n";
+    if (output.tellp() == 0) {
+      output << "type,from,to,maxSplits,maxSimilarity,routeCount,recommendedRouteCount,"
+                "exploreTime,recommendationTime\n";
+    }
 
     for (double epsilon, maxSimilarity; params >> epsilon >> maxSimilarity;) {
       std::cout << "running config: " << epsilon << " " << maxSimilarity << '\n';
