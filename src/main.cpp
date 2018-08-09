@@ -163,35 +163,39 @@ void runWebServer(Graph& g)
       return;
     }
 
-    auto dijkstra = g.createDijkstra();
+    try {
+      auto dijkstra = g.createDijkstra();
 
-    Dijkstra::ScalingFactor f;
-    dijkstra.calcScalingFactor(NodePos{ *s }, NodePos{ *t }, f);
+      Dijkstra::ScalingFactor f;
+      dijkstra.calcScalingFactor(NodePos{ *s }, NodePos{ *t }, f);
 
-    Config c{ LengthConfig{ (static_cast<double>(*length) / 100.0) },
-      HeightConfig{ (static_cast<double>(*height) / 100.0) },
-      UnsuitabilityConfig{ (static_cast<double>(*unsuitability) / 100.0) } };
+      Config c{ LengthConfig{ (static_cast<double>(*length) / 100.0) },
+        HeightConfig{ (static_cast<double>(*height) / 100.0) },
+        UnsuitabilityConfig{ (static_cast<double>(*unsuitability) / 100.0) } };
 
-    for (size_t i = 0; i < DIMENSION; ++i) {
-      c.values[i] *= f[i];
+      for (size_t i = 0; i < DIMENSION; ++i) {
+        c.values[i] *= f[i];
+      }
+
+      auto start = std::chrono::high_resolution_clock::now();
+      auto route = dijkstra.findBestRoute(NodePos{ *s }, NodePos{ *t }, c);
+      auto end = std::chrono::high_resolution_clock::now();
+      size_t dur = std::chrono::duration_cast<ms>(end - start).count();
+      *log << "Dijkstra took " << dur << "ms"
+           << "\\n";
+
+      std::cout << "Finding the route took " << dur << "ms" << '\n';
+      if (route) {
+
+        auto json = routeToJson(*route, g, true);
+        SimpleWeb::CaseInsensitiveMultimap header;
+        header.emplace("Content-Type", "application/json");
+        response->write(SimpleWeb::StatusCode::success_ok, json, header);
+      }
+      response->write(SimpleWeb::StatusCode::client_error_not_found, "Did not find route");
+    } catch (std::exception& e) {
+      response->write(SimpleWeb::StatusCode::server_error_internal_server_error, e.what());
     }
-
-    auto start = std::chrono::high_resolution_clock::now();
-    auto route = dijkstra.findBestRoute(NodePos{ *s }, NodePos{ *t }, c);
-    auto end = std::chrono::high_resolution_clock::now();
-    size_t dur = std::chrono::duration_cast<ms>(end - start).count();
-    *log << "Dijkstra took " << dur << "ms"
-         << "\\n";
-
-    std::cout << "Finding the route took " << dur << "ms" << '\n';
-    if (route) {
-
-      auto json = routeToJson(*route, g, true);
-      SimpleWeb::CaseInsensitiveMultimap header;
-      header.emplace("Content-Type", "application/json");
-      response->write(SimpleWeb::StatusCode::success_ok, json, header);
-    }
-    response->write(SimpleWeb::StatusCode::client_error_not_found, "Did not find route");
   };
 
   server.resource["^/scaled"]["GET"] = [&g](Response response, Request request) {
@@ -232,6 +236,10 @@ void runWebServer(Graph& g)
     auto& points = triangulation.points;
     auto& triangles = triangulation.triangles;
     std::stringstream result;
+
+    auto selCount
+        = std::count_if(points.begin(), points.end(), [](const auto& p) { return p.selected; });
+    std::cout << "Selected " << selCount << " routes!" << '\n';
 
     result << "{ \"points\": [";
     bool first = true;
@@ -300,34 +308,39 @@ void runWebServer(Graph& g)
       return;
     }
     *log << "from " << *s << " to " << *t << "\\n";
+    try {
 
-    std::cout << "starting computation"
-              << "\n";
-    auto [routes, configs]
-        = EnumerateOptimals(g, *maxOverlap / 100.0, *maxRoutes).find(NodePos{ *s }, NodePos{ *t });
-    std::stringstream result;
+      std::cout << "starting computation"
+                << "\n";
+      auto [routes, configs] = EnumerateOptimals(g, *maxOverlap / 100.0, *maxRoutes)
+                                   .find(NodePos{ *s }, NodePos{ *t });
 
-    std::cout << "building json for " << routes.size() << " routes" << '\n';
+      std::stringstream result;
 
-    result << "{ \"points\": [";
-    for (size_t i = 0; i < routes.size(); ++i) {
-      if (i > 0) {
-        result << ",";
+      std::cout << "building json for " << routes.size() << " routes" << '\n';
+
+      result << "{ \"points\": [";
+      for (size_t i = 0; i < routes.size(); ++i) {
+        if (i > 0) {
+          result << ",";
+        }
+        result << "{ \"conf\": \"" << configs[i] << "\",";
+        result << "\"route\":" << routeToJson(routes[i], g) << ",";
+        result << "\"selected\": "
+               << "true";
+        result << "}";
       }
-      result << "{ \"conf\": \"" << configs[i] << "\",";
-      result << "\"route\":" << routeToJson(routes[i], g) << ",";
-      result << "\"selected\": "
-             << "true";
+      result << "],";
+      result << "\"debug\":\"" << log->getInfo() << "\" ";
+
       result << "}";
+
+      SimpleWeb::CaseInsensitiveMultimap header;
+      header.emplace("Content-Type", "application/json");
+      response->write(SimpleWeb::StatusCode::success_ok, result, header);
+    } catch (std::exception& e) {
+      response->write(SimpleWeb::StatusCode::server_error_internal_server_error, e.what());
     }
-    result << "],";
-    result << "\"debug\":\"" << log->getInfo() << "\" ";
-
-    result << "}";
-
-    SimpleWeb::CaseInsensitiveMultimap header;
-    header.emplace("Content-Type", "application/json");
-    response->write(SimpleWeb::StatusCode::success_ok, result, header);
   };
 
   std::cout << "Starting web server at http://localhost:" << server.config.port << '\n';
