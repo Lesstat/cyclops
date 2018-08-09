@@ -108,7 +108,7 @@ typedef CGAL::Triangulation<Traits, TDS> Triangulation;
 typedef Triangulation::Facet Facet;
 typedef TDS::Vertex_iterator VertexIter;
 
-auto compare_prio = [](auto left, auto right) { return left.data().prio() < right.data().prio(); };
+auto compare_prio = [](auto left, auto right) { return left.data().prio() > right.data().prio(); };
 typedef std::priority_queue<TDS::Full_cell, std::vector<TDS::Full_cell>, decltype(compare_prio)>
     CellContainer;
 
