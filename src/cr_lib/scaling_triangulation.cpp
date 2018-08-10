@@ -441,24 +441,7 @@ class SimRouteCountPrio : public TrianglePrio {
 
   bool noMoreRoutes(size_t p1, size_t p2, size_t p3) override
   {
-    auto simCount1 = 0;
-    auto simCount2 = 0;
-    auto simCount3 = 0;
-    auto lastPoint = std::max({ p1, p2, p3 });
-    for (size_t i = 0; i < lastPoint; ++i) {
-      if (i != p1 && tri->compare(i, p1) > maxOverlap) {
-        simCount1++;
-      }
-      if (i != p2 && tri->compare(i, p2) > maxOverlap) {
-        simCount2++;
-      }
-      if (i != p3 && tri->compare(i, p3) > maxOverlap) {
-        simCount3++;
-      }
-    }
-    auto maxSim = 2;
-    bool tooManySim = simCount1 > maxSim && simCount2 > maxSim && simCount3 > maxSim;
-    return tooManySim || (tri->compare(p1, p2) == 1 && tri->compare(p2, p3) == 1);
+    return tri->compare(p1, p2) == 1 && tri->compare(p2, p3) == 1;
   };
 
   double prio(size_t, size_t p1, size_t p2, size_t p3) override
