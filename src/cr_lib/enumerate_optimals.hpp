@@ -294,6 +294,10 @@ class EnumerateOptimals {
     namespace c = std::chrono;
 
     auto start = c::high_resolution_clock::now();
+    routes.clear();
+    configs.clear();
+    similarities.clear();
+    tri.clear();
 
     Config conf(std::vector(DIMENSION, 1.0 / DIMENSION));
     auto route = d.findBestRoute(s, t, conf);
@@ -405,17 +409,23 @@ class EnumerateOptimals {
       }
     }
 
-    std::vector<std::pair<size_t, size_t>> edges;
+    std::vector<size_t> independent_set;
+    if (maxOverlap < 1.0) {
+      std::vector<std::pair<size_t, size_t>> edges;
 
-    for (size_t i = 0; i < vertices.size(); ++i) {
-      for (size_t j = i + 1; j < vertices.size(); ++j) {
-        if (compare(vertices[i], vertices[j]) >= maxOverlap) {
-          edges.emplace_back(i, j);
+      for (size_t i = 0; i < vertices.size(); ++i) {
+        for (size_t j = i + 1; j < vertices.size(); ++j) {
+          if (compare(vertices[i], vertices[j]) >= maxOverlap) {
+            edges.emplace_back(i, j);
+          }
         }
       }
+      independent_set = find_independent_set(vertices.size(), edges);
+    } else {
+      for (size_t i = 0; i < vertices.size(); ++i) {
+        independent_set.push_back(i);
+      }
     }
-    auto independent_set = find_independent_set(vertices.size(), edges);
-
     end = c::high_resolution_clock::now();
     recommendation_time = c::duration_cast<c::milliseconds>(end - start).count();
 

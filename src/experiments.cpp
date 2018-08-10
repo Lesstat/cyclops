@@ -154,6 +154,36 @@ void enumerate(std::ifstream& file, std::ofstream& output, Dijkstra& d, size_t m
   }
 }
 
+void enumerate_all(std::ifstream& file, std::ofstream& output, Dijkstra& d, std::string type)
+{
+  size_t from;
+  size_t to;
+  int counter = 0;
+  while (file >> from >> to) {
+    if (!d.findBestRoute(NodePos{ from }, NodePos{ to }, PosVector{ { 1, 0, 0 } })) {
+      std::cout << "did not find routes"
+                << "\n";
+      continue;
+    }
+    try {
+      if (++counter % 20 == 0) {
+        std::cout << "finished " << counter << " s-t pairs" << '\n';
+      }
+      EnumerateOptimals o(d, 1.0, std::numeric_limits<size_t>::max());
+
+      std::vector<Route> routes;
+      std::tie(routes, std::ignore) = o.find(NodePos{ from }, NodePos{ to });
+
+      auto routes_recommended = routes.size();
+
+      output << type << "," << from << "," << to << "," << routes_recommended << ","
+             << o.enumeration_time << '\n';
+    } catch (...) {
+      continue;
+    }
+  }
+}
+
 void search_candidates(Graph& g)
 {
   std::cout << "searching for candidates" << '\n';
@@ -270,8 +300,8 @@ int main(int argc, char* argv[])
   dataConfiguration.add_options()("dijkstra,d", "Run dijkstra for random s-t queries ")(
       "alt,a", "Run alternative route search for random s-t queries")(
       "candidates,c", "find candidates for one and more day tours")("commute",
-      "find candidates for commuting tours")("random,r", "explore random configurations")(
-      "naive,n", "naive exploration")("enumerate,e", "enumerate paths");
+      "find candidates for commuting tours")("random,r", "explore random configurations")("naive,n",
+      "naive exploration")("enumerate,e", "enumerate paths")("all", "enumerate all paths");
 
   po::options_description all;
   all.add_options()("help,h", "prints help message");
@@ -354,9 +384,17 @@ int main(int argc, char* argv[])
       enumerate(week, output, d, maxRoutes, maxSimilarity, "week");
       enumerate(commute, output, d, maxRoutes, maxSimilarity, "commute");
     }
-  }
-
-  else if (vm.count("dijkstra") > 0) {
+  } else if (vm.count("all") > 0) {
+    if (output.tellp() == 0) {
+      output << "type,from,to,routeCount,time\n";
+    }
+    std::ifstream day{ "daytour" };
+    std::ifstream week{ "weektour" };
+    std::ifstream commute{ "commute" };
+    enumerate_all(commute, output, d, "commute");
+    enumerate_all(day, output, d, "day");
+    enumerate_all(week, output, d, "week");
+  } else if (vm.count("dijkstra") > 0) {
     if (output.tellp() == 0) {
       output << "from,to,alpha1,alpha2,alpha3,length,heigh_gain,unsuitabiltiy,edgeCount,pqPolls,"
                 "time\n";
