@@ -308,12 +308,12 @@ void runWebServer(Graph& g)
       return;
     }
     *log << "from " << *s << " to " << *t << "\\n";
+    EnumerateOptimals enumerate(g, *maxOverlap / 100.0, *maxRoutes);
     try {
 
       std::cout << "starting computation"
                 << "\n";
-      auto [routes, configs] = EnumerateOptimals(g, *maxOverlap / 100.0, *maxRoutes)
-                                   .find(NodePos{ *s }, NodePos{ *t });
+      auto [routes, configs] = enumerate.find(NodePos{ *s }, NodePos{ *t });
 
       std::stringstream result;
 
@@ -339,6 +339,8 @@ void runWebServer(Graph& g)
       header.emplace("Content-Type", "application/json");
       response->write(SimpleWeb::StatusCode::success_ok, result, header);
     } catch (std::exception& e) {
+      std::cout << "Enumeration failed after computing " << enumerate.vertex_count() << " routes"
+                << '\n';
       response->write(SimpleWeb::StatusCode::server_error_internal_server_error, e.what());
     }
   };
@@ -462,6 +464,8 @@ int testGraph(Graph& g)
   std::cout << "Compared " << route << " routes" << '\n';
   std::cout << "Did not find a route in " << noRoute << " cases" << '\n';
   std::cout << "average speed up is " << static_cast<double>(nTime) / dTime << '\n';
+  std::cout << "Average CH-Dijkstra time: " << static_cast<double>(dTime) / route << "ms" << '\n';
+  std::cout << "Average    Dijkstra time: " << static_cast<double>(nTime) / route << "ms" << '\n';
   return 0;
 }
 

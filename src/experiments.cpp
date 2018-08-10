@@ -136,7 +136,7 @@ void enumerate(std::ifstream& file, std::ofstream& output, Dijkstra& d, size_t m
       continue;
     }
     try {
-      EnumerateOptimals o(d, maxRoutes, maxSimilarity);
+      EnumerateOptimals o(d, maxSimilarity, maxRoutes);
 
       std::vector<Route> routes;
       std::tie(routes, std::ignore) = o.find(NodePos{ from }, NodePos{ to });

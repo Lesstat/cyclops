@@ -444,6 +444,7 @@ class EnumerateOptimals {
   }
 
   size_t found_route_count() const { return routes.size(); }
+  size_t vertex_count() const { return tri.number_of_vertices(); }
 };
 
 #endif /* ENUMERATE_OPTIMALS_H */
