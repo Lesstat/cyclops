@@ -191,9 +191,9 @@ function initializeCanvas() {
   drawDot(canvasRgb, center.x, center.y);
 }
 
-const lengthCorner = { x: 5, y: 505 };
-const heightCorner = { x: 505, y: 505 };
-const unsuitabilityCorner = { x: 252, y: 22 };
+const lengthCorner = { x: 20, y: canvasRgb.height - 30 };
+const heightCorner = { x: canvasRgb.width - 20, y: canvasRgb.height - 30 };
+const unsuitabilityCorner = { x: (lengthCorner.x + heightCorner.x) / 2, y: 50 };
 const center = configToCoords([1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]);
 
 function drawTriangle(canvas) {
@@ -206,6 +206,19 @@ function drawTriangle(canvas) {
   ctx.lineTo(heightCorner.x, heightCorner.y);
   ctx.lineTo(unsuitabilityCorner.x, unsuitabilityCorner.y);
   ctx.fill();
+  ctx.font = "20px sans-serif";
+
+  ctx.fillStyle = "blue";
+  ctx.fillText("Length", 0, lengthCorner.y + 20);
+  ctx.fillStyle = "red";
+  ctx.fillText(
+    "Unsuitability",
+    unsuitabilityCorner.x - 60,
+    unsuitabilityCorner.y - 10
+  );
+
+  ctx.fillStyle = "green";
+  ctx.fillText("Height", heightCorner.x - 50, heightCorner.y + 20);
 }
 
 function drawDot(canvas, x, y, style) {
