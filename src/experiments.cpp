@@ -169,7 +169,7 @@ void enumerate_all(std::ifstream& file, std::ofstream& output, Dijkstra& d, std:
       if (++counter % 20 == 0) {
         std::cout << "finished " << counter << " s-t pairs" << '\n';
       }
-      EnumerateOptimals o(d, 1.0, std::numeric_limits<size_t>::max());
+      EnumerateOptimals o(d, 1.1, std::numeric_limits<size_t>::max());
 
       std::vector<Route> routes;
       std::tie(routes, std::ignore) = o.find(NodePos{ from }, NodePos{ to });

@@ -308,7 +308,8 @@ void runWebServer(Graph& g)
       return;
     }
     *log << "from " << *s << " to " << *t << "\\n";
-    EnumerateOptimals enumerate(g, *maxOverlap / 100.0, *maxRoutes);
+    auto d = g.createDijkstra();
+    EnumerateOptimals enumerate(d, *maxOverlap / 100.0, *maxRoutes);
     try {
 
       std::cout << "starting computation"

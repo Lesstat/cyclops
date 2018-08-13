@@ -115,7 +115,7 @@ typedef std::priority_queue<TDS::Full_cell, std::vector<TDS::Full_cell>, decltyp
 
 class EnumerateOptimals {
 
-  Dijkstra d;
+  Dijkstra& d;
   Triangulation tri{ DIMENSION };
   std::vector<Route> routes;
   std::vector<Config> configs;
@@ -246,7 +246,7 @@ class EnumerateOptimals {
         continue;
       }
 
-      if (c.data().prio() < 0.0) {
+      if (c.data().prio() < 0.0 && maxOverlap < 1.0) {
         std::vector<TDS::Vertex_handle> vertices;
         for (auto v = c.vertices_begin(); v != c.vertices_end(); ++v) {
           auto& vertex = *v;
@@ -274,13 +274,6 @@ class EnumerateOptimals {
   public:
   size_t enumeration_time;
   size_t recommendation_time;
-
-  EnumerateOptimals(Graph& g, double maxOverlap, size_t maxRoutes)
-      : d(g.createDijkstra())
-      , maxOverlap(maxOverlap)
-      , maxRoutes(maxRoutes)
-  {
-  }
 
   EnumerateOptimals(Dijkstra& d, double maxOverlap, size_t maxRoutes)
       : d(d)
@@ -345,24 +338,20 @@ class EnumerateOptimals {
         try {
           Config conf = findConfig(f);
           auto route = d.findBestRoute(s, t, conf);
-          TDS::Vertex_handle v;
-          for (auto vertex = f.vertices_begin(); vertex != f.vertices_end(); ++vertex) {
-            if (*vertex == TDS::Vertex_const_handle() || tri.is_infinite(*vertex)) {
-              continue;
-            } else {
-              v = *vertex;
-              break;
-            }
-          }
 
           routes.push_back(std::move(*route));
           configs.push_back(std::move(conf));
 
+          auto lastRoute = routes.size() - 1;
           bool include = true;
-          for (size_t i = 0; i < routes.size() - 2; ++i) {
-            auto lastRoute = routes.size() - 1;
-            if (compare(i, lastRoute) == 1.0) {
-              include = false;
+          for (auto vertex = f.vertices_begin(); vertex != f.vertices_end(); ++vertex) {
+            if (*vertex == TDS::Vertex_const_handle() || tri.is_infinite(*vertex)) {
+              continue;
+            } else {
+              TDS::Vertex_handle v = *vertex;
+              if (compare(v->data().id, lastRoute) == 1.0) {
+                include = false;
+              }
               break;
             }
           }
