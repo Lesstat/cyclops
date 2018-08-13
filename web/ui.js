@@ -9,7 +9,6 @@ var endPopup = L.popup({ autoClose: false });
 var geoJson = L.layerGroup([]).addTo(map);
 var towerLayer = L.layerGroup([]).addTo(map);
 
-let canvas = document.getElementById("triangleSelector");
 let canvasRgb = document.getElementById("triangleSelectorRGB");
 
 L.tileLayer("http://{s}.tiles.wmflabs.org/bw-mapnik/{z}/{x}/{y}.png", {
@@ -142,57 +141,6 @@ function panOutMap() {
   xmlhttp.send();
 }
 
-function alternativeRoutes(kind) {
-  listOfRoutes = [];
-  clearOverlays();
-  let xmlhttp = new XMLHttpRequest();
-
-  xmlhttp.responseType = "json";
-  xmlhttp.onload = function() {
-    if (xmlhttp.status == 200) {
-      addToDebugLog("kind", xmlhttp.response.debug);
-
-      let values = xmlhttp.response.config1.split("/");
-
-      let myStyle1 = {
-        color: gradientToColor(values),
-        weight: 5,
-        opacity: 0.65
-      };
-      drawTriangle(canvas);
-      let coord = configToCoords(values.map(val => val / 100));
-
-      drawDot(canvas, coord.x, coord.y, "blue");
-
-      geoJson.addLayer(
-        L.geoJSON(xmlhttp.response.route1.route.geometry, { style: myStyle1 })
-      );
-
-      let myStyle2 = {
-        color: "#33FF00",
-        weight: 5,
-        opacity: 0.65
-      };
-
-      values = xmlhttp.response.config2.split("/");
-      coord = configToCoords(values.map(val => val / 100));
-
-      drawDot(canvas, coord.x, coord.y, "green");
-
-      geoJson.addLayer(
-        L.geoJSON(xmlhttp.response.route2.route.geometry, { style: myStyle2 })
-      );
-    } else {
-      document.getElementById("route_length").innerHTML = "Unknown";
-      document.getElementById("route_height").innerHTML = "Unknown";
-      document.getElementById("route_unsuitability").innerHTML = "Unknown";
-    }
-  };
-  let s = document.getElementById("start").innerHTML;
-  let t = document.getElementById("end").innerHTML;
-  xmlhttp.open("GET", "/alternative/" + kind + "?s=" + s + "&t=" + t);
-  xmlhttp.send();
-}
 function rainbow(number) {
   let colors = [
     "#543005",
@@ -235,17 +183,11 @@ function gradientToColor(config) {
 var listOfRoutes = [];
 
 function initializeCanvas() {
-  canvas.addEventListener("mousemove", moveDot);
-  canvas.addEventListener("mouseup", mouseUp);
-  canvas.addEventListener("mousedown", mouseDown);
-
   canvasRgb.addEventListener("mousemove", moveDot);
   canvasRgb.addEventListener("mouseup", mouseUp);
   canvasRgb.addEventListener("mousedown", mouseDown);
 
-  drawTriangle(canvas);
   drawTriangle(canvasRgb);
-  drawDot(canvas, center.x, center.y);
   drawDot(canvasRgb, center.x, center.y);
 }
 
@@ -296,8 +238,6 @@ function moveDot(event) {
   let unsuitabilitySpan = document.getElementById("road_percent");
 
   if (clicked && event) {
-    drawTriangle(canvas);
-    drawDot(canvas, event.offsetX, event.offsetY);
     drawTriangle(canvasRgb);
     drawDot(canvasRgb, event.offsetX, event.offsetY);
     let point = { x: event.offsetX, y: event.offsetY };
@@ -385,13 +325,11 @@ function scalingTriangulation() {
     if (xmlhttp.status == 200) {
       addToDebugLog("triangulation", xmlhttp.response.debug);
       listOfRoutes = [];
-      drawTriangle(canvas);
       drawTriangle(canvasRgb);
 
       let points = xmlhttp.response.points;
       let triangles = xmlhttp.response.triangles;
 
-      drawTriangles(canvas.getContext("2d"), points, triangles, false);
       drawTriangles(canvasRgb.getContext("2d"), points, triangles, true);
 
       for (let p in points) {
@@ -401,7 +339,6 @@ function scalingTriangulation() {
         let values = points[p].conf.split("/");
         let col = gradientToColor(values);
         let coord = configToCoords(values);
-        drawDot(canvas, coord.x, coord.y, rainbow(p));
         drawDot(canvasRgb, coord.x, coord.y, col);
 
         let myStyle = {
@@ -589,7 +526,6 @@ function enumerateRoutes() {
     if (xmlhttp.status == 200) {
       addToDebugLog("enumeration", xmlhttp.response.debug);
       listOfRoutes = [];
-      drawTriangle(canvas);
       drawTriangle(canvasRgb);
 
       let points = xmlhttp.response.points;
@@ -601,7 +537,6 @@ function enumerateRoutes() {
         let values = points[p].conf.split("/");
         let col = gradientToColor(values);
         let coord = configToCoords(values);
-        drawDot(canvas, coord.x, coord.y, rainbow(p));
         drawDot(canvasRgb, coord.x, coord.y, col);
 
         let myStyle = {
