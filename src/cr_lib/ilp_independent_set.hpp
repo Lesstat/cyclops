@@ -41,7 +41,7 @@ class ilpSet {
   }
   ~ilpSet() { glp_delete_prob(problem); }
 
-  void addEdges(std::vector<std::pair<size_t, size_t>>& edges)
+  void addEdges(const std::vector<std::pair<size_t, size_t>>& edges)
   {
     glp_add_rows(problem, edges.size());
     for (size_t i = 1; i <= edges.size(); ++i) {
@@ -66,7 +66,7 @@ class ilpSet {
     params.tm_lim = 5000;
 
     status = glp_intopt(problem, &params);
-    if (status != 0) {
+    if (status != 0 && status != GLP_ETMLIM) {
       throw std::invalid_argument("GLPK returned " + std::to_string(status) + " for ILP");
     }
     std::vector<size_t> results;
@@ -92,6 +92,11 @@ class ilpSet {
 };
 
 std::vector<size_t> find_independent_set(
+    size_t nodeCount, const std::vector<std::pair<size_t, size_t>>& edges);
+
+void duplicate_edges(std::vector<std::pair<size_t, size_t>>& edges);
+
+std::vector<size_t> greedy_independent_set(
     size_t nodeCount, std::vector<std::pair<size_t, size_t>>& edges);
 
 #endif /* ILP_INDEPENDENT_SET_H */
