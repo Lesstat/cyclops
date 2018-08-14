@@ -113,8 +113,12 @@ auto compare_prio = [](auto left, auto right) { return left.data().prio() > righ
 typedef std::priority_queue<TDS::Full_cell, std::vector<TDS::Full_cell>, decltype(compare_prio)>
     CellContainer;
 
+namespace c = std::chrono;
 class EnumerateOptimals {
+  public:
+  typedef std::vector<std::pair<size_t, size_t>> Edges;
 
+  private:
   Dijkstra& d;
   Triangulation tri{ DIMENSION };
   std::vector<Route> routes;
@@ -122,6 +126,7 @@ class EnumerateOptimals {
   std::map<std::pair<size_t, size_t>, double> similarities;
   double maxOverlap;
   size_t maxRoutes;
+  Dijkstra::ScalingFactor factor;
 
   double compare(size_t i, size_t j)
   {
@@ -271,6 +276,95 @@ class EnumerateOptimals {
     }
   }
 
+  std::vector<size_t> extract_independent_set(const std::vector<size_t>& vertices, bool ilp)
+  {
+
+    auto start = c::high_resolution_clock::now();
+
+    std::vector<size_t> independent_set;
+    if (maxOverlap < 1.0) {
+      Edges edges;
+
+      for (size_t i = 0; i < vertices.size(); ++i) {
+        for (size_t j = i + 1; j < vertices.size(); ++j) {
+          if (compare(vertices[i], vertices[j]) >= maxOverlap) {
+            edges.emplace_back(i, j);
+          }
+        }
+      }
+      if (ilp) {
+        independent_set = find_independent_set(vertices.size(), edges);
+      } else {
+        duplicate_edges(edges);
+        independent_set = greedy_independent_set(vertices.size(), edges);
+      }
+    } else {
+      for (size_t i = 0; i < vertices.size(); ++i) {
+        independent_set.push_back(i);
+      }
+    }
+    auto end = c::high_resolution_clock::now();
+    recommendation_time = c::duration_cast<c::milliseconds>(end - start).count();
+    return independent_set;
+  }
+
+  std::tuple<std::vector<size_t>, Edges> vertex_ids_and_edges()
+  {
+    typedef Triangulation::Face Face;
+    typedef std::vector<Face> Faces;
+
+    std::vector<size_t> vertices;
+    Edges edges;
+
+    auto get_edges = [&edges, this](auto v) {
+      Faces adjacent_edges;
+      tri.tds().incident_faces(v, 1, std::back_inserter(adjacent_edges));
+      for (auto& f : adjacent_edges) {
+        auto v0 = f.vertex(0);
+        auto v1 = f.vertex(1);
+        if (tri.is_infinite(v0) || tri.is_infinite(v1)) {
+          continue;
+        }
+        auto id0 = v0->data().id;
+        auto id1 = v1->data().id;
+        if (id0 > id1) {
+          std::swap(id0, id1);
+        }
+        edges.emplace_back(id0, id1);
+      }
+    };
+
+    if (tri.number_of_vertices() >= DIMENSION) {
+      Faces ch_edges;
+      std::back_insert_iterator<Faces> out(ch_edges);
+      tri.tds().incident_faces(tri.infinite_vertex(), 1, out);
+
+      vertices.reserve(ch_edges.size());
+      for (auto& f : ch_edges) {
+        TDS::Vertex_handle v = f.vertex(0);
+        if (tri.is_infinite(v)) {
+          v = f.vertex(1);
+        }
+        vertices.push_back(v->data().id);
+        get_edges(v);
+      }
+    } else {
+      for (TDS::Vertex_iterator vertex = tri.vertices_begin(); vertex != tri.vertices_end();
+           ++vertex) {
+        if (vertex == TDS::Vertex_handle() || tri.is_infinite(*vertex)) {
+          continue;
+        }
+        vertices.push_back(vertex->data().id);
+        get_edges(vertex);
+      }
+    }
+    std::sort(edges.begin(), edges.end());
+    auto last = std::unique(edges.begin(), edges.end());
+    edges.erase(last, edges.end());
+
+    return { vertices, edges };
+  }
+
   public:
   size_t enumeration_time;
   size_t recommendation_time;
@@ -282,10 +376,8 @@ class EnumerateOptimals {
   {
   }
 
-  std::tuple<std::vector<Route>, std::vector<Config>> find(NodePos s, NodePos t)
+  void find(NodePos s, NodePos t)
   {
-    namespace c = std::chrono;
-
     auto start = c::high_resolution_clock::now();
     routes.clear();
     configs.clear();
@@ -303,7 +395,6 @@ class EnumerateOptimals {
     configs.push_back(std::move(conf));
     addToTriangulation();
 
-    Dijkstra::ScalingFactor factor;
     for (size_t i = 0; i < DIMENSION; ++i) {
       Config conf(std::vector(DIMENSION, 0.0));
       conf.values[i] = 1.0;
@@ -369,54 +460,16 @@ class EnumerateOptimals {
     auto end = c::high_resolution_clock::now();
 
     enumeration_time = c::duration_cast<c::milliseconds>(end - start).count();
+  }
 
-    start = c::high_resolution_clock::now();
-    std::vector<size_t> vertices;
+  size_t found_route_count() const { return routes.size(); }
+  size_t vertex_count() const { return tri.number_of_vertices(); }
 
-    if (tri.number_of_vertices() >= DIMENSION) {
-      typedef Triangulation::Face Face;
-      typedef std::vector<Face> Faces;
-      Faces ch_edges;
-      std::back_insert_iterator<Faces> out(ch_edges);
-      tri.tds().incident_faces(tri.infinite_vertex(), 1, out);
+  std::tuple<std::vector<Route>, std::vector<Config>, Edges> recommend_routes(bool ilp)
+  {
 
-      vertices.reserve(ch_edges.size());
-      for (auto& f : ch_edges) {
-        TDS::Vertex_handle v = f.vertex(0);
-        if (tri.is_infinite(v)) {
-          v = f.vertex(1);
-        }
-        vertices.push_back(v->data().id);
-      }
-    } else {
-      for (TDS::Vertex_iterator vertex = tri.vertices_begin(); vertex != tri.vertices_end();
-           ++vertex) {
-        if (vertex == TDS::Vertex_handle() || tri.is_infinite(*vertex)) {
-          continue;
-        }
-        vertices.push_back(vertex->data().id);
-      }
-    }
-
-    std::vector<size_t> independent_set;
-    if (maxOverlap < 1.0) {
-      std::vector<std::pair<size_t, size_t>> edges;
-
-      for (size_t i = 0; i < vertices.size(); ++i) {
-        for (size_t j = i + 1; j < vertices.size(); ++j) {
-          if (compare(vertices[i], vertices[j]) >= maxOverlap) {
-            edges.emplace_back(i, j);
-          }
-        }
-      }
-      independent_set = find_independent_set(vertices.size(), edges);
-    } else {
-      for (size_t i = 0; i < vertices.size(); ++i) {
-        independent_set.push_back(i);
-      }
-    }
-    end = c::high_resolution_clock::now();
-    recommendation_time = c::duration_cast<c::milliseconds>(end - start).count();
+    auto [vertices, edges] = vertex_ids_and_edges();
+    auto independent_set = extract_independent_set(vertices, ilp);
 
     std::vector<Route> routes;
     routes.reserve(independent_set.size());
@@ -439,11 +492,21 @@ class EnumerateOptimals {
       configs.push_back(std::move(c));
     }
 
-    return { routes, configs };
-  }
+    std::map<size_t, size_t> id_to_pos;
+    for (size_t i = 0; i < independent_set.size(); ++i) {
+      id_to_pos[independent_set[i]] = i;
+    }
+    Edges final_edges;
+    for (auto& e : edges) {
+      try {
+        final_edges.emplace_back(id_to_pos.at(e.first), id_to_pos.at(e.second));
+      } catch (std::out_of_range& e) {
+        continue;
+      }
+    }
 
-  size_t found_route_count() const { return routes.size(); }
-  size_t vertex_count() const { return tri.number_of_vertices(); }
+    return { routes, configs, edges };
+  }
 };
 
 #endif /* ENUMERATE_OPTIMALS_H */

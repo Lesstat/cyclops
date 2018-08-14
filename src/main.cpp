@@ -314,7 +314,8 @@ void runWebServer(Graph& g)
 
       std::cout << "starting computation"
                 << "\n";
-      auto [routes, configs] = enumerate.find(NodePos{ *s }, NodePos{ *t });
+      enumerate.find(NodePos{ *s }, NodePos{ *t });
+      auto [routes, configs, edges] = enumerate.recommend_routes(true);
 
       std::stringstream result;
 
@@ -331,6 +332,15 @@ void runWebServer(Graph& g)
                << "true";
         result << "}";
       }
+      result << "],";
+      result << "\"edges\": [";
+      for (size_t i = 0; i < edges.size(); ++i) {
+        if (i > 0) {
+          result << ",";
+        }
+        result << "[" << edges[i].first << "," << edges[i].second << "]";
+      }
+
       result << "],";
       result << "\"debug\":\"" << log->getInfo() << "\" ";
 

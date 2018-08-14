@@ -75,6 +75,7 @@ void explore(std::ifstream& file, std::ofstream& output, Dijkstra& d, size_t spl
 void explore_random(std::ifstream& file, std::ofstream& output, Dijkstra& d, size_t splitCount,
     double maxSimilarity, std::string type)
 {
+  auto counter = 0;
   while (!file.eof()) {
     size_t from;
     size_t to;
@@ -84,6 +85,9 @@ void explore_random(std::ifstream& file, std::ofstream& output, Dijkstra& d, siz
     }
     if (file.eof()) {
       break;
+    }
+    if (++counter % 20 == 0) {
+      output.flush();
     }
     try {
       std::vector<Route> routes;
@@ -104,13 +108,20 @@ void explore_random(std::ifstream& file, std::ofstream& output, Dijkstra& d, siz
         }
       }
       start = c::high_resolution_clock::now();
-      auto set = find_independent_set(routes.size(), edges);
+      auto ilpSet = find_independent_set(routes.size(), edges);
       end = c::high_resolution_clock::now();
-      size_t recommendation_time = c::duration_cast<ms>(end - start).count();
+      size_t ilp_recommendation_time = c::duration_cast<ms>(end - start).count();
 
-      output << type << "," << from << "," << to << "," << splitCount << "," << maxSimilarity << ","
-             << routes.size() << "," << set.size() << "," << exploreTime << ","
-             << recommendation_time << '\n';
+      duplicate_edges(edges);
+      start = c::high_resolution_clock::now();
+      auto greedySet = greedy_independent_set(routes.size(), edges);
+      end = c::high_resolution_clock::now();
+      size_t greedy_recommendation_time = c::duration_cast<ms>(end - start).count();
+
+      output << type << "," << from << "," << to << "," << routes.size() << "," << maxSimilarity
+             << "," << routes.size() << "," << ilpSet.size() << "," << greedySet.size() << ","
+             << exploreTime << "," << ilp_recommendation_time << "," << greedy_recommendation_time
+             << '\n';
     } catch (...) {
       continue;
     }
@@ -120,6 +131,7 @@ void explore_random(std::ifstream& file, std::ofstream& output, Dijkstra& d, siz
 void enumerate(std::ifstream& file, std::ofstream& output, Dijkstra& d, size_t maxRoutes,
     double maxSimilarity, std::string type)
 {
+  auto counter = 0;
   while (!file.eof()) {
     size_t from;
     size_t to;
@@ -130,6 +142,10 @@ void enumerate(std::ifstream& file, std::ofstream& output, Dijkstra& d, size_t m
     if (file.eof()) {
       break;
     }
+    if (++counter % 20 == 0) {
+      output.flush();
+    }
+
     if (!d.findBestRoute(NodePos{ from }, NodePos{ to }, PosVector{ { 1, 0, 0 } })) {
       std::cout << "did not find routes"
                 << "\n";
@@ -139,15 +155,21 @@ void enumerate(std::ifstream& file, std::ofstream& output, Dijkstra& d, size_t m
       EnumerateOptimals o(d, maxSimilarity, maxRoutes);
 
       std::vector<Route> routes;
-      std::tie(routes, std::ignore) = o.find(NodePos{ from }, NodePos{ to });
+      o.find(NodePos{ from }, NodePos{ to });
 
-      auto routes_recommended = routes.size();
+      std::tie(routes, std::ignore, std::ignore) = o.recommend_routes(true);
+      auto routes_recommended_ilp = routes.size();
+      auto ilp_time = o.recommendation_time;
+
+      std::tie(routes, std::ignore, std::ignore) = o.recommend_routes(false);
+      auto routes_recommended_greedy = routes.size();
+      auto greedy_time = o.recommendation_time;
 
       auto routeCount = o.found_route_count();
 
       output << type << "," << from << "," << to << "," << maxRoutes << "," << maxSimilarity << ","
-             << routeCount << "," << routes_recommended << "," << o.enumeration_time << ","
-             << o.recommendation_time << '\n';
+             << routeCount << "," << routes_recommended_ilp << "," << routes_recommended_greedy
+             << "," << o.enumeration_time << "," << ilp_time << "," << greedy_time << '\n';
     } catch (...) {
       continue;
     }
@@ -168,11 +190,14 @@ void enumerate_all(std::ifstream& file, std::ofstream& output, Dijkstra& d, std:
     try {
       if (++counter % 20 == 0) {
         std::cout << "finished " << counter << " s-t pairs" << '\n';
+        output.flush();
       }
       EnumerateOptimals o(d, 1.1, std::numeric_limits<size_t>::max());
 
       std::vector<Route> routes;
-      std::tie(routes, std::ignore) = o.find(NodePos{ from }, NodePos{ to });
+      o.find(NodePos{ from }, NodePos{ to });
+
+      std::tie(routes, std::ignore, std::ignore) = o.recommend_routes(true);
 
       auto routes_recommended = routes.size();
 
@@ -277,6 +302,49 @@ void search_commuting_candidates(Graph& g)
             << "\n";
 }
 
+void explore_naive(std::ifstream& route_input, std::ofstream& output, Dijkstra& d, double epsilon,
+    double maxSimilarity, std::string type)
+{
+  int counter = 0;
+  for (size_t from, to; route_input >> from >> to;) {
+    if (++counter % 20 == 0) {
+      output.flush();
+    }
+    try {
+      auto start = c::high_resolution_clock::now();
+      auto routes = naiveExploration(d, NodePos{ from }, NodePos{ to }, epsilon);
+      auto end = c::high_resolution_clock::now();
+      size_t exploreTime = c::duration_cast<ms>(end - start).count();
+
+      std::vector<std::pair<size_t, size_t>> edges;
+      for (size_t i = 0; i < routes.size(); ++i) {
+        for (size_t j = i + 1; j < routes.size(); ++j) {
+          if (calculateSharing(routes[i], routes[j]) > maxSimilarity) {
+            edges.emplace_back(i, j);
+          }
+        }
+      }
+
+      start = c::high_resolution_clock::now();
+      auto ilpSet = find_independent_set(routes.size(), edges);
+      end = c::high_resolution_clock::now();
+      size_t ilp_recommendation_time = c::duration_cast<ms>(end - start).count();
+
+      start = c::high_resolution_clock::now();
+      auto greedySet = greedy_independent_set(routes.size(), edges);
+      end = c::high_resolution_clock::now();
+      size_t greedy_recommendation_time = c::duration_cast<ms>(end - start).count();
+
+      output << type << "," << from << "," << to << "," << routes.size() << "," << maxSimilarity
+             << "," << routes.size() << "," << ilpSet.size() << "," << greedySet.size() << ","
+             << exploreTime << "," << ilp_recommendation_time << "," << greedy_recommendation_time
+             << '\n';
+    } catch (...) {
+      continue;
+    }
+  }
+}
+
 int main(int argc, char* argv[])
 {
   std::cout.imbue(std::locale(""));
@@ -368,13 +436,14 @@ int main(int argc, char* argv[])
     }
   } else if (vm.count("enumerate") > 0) {
     if (output.tellp() == 0) {
-      output << "type,from,to,maxRoutes,maxSimilarity,routeCount,recommendedRouteCount,"
-                "exploreTime,recommendationTime\n";
+      output << "type,from,to,maxRoutes,maxSimilarity,routeCount,ilpRecommendedRouteCount,"
+                "greedyRecommendedRouteCount,exploreTime,ilpRecommendationTime,"
+                "greedyRecommendationTime\n";
     }
-    while (!params.eof()) {
-      size_t maxRoutes = 0;
-      double maxSimilarity = 1.0;
-      params >> maxRoutes >> maxSimilarity;
+    size_t maxRoutes = 0;
+    double maxSimilarity = 1.0;
+
+    while (params >> maxRoutes >> maxSimilarity) {
       std::cout << "Starting Configuration: " << maxRoutes << " " << maxSimilarity << "\n";
 
       std::ifstream day{ "daytour" };
@@ -393,7 +462,7 @@ int main(int argc, char* argv[])
     std::ifstream commute{ "commute" };
     enumerate_all(commute, output, d, "commute");
     enumerate_all(day, output, d, "day");
-    enumerate_all(week, output, d, "week");
+    // enumerate_all(week, output, d, "week");
   } else if (vm.count("dijkstra") > 0) {
     if (output.tellp() == 0) {
       output << "from,to,alpha1,alpha2,alpha3,length,heigh_gain,unsuitabiltiy,edgeCount,pqPolls,"
@@ -431,13 +500,14 @@ int main(int argc, char* argv[])
     search_commuting_candidates(g);
   } else if (vm.count("random") > 0) {
     if (output.tellp() == 0) {
-      output << "type,from,to,maxSplits,maxSimilarity,routeCount,recommendedRouteCount,"
-                "exploreTime,recommendationTime\n";
+      output << "type,from,to,maxRoutes,maxSimilarity,routeCount,ilpRecommendedRouteCount,"
+                "greedyRecommendedRouteCount,exploreTime,ilpRecommendationTime,"
+                "greedyRecommendationTime\n";
     }
-    while (!params.eof()) {
-      size_t splitCount = 0;
-      double maxSimilarity = 1.0;
-      params >> splitCount >> maxSimilarity;
+    size_t splitCount = 0;
+    double maxSimilarity = 1.0;
+    while (params >> splitCount >> maxSimilarity) {
+
       std::cout << "Starting Configuration: " << splitCount << " " << maxSimilarity << "\n";
 
       std::ifstream day{ "daytour" };
@@ -449,8 +519,9 @@ int main(int argc, char* argv[])
     }
   } else if (vm.count("naive") > 0) {
     if (output.tellp() == 0) {
-      output << "type,from,to,maxSplits,maxSimilarity,routeCount,recommendedRouteCount,"
-                "exploreTime,recommendationTime\n";
+      output << "type,from,to,maxRoutes,maxSimilarity,routeCount,ilpRecommendedRouteCount,"
+                "greedyRecommendedRouteCount,exploreTime,ilpRecommendationTime,"
+                "greedyRecommendationTime\n";
     }
 
     for (double epsilon, maxSimilarity; params >> epsilon >> maxSimilarity;) {
@@ -459,96 +530,9 @@ int main(int argc, char* argv[])
       std::ifstream day{ "daytour" };
       std::ifstream week{ "weektour" };
       std::ifstream commute{ "commute" };
-
-      std::cout << "commute ";
-      for (size_t from, to; commute >> from >> to;) {
-        try {
-          auto start = c::high_resolution_clock::now();
-          auto routes = naiveExploration(d, NodePos{ from }, NodePos{ to }, epsilon);
-          auto end = c::high_resolution_clock::now();
-          size_t exploreTime = c::duration_cast<ms>(end - start).count();
-
-          std::vector<std::pair<size_t, size_t>> edges;
-          for (size_t i = 0; i < routes.size(); ++i) {
-            for (size_t j = i + 1; j < routes.size(); ++j) {
-              if (calculateSharing(routes[i], routes[j]) > maxSimilarity) {
-                edges.emplace_back(i, j);
-              }
-            }
-          }
-          start = c::high_resolution_clock::now();
-          auto set = find_independent_set(routes.size(), edges);
-          end = c::high_resolution_clock::now();
-          size_t recommendation_time = c::duration_cast<ms>(end - start).count();
-
-          output << "commute"
-                 << "," << from << "," << to << "," << routes.size() / 3 << "," << maxSimilarity
-                 << "," << routes.size() << "," << set.size() << "," << exploreTime << ","
-                 << recommendation_time << '\n';
-        } catch (...) {
-          continue;
-        }
-      }
-
-      std::cout << "day ";
-      for (size_t from, to; day >> from >> to;) {
-        try {
-          auto start = c::high_resolution_clock::now();
-          auto routes = naiveExploration(d, NodePos{ from }, NodePos{ to }, epsilon);
-          auto end = c::high_resolution_clock::now();
-          size_t exploreTime = c::duration_cast<ms>(end - start).count();
-
-          std::vector<std::pair<size_t, size_t>> edges;
-          for (size_t i = 0; i < routes.size(); ++i) {
-            for (size_t j = i + 1; j < routes.size(); ++j) {
-              if (calculateSharing(routes[i], routes[j]) > maxSimilarity) {
-                edges.emplace_back(i, j);
-              }
-            }
-          }
-          start = c::high_resolution_clock::now();
-          auto set = find_independent_set(routes.size(), edges);
-          end = c::high_resolution_clock::now();
-          size_t recommendation_time = c::duration_cast<ms>(end - start).count();
-
-          output << "day"
-                 << "," << from << "," << to << "," << routes.size() / 3 << "," << maxSimilarity
-                 << "," << routes.size() << "," << set.size() << "," << exploreTime << ","
-                 << recommendation_time << '\n';
-        } catch (...) {
-          continue;
-        }
-      }
-
-      std::cout << "week\n";
-      for (size_t from, to; week >> from >> to;) {
-        try {
-          auto start = c::high_resolution_clock::now();
-          auto routes = naiveExploration(d, NodePos{ from }, NodePos{ to }, epsilon);
-          auto end = c::high_resolution_clock::now();
-          size_t exploreTime = c::duration_cast<ms>(end - start).count();
-
-          std::vector<std::pair<size_t, size_t>> edges;
-          for (size_t i = 0; i < routes.size(); ++i) {
-            for (size_t j = i + 1; j < routes.size(); ++j) {
-              if (calculateSharing(routes[i], routes[j]) > maxSimilarity) {
-                edges.emplace_back(i, j);
-              }
-            }
-          }
-          start = c::high_resolution_clock::now();
-          auto set = find_independent_set(routes.size(), edges);
-          end = c::high_resolution_clock::now();
-          size_t recommendation_time = c::duration_cast<ms>(end - start).count();
-
-          output << "week"
-                 << "," << from << "," << to << "," << routes.size() / 3 << "," << maxSimilarity
-                 << "," << routes.size() << "," << set.size() << "," << exploreTime << ","
-                 << recommendation_time << '\n';
-        } catch (...) {
-          continue;
-        }
-      }
+      explore_naive(commute, output, d, epsilon, maxSimilarity, "commute");
+      explore_naive(day, output, d, epsilon, maxSimilarity, "day");
+      explore_naive(week, output, d, epsilon, maxSimilarity, "week");
     }
   }
   return 0;
