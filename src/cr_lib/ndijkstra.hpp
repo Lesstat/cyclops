@@ -56,6 +56,7 @@ class NormalDijkstra {
   void saveDotGraph(const EdgeId& inId, const EdgeId& outId);
 
   friend RouteIterator;
+  size_t pqPops = 0;
 
   private:
   void clearState();

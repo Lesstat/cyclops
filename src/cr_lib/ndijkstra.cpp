@@ -50,6 +50,7 @@ std::optional<RouteWithCount> NormalDijkstra::findBestRoute(
     }
     auto [node, pathCost] = heap.top();
     heap.pop();
+    ++pqPops;
     if (node == to) {
       return buildRoute(from, to);
     }
@@ -94,6 +95,7 @@ void NormalDijkstra::clearState()
   touched.clear();
   pathCost = Cost{};
   pathCount = 0;
+  pqPops = 0;
 }
 void insertUnpackedEdge(const Edge& e, std::deque<EdgeId>& route, bool front)
 {

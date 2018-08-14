@@ -366,6 +366,9 @@ int testGraph(Graph& g)
   size_t dTime = 0;
   size_t nTime = 0;
 
+  size_t dPops = 0;
+  size_t nPops = 0;
+
   for (int i = 0; i < 1000; ++i) {
     NodePos from{ dist(rd) };
     NodePos to{ dist(rd) };
@@ -383,6 +386,8 @@ int testGraph(Graph& g)
                 << (chTime > 0 ? normalTime / chTime : 999999999999999) << '\n';
       dTime += chTime;
       nTime += normalTime;
+      dPops += d.pqPops;
+      nPops += n.pqPops;
       ++route;
       if (std::abs(dRoute->costs * c - nRoute->costs * c) > 0.1) {
         std::cout << '\n'
@@ -467,6 +472,9 @@ int testGraph(Graph& g)
   std::cout << "average speed up is " << static_cast<double>(nTime) / dTime << '\n';
   std::cout << "Average CH-Dijkstra time: " << static_cast<double>(dTime) / route << "ms" << '\n';
   std::cout << "Average    Dijkstra time: " << static_cast<double>(nTime) / route << "ms" << '\n';
+  std::cout << "Average CH-Dijkstra pops: " << static_cast<double>(dPops) / route << '\n';
+  std::cout << "Average    Dijkstra pops: " << static_cast<double>(nPops) / route << '\n';
+  std::cout << "PQ-Pops ratio: " << static_cast<double>(nPops) / dPops << '\n';
   return 0;
 }
 
