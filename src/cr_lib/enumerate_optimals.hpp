@@ -416,7 +416,7 @@ class EnumerateOptimals {
     while (workToDo) {
       includeConvexHullCells(q);
       workToDo = false;
-      while (!q.empty() && tri.number_of_vertices() < maxRoutes) {
+      while (!q.empty() && routes.size() < maxRoutes) {
         auto f = q.top();
         q.pop();
         FullCellId& cellData = const_cast<FullCellId&>(f.data());
