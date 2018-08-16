@@ -42,34 +42,6 @@ void saveToBinaryFile(Graph& ch, std::string& filename)
   }
 }
 
-void cliDijkstra(Graph& ch)
-{
-  Dijkstra d = ch.createDijkstra();
-
-  while (true) {
-    size_t from, to;
-    std::cout << "Please insert NodeId of start node: " << '\n';
-    std::cin >> from;
-    std::cout << "Please insert NodeId of end node: " << '\n';
-    std::cin >> to;
-
-    std::cout << "Starting dijkstra" << '\n';
-    auto maybeRoute = d.findBestRoute(NodePos{ from }, NodePos{ to },
-        Config{ LengthConfig{ 1 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } });
-
-    if (maybeRoute.has_value()) {
-      auto route = maybeRoute.value();
-
-      std::cout << "Route is " << route.costs.values[0] << "m long" << '\n';
-      std::cout << "Route has " << route.costs.values[1] << "m absolute height difference" << '\n';
-      std::cout << "Route has " << route.costs.values[2] << " unsuitability costs" << '\n';
-
-    } else {
-      std::cout << "No route from " << from << "to " << to << "found" << '\n';
-    }
-  }
-}
-
 void runWebServer(Graph& g)
 {
   using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
@@ -503,10 +475,9 @@ int main(int argc, char* argv[])
       "multi,m", po::value<std::string>(&loadFileName), "load graph from multiple files");
 
   po::options_description action{ "actions" };
-  action.add_options()("dijkstra,d", "start interactive dijkstra in cli");
-  action.add_options()("web,w", "start webserver for interaction via browser");
   action.add_options()("save", po::value<std::string>(&saveFileName), "save graph to binary file");
   action.add_options()("test", "runs normal dijkstra and CH dijktra for comparison");
+  action.add_options()("web,w", "start webserver for interaction via browser");
 
   po::options_description all;
   all.add_options()("help,h", "prints help message");
@@ -538,16 +509,12 @@ int main(int argc, char* argv[])
     saveToBinaryFile(g, saveFileName);
   }
 
-  if (vm.count("dijkstra") > 0) {
-    cliDijkstra(g);
+  if (vm.count("test") > 0) {
+    return testGraph(g);
   }
 
   if (vm.count("web") > 0) {
     runWebServer(g);
-  }
-
-  if (vm.count("test") > 0) {
-    return testGraph(g);
   }
 
   return 0;
