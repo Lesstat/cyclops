@@ -329,83 +329,6 @@ function configToCoords(values) {
       unsuitabilityCorner.y * values[2]
   };
 }
-function scalingTriangulation() {
-  clearOverlays();
-  let xmlhttp = new XMLHttpRequest();
-
-  xmlhttp.responseType = "json";
-  xmlhttp.onload = function() {
-    if (xmlhttp.status == 200) {
-      addToDebugLog("triangulation", xmlhttp.response.debug);
-      listOfRoutes = [];
-      drawTriangle(canvasRgb);
-
-      let points = xmlhttp.response.points;
-      let triangles = xmlhttp.response.triangles;
-
-      drawTriangles(canvasRgb.getContext("2d"), points, triangles, true);
-
-      for (let p in points) {
-        if (!points[p].selected) {
-          continue;
-        }
-        let values = points[p].conf.split("/");
-        let col = gradientToColor(values);
-        let coord = configToCoords(values);
-        drawDot(canvasRgb, coord.x, coord.y, col);
-
-        let myStyle = {
-          color: col,
-          weight: 4,
-          opacity: 0.7
-        };
-        let geoRoute = L.geoJSON(points[p].route.route.geometry, {
-          style: myStyle
-        });
-
-        geoJson.addLayer(geoRoute);
-        listOfRoutes.push({
-          point: coord,
-          route: geoRoute,
-          config: values,
-          cost: {
-            length: points[p].route.length,
-            height: points[p].route.height,
-            unsuitability: points[p].route.unsuitability
-          }
-        });
-      }
-    }
-  };
-
-  let s = document.getElementById("start").innerHTML;
-  let t = document.getElementById("end").innerHTML;
-  let maxSplits = document.getElementById("maxSplits").value;
-  let maxLevel = document.getElementById("maxLevel").value;
-  let maxOverlap = document.getElementById("maxOverlap").value;
-  let splitByLevel = document.getElementById("splitByLevel").checked;
-
-  let uri =
-    "/scaled" +
-    "?s=" +
-    s +
-    "&t=" +
-    t +
-    "&maxSplits=" +
-    maxSplits +
-    "&maxOverlap=" +
-    maxOverlap;
-
-  if (maxLevel > 0) {
-    uri += "&maxLevel=" + maxLevel;
-  }
-  if (splitByLevel) {
-    uri += "&splitByLevel=" + "true";
-  }
-
-  xmlhttp.open("GET", uri);
-  xmlhttp.send();
-}
 
 function addToDebugLog(requestType, message) {
   if (!message) {
@@ -542,6 +465,7 @@ function enumerateRoutes() {
       drawTriangle(canvasRgb);
 
       let points = xmlhttp.response.points;
+      let coords = [];
 
       for (let p in points) {
         if (!points[p].selected) {
@@ -550,6 +474,7 @@ function enumerateRoutes() {
         let values = points[p].conf.split("/");
         let col = gradientToColor(values);
         let coord = configToCoords(values);
+        coords.push(coord);
         drawDot(canvasRgb, coord.x, coord.y, col);
 
         let myStyle = {
@@ -572,12 +497,24 @@ function enumerateRoutes() {
           }
         });
       }
+      let edges = xmlhttp.response.edges;
+      let ctx = canvasRgb.getContext("2d");
+      ctx.fillStyle = "black";
+      for (let e in edges) {
+        let coord0 = coords[edges[e][0]];
+        let coord1 = coords[edges[e][1]];
+
+        ctx.moveTo(coord0.x, coord0.y);
+        ctx.beginPath();
+        ctx.lineTo(coord1.x, coord1.y);
+        ctx.stroke();
+      }
     }
   };
 
   let s = document.getElementById("start").innerHTML;
   let t = document.getElementById("end").innerHTML;
-  let maxSplits = document.getElementById("maxSplits").value;
+  let maxRefinements = document.getElementById("maxRefinements").value;
   let maxOverlap = document.getElementById("maxOverlap").value;
 
   let uri =
@@ -587,7 +524,7 @@ function enumerateRoutes() {
     "&t=" +
     t +
     "&maxRoutes=" +
-    maxSplits * 3 +
+    maxRefinements +
     "&maxOverlap=" +
     maxOverlap;
 

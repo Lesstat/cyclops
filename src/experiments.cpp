@@ -22,8 +22,8 @@
 #include "grid.hpp"
 #include "ilp_independent_set.hpp"
 #include "naive_exploration.hpp"
+#include "posvector.hpp"
 #include "routeComparator.hpp"
-#include "scaling_triangulation.hpp"
 #include <boost/program_options.hpp>
 #include <chrono>
 #include <iostream>
@@ -38,40 +38,6 @@ void printErrorAndHelp(const std::string& error, const po::options_description& 
   std::cout << all << '\n';
 }
 
-void explore(std::ifstream& file, std::ofstream& output, Dijkstra& d, size_t splitCount,
-    size_t maxLevel, double maxSimilarity, std::string type)
-{
-  while (!file.eof()) {
-    size_t from;
-    size_t to;
-    file >> from >> to;
-    if (from == to) {
-      continue;
-    }
-    if (file.eof()) {
-      break;
-    }
-    if (!d.findBestRoute(NodePos{ from }, NodePos{ to }, PosVector{ { 1, 0, 0 } })) {
-      std::cout << "did not find routes"
-                << "\n";
-      continue;
-    }
-    try {
-      auto exploration = scaledTriangulation(d, NodePos{ from }, NodePos{ to }, splitCount,
-          maxLevel > 0 ? maxLevel : std::optional<size_t>{}, false, maxSimilarity);
-
-      auto routes_recommended = std::count_if(
-          exploration.points.begin(), exploration.points.end(), [](auto p) { return p.selected; });
-      auto routeCount = exploration.points.size();
-
-      output << type << "," << from << "," << to << "," << splitCount << "," << maxLevel << ","
-             << maxSimilarity << "," << routeCount << "," << routes_recommended << ","
-             << exploration.explore_time << "," << exploration.recommendation_time << '\n';
-    } catch (...) {
-      continue;
-    }
-  }
-}
 void explore_random(std::ifstream& file, std::ofstream& output, Dijkstra& d, size_t splitCount,
     double maxSimilarity, std::string type)
 {
@@ -366,7 +332,6 @@ int main(int argc, char* argv[])
 
   po::options_description experiment{ "Experiment to conduct" };
   dataConfiguration.add_options()("dijkstra,d", "Run dijkstra for random s-t queries ")(
-      "alt,a", "Run alternative route search for random s-t queries")(
       "candidates,c", "find candidates for one and more day tours")("commute",
       "find candidates for commuting tours")("random,r", "explore random configurations")("naive,n",
       "naive exploration")("enumerate,e", "enumerate paths")("all", "enumerate all paths");
@@ -415,26 +380,7 @@ int main(int argc, char* argv[])
   std::random_device rd{};
   std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
 
-  if (vm.count("alt") > 0) {
-    if (output.tellp() == 0) {
-      output << "type,from,to,maxSplits,maxLevel,maxSimilarity,routeCount,recommendedRouteCount,"
-                "exploreTime,recommendationTime\n";
-    }
-    while (!params.eof()) {
-      size_t splitCount = 0, maxLevel = 0;
-      double maxSimilarity = 1.0;
-      params >> splitCount >> maxLevel >> maxSimilarity;
-      std::cout << "Starting Configuration: " << splitCount << " " << maxLevel << " "
-                << maxSimilarity << "\n";
-
-      std::ifstream day{ "daytour" };
-      std::ifstream week{ "weektour" };
-      std::ifstream commute{ "commute" };
-      explore(day, output, d, splitCount, maxLevel, maxSimilarity, "day");
-      explore(week, output, d, splitCount, maxLevel, maxSimilarity, "week");
-      explore(commute, output, d, splitCount, maxLevel, maxSimilarity, "commute");
-    }
-  } else if (vm.count("enumerate") > 0) {
+  if (vm.count("enumerate") > 0) {
     if (output.tellp() == 0) {
       output << "type,from,to,maxRoutes,maxSimilarity,routeCount,ilpRecommendedRouteCount,"
                 "greedyRecommendedRouteCount,exploreTime,ilpRecommendationTime,"

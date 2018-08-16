@@ -23,7 +23,6 @@
 #include "loginfo.hpp"
 #include "ndijkstra.hpp"
 #include "routeComparator.hpp"
-#include "scaling_triangulation.hpp"
 #include "server_http.hpp"
 #include "webUtilities.hpp"
 #include <boost/archive/binary_oarchive.hpp>
@@ -168,89 +167,6 @@ void runWebServer(Graph& g)
     } catch (std::exception& e) {
       response->write(SimpleWeb::StatusCode::server_error_internal_server_error, e.what());
     }
-  };
-
-  server.resource["^/scaled"]["GET"] = [&g](Response response, Request request) {
-    auto log = Logger::initLogger();
-
-    std::optional<size_t> s{}, t{}, maxSplits{}, dummy{}, maxLevel{}, maxOverlap{};
-    bool splitByLevel{ false };
-
-    auto queryParams = request->parse_query_string();
-    extractQueryFields(queryParams, s, t, dummy, dummy, dummy);
-    if (s > g.getNodeCount() || t > g.getNodeCount()) {
-      response->write(
-          SimpleWeb::StatusCode::client_error_bad_request, "Request contains illegal node ids");
-      return;
-    }
-    if (!(s && t)) {
-      response->write(SimpleWeb::StatusCode::client_error_bad_request,
-          "Request needs to contain the parameters: s, t");
-      return;
-    }
-    for (const auto& param : queryParams) {
-      if (param.first == "maxSplits") {
-        maxSplits = stoull(param.second);
-      } else if (param.first == "maxLevel") {
-        maxLevel = stoull(param.second);
-      } else if (param.first == "splitByLevel" && param.second == "true") {
-        splitByLevel = true;
-      } else if (param.first == "maxOverlap") {
-        maxOverlap = stoull(param.second);
-      }
-    }
-
-    *log << "from " << *s << " to " << *t << "\\n";
-
-    auto d = g.createDijkstra();
-    auto triangulation = scaledTriangulation(d, NodePos{ *s }, NodePos{ *t },
-        maxSplits.value_or(10), maxLevel, splitByLevel, maxOverlap.value_or(95) / 100.0);
-    auto& points = triangulation.points;
-    auto& triangles = triangulation.triangles;
-    std::stringstream result;
-
-    auto selCount
-        = std::count_if(points.begin(), points.end(), [](const auto& p) { return p.selected; });
-    std::cout << "Selected " << selCount << " routes!" << '\n';
-
-    result << "{ \"points\": [";
-    bool first = true;
-    for (auto& p : points) {
-      if (first) {
-        first = false;
-      } else {
-        result << ",";
-      }
-      result << "{ \"conf\": \"" << p.p << "\",";
-      result << "\"route\":" << routeToJson(p.r, g) << ",";
-      result << "\"selected\": " << p.selected;
-      result << "}";
-    }
-    result << "],";
-    result << "\"triangles\": [";
-    first = true;
-    for (auto& t : triangles) {
-      if (first) {
-        first = false;
-      } else {
-        result << ",";
-      }
-      result << "{ \"point1\":" << t.point1 << ",";
-      result << "\"point2\":" << t.point2 << ",";
-      result << "\"point3\":" << t.point3 << ",";
-      result << "\"noChildren\":" << t.noChildren << ",";
-      result << "\"noMoreRoutes\":" << t.noMoreRoutes;
-      result << "}";
-    }
-
-    result << "],";
-    result << "\"debug\":\"" << log->getInfo() << "\" ";
-
-    result << "}";
-
-    SimpleWeb::CaseInsensitiveMultimap header;
-    header.emplace("Content-Type", "application/json");
-    response->write(SimpleWeb::StatusCode::success_ok, result, header);
   };
 
   server.resource["^/enumerate"]["GET"] = [&g](Response response, Request request) {
