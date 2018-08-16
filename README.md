@@ -3,9 +3,10 @@ Cyclops finds alternative routes between two points using multiple
 metrics. Each of the paths is optimal for some combination of the
 metrics and sufficiently different from the others according to user
 preference. ![Alternative routes from Pforzheim to
-Stuttgart](pics/alternative-route-examples.png) It does this fast by
-using the Dijkstra speed-up technique multicriteria contraction
-hierarchies.
+Stuttgart](pics/alternative-route-examples.png)
+
+It does this fast by using the Dijkstra speed-up technique
+multicriteria contraction hierarchies.
 
 Cyclops was initially implemented for bicycle routes and three
 specific metrics. Although the Cyclops back end is capable of handling
@@ -121,7 +122,8 @@ Those values are:
 ```
 No two nodes are allowed to have the same internal id. The CH-Level is
 important for the speeding up the shortest path search. A Ch-Graph can
-for example be constructed from a normal graph by my [multi-ch-creator](https://github.com/lesstat/multi-ch-creator).
+for example be constructed from a normal graph by my [multi-ch-constructor](https://github.com/lesstat/multi-ch-constructor).
+
 Cyclops works with a normal graph too, but slowly :-)
 
 ### Edges
