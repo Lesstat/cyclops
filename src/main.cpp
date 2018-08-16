@@ -203,7 +203,7 @@ void runWebServer(Graph& g)
       std::cout << "starting computation"
                 << "\n";
       enumerate.find(NodePos{ *s }, NodePos{ *t });
-      auto [routes, configs, edges] = enumerate.recommend_routes(true);
+      auto [routes, configs, edges] = enumerate.recommend_routes(false);
 
       std::stringstream result;
 

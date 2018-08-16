@@ -1,16 +1,26 @@
 # Cyclops - an alternative route planning tool for bicycles
+Cyclops finds alternative routes between two points using multiple
+metrics. Each of the paths is optimal for some combination of the
+metrics and sufficiently different from the others according to user
+preference. ![Alternative routes from Pforzheim to
+Stuttgart](pics/alternative-route-examples.png) It does this fast by
+using the Dijkstra speed-up technique multicriteria contraction
+hierarchies.
+
+Cyclops was initially implemented for bicycle routes and three
+specific metrics. Although the Cyclops back end is capable of handling
+other metrics and a different number of metrics its front end is only
+designed for this use case and would need adaption for a different one.
 
 ## Building
 To Build Cyclops first clone it and change into its directory:
 
 ``` shell
-git clone --recursive https://github.com/lesstat/cycle-routing
-cd cycle-routing
+git clone --recursive https://github.com/lesstat/cyclops
+cd cyclops
 ```
 
 Then create a build directory for cmake and run cmake and make.
-
-
 ``` shell
 mkdir build
 cd build
@@ -45,7 +55,25 @@ write the graph to a binary file for faster loading (no text parsing necessary).
 and CH-Dijkstra, assures that they output the same path and prints the
 speed-up at the end.
 
-``--web`` starts a web server for interactive use.
+``--web`` starts a web server for interactive use. Cyclops expects a
+directory named ``web`` with the contents for the web interface at the
+current working directory (not the directory the executable is located
+in). Starting from the root directory of the repository is currently
+mandatory for the web interface.
+
+## Different Number of Metrics
+Although Cyclops was initially implemented to handle exactly three
+metrics, it was adapted to handle an arbitrary number of metrics. For
+best performance the number of metrics is needed at **compile
+time**. If you want to work with more or less metrics change the
+constant DIMENSION in the file graph.hpp to the number of metrics you
+have in your graph.
+
+For four metrics the line would need to be:
+``` c++
+const size_t DIMENSION = 4;
+```
+
 
 ## Graph Data
 Cyclops can read road graphs in two different formats. The important
@@ -76,6 +104,10 @@ A header could look like this:
 ```
 Which means there is a vector of size three assigned to every
 edge. There are 8,456,123 nodes in the graph and 17,987,123 edges.
+
+As mentioned above Cyclops needs to be compiled with the right
+dimension for different dimensions to work. This will be checked when
+the graph is read.
 
 ### Nodes
 Immediately after the header (without a blank line) follows the data for all nodes, one node
