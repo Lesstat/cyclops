@@ -60,7 +60,8 @@ speed-up at the end.
 directory named ``web`` with the contents for the web interface at the
 current working directory (not the directory the executable is located
 in). Starting from the root directory of the repository is currently
-mandatory for the web interface.
+mandatory for the web interface. The Web interface is available at
+``http://localhost:8080/web``
 
 ## Different Number of Metrics
 Although Cyclops was initially implemented to handle exactly three
