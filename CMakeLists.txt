@@ -18,7 +18,9 @@ include(cotire)
 
 find_package(glpk REQUIRED)
 
-find_package(Boost 1.58 REQUIRED COMPONENTS serialization program_options filesystem)
+
+
+
 find_package (Threads)
 
 find_package(glpk REQUIRED) 
@@ -30,17 +32,19 @@ find_library(mpfr REQUIRED)
 add_library(process INTERFACE)
 target_include_directories(process SYSTEM INTERFACE vendor/boost-process)
 
+find_package(Boost 1.58 REQUIRED COMPONENTS serialization program_options filesystem)
+
 # Actual Implementation of project in static library
 file(GLOB lib_src src/cr_lib/*.cpp )
 add_library(cr_lib STATIC ${lib_src})
 target_include_directories(cr_lib PUBLIC src/cr_lib /usr/include/coin )
+target_include_directories(cr_lib SYSTEM INTERFACE ${EIGEN3_INCLUDE_DIR})
 target_link_libraries(cr_lib ${GLPK_LIBRARIES})
 target_link_libraries(cr_lib ${Boost_LIBRARIES})
 target_link_libraries(cr_lib -lm)
 target_link_libraries(cr_lib ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(cr_lib process)
 target_link_libraries(cr_lib ${CGAL_LIBRARY})
-target_link_libraries(cr_lib Eigen3::Eigen)
 target_link_libraries(cr_lib ${GMP_LIBRARIES})
 target_link_libraries(cr_lib ${MPFR_LIBRARIES})
 
