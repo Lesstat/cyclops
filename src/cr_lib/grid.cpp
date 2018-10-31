@@ -114,7 +114,7 @@ std::optional<NodePos> Grid::findNextNode(Lat lat, Lng lng)
       for (long xi = x - radius; xi <= x + radius; ++xi) {
         if (!(std::abs(static_cast<long>(xi - x)) == radius
                 || std::abs(static_cast<long>(yi - y)) == radius)
-            || xi >= sideLength || yi >= sideLength) {
+            || xi >= sideLength || yi >= sideLength || xi < 0 || yi < 0) {
 
           continue;
         }
@@ -153,5 +153,5 @@ size_t Grid::coordsToIndex(Lat lat, Lng lng)
   if (y == sideLength) {
     y -= 1;
   }
-  return NodePos{ static_cast<size_t>(y * (sideLength) + x) };
+  return NodePos{ static_cast<size_t>(y * sideLength + x) };
 }
