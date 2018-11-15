@@ -28,7 +28,7 @@ void testNodeInternals(const Node& n, NodeId id, Lat lat, Lng lng, size_t level)
 
 TEST_CASE("Create Node from text repersentation")
 {
-
-  Node n = Node::createFromText("0 163361 48.6478807 9.3334938 300 2");
+  std::stringstream ss("0 163361 48.6478807 9.3334938 300 2");
+  Node n = Node::createFromText(ss);
   testNodeInternals(n, NodeId{ 0 }, Lat{ 48.6478807 }, Lng{ 9.3334938 }, 2);
 }

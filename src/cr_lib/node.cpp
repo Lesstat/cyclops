@@ -42,14 +42,13 @@ std::ostream& operator<<(std::ostream& os, const Node& n)
   return os;
 }
 
-Node Node::createFromText(const std::string& text)
+Node Node::createFromText(std::istream& text)
 {
   size_t id, osmId, level;
   double lat, lng;
   double height;
 
-  std::sscanf(
-      text.c_str(), "%lu%lu%lf%lf%lf%lu", &id, &osmId, &lat, &lng, &height, &level); // NOLINT
+  text >> id >> osmId >> lat >> lng >> height >> level;
 
   Node n{ NodeId{ id }, Lat(lat), Lng(lng), height };
   n.level = level;

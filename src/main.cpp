@@ -292,12 +292,11 @@ int testGraph(Graph& g)
                   << "cost differ in route from " << from << " (" << g.getNode(from).id() << ") to "
                   << to << " (" << g.getNode(to).id() << ")" << '\n';
         std::cout << "Edge count: " << nRoute->edges.size() << '\n';
-        std::cout << "dLength: " << dRoute->costs.values[0]
-                  << ", nLength: " << nRoute->costs.values[0] << '\n';
-        std::cout << "dHeight: " << dRoute->costs.values[1]
-                  << ", nHeight: " << nRoute->costs.values[1] << '\n';
-        std::cout << "dUnsuitability: " << dRoute->costs.values[2]
-                  << ", nUnsuitability: " << nRoute->costs.values[2] << '\n';
+        for (size_t i = 0; i < DIMENSION; ++i) {
+          std::cout << "cost " << i << " d: " << dRoute->costs.values[i] << ", cost " << i
+                    << " n:" << nRoute->costs.values[i] << '\n';
+        }
+
         std::cout << "total cost d: " << dRoute->costs * c
                   << ", total cost n: " << nRoute->costs * c << '\n';
         std::ofstream wholeRoute{ "/tmp/whole-" + std::to_string(from) + "-" + std::to_string(to)
@@ -334,12 +333,16 @@ int testGraph(Graph& g)
               std::cout << "did not find correct subpath between " << nextToLastPos << " and "
                         << currentPos << " at index " << i << '\n';
 
-              std::cout << '\n'
-                        << "Normal dijkstra needs length " << nTest->costs.values[0] << " height "
-                        << nTest->costs.values[1] << " road " << nTest->costs.values[2] << '\n';
+              std::cout << '\n' << "Normal dijkstra needs: ";
+              for (size_t i = 0; i < DIMENSION; ++i) {
+                std::cout << nTest->costs.values[i] << ", ";
+              }
 
-              std::cout << "CH dijkstra needs     length " << dTest->costs.values[0] << " height "
-                        << dTest->costs.values[1] << " road " << dTest->costs.values[2] << '\n';
+              std::cout << '\n' << "CH dijkstra needs: ";
+              for (size_t i = 0; i < DIMENSION; ++i) {
+                std::cout << nTest->costs.values[i] << ", ";
+              }
+              std::cout << '\n';
 
               std::ofstream falsePart{ "/tmp/false-" + std::to_string(from) + "-"
                 + std::to_string(to) + ".dot" };

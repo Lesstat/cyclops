@@ -47,25 +47,29 @@ Edge::Edge(NodeId source, NodeId dest, ReplacedEdge edgeA, ReplacedEdge edgeB)
 NodeId Edge::getSourceId() const { return source; }
 NodeId Edge::getDestId() const { return destination; }
 
-Edge Edge::createFromText(const std::string& text)
+Edge Edge::createFromText(std::istream& text)
 {
 
   size_t source, dest;
-  double length, height, unsuitability;
+  Cost c;
   long edgeA, edgeB;
 
-  std::sscanf(text.c_str(), "%lu%lu%lf%lf%lf%li%li", &source, &dest, &length, &height, // NOLINT
-      &unsuitability, &edgeA, &edgeB); // NOLINT
+  text >> source >> dest;
+  for (auto& c : c.values) {
+    text >> c;
+  }
+  text >> edgeA >> edgeB;
 
   Edge e{ NodeId(source), NodeId(dest) };
   if (edgeA > 0) {
     e.edgeA = EdgeId{ static_cast<size_t>(edgeA) };
     e.edgeB = EdgeId{ static_cast<size_t>(edgeB) };
   }
-  e.cost = Cost({ length, height, unsuitability });
+  e.cost = c;
   for (double c : e.cost.values) {
     if (0 > c) {
-      throw std::invalid_argument("Cost below zero: " + std::to_string(c));
+      throw std::invalid_argument("Cost below zero: " + std::to_string(c) + " for edge from "
+          + std::to_string(source) + " to " + std::to_string(dest));
     }
   }
   return e;

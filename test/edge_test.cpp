@@ -35,14 +35,16 @@ TEST_CASE("Parse Edge from text format")
 
   SECTION("Original Edge")
   {
-    Edge e = Edge::createFromText("10990 689504 24.340902087980123 7 12.1758 -1 -1");
+    std::stringstream ss("10990 689504 24.340902087980123 7 12.1758 -1 -1");
+    Edge e = Edge::createFromText(ss);
     testEdgeInternals(e, NodeId{ 10990 }, NodeId{ 689504 }, Length{ 24.340902087980123 },
         Height{ 7 }, Unsuitability{ 12.1758 }, {}, {});
   }
 
   SECTION("Shortcut Edge")
   {
-    Edge e = Edge::createFromText("10990 689504 24.340902087980123 7 12.1758 259 687");
+    std::stringstream ss("10990 689504 24.340902087980123 7 12.1758 259 687");
+    Edge e = Edge::createFromText(ss);
     testEdgeInternals(e, NodeId{ 10990 }, NodeId{ 689504 }, Length{ 24.340902087980123 },
         Height{ 7 }, Unsuitability{ 12.1758 }, EdgeId{ 259 }, EdgeId{ 687 });
   }

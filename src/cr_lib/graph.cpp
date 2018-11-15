@@ -167,10 +167,8 @@ size_t readCount(std::istream& file)
 
 template <class Obj> void parseLines(std::vector<Obj>& v, std::istream& file, size_t count)
 {
-  std::string line{};
   for (size_t i = 0; i < count; ++i) {
-    std::getline(file, line);
-    v.push_back(Obj::createFromText(line));
+    v.push_back(Obj::createFromText(file));
   }
 }
 

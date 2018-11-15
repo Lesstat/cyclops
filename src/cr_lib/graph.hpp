@@ -179,7 +179,7 @@ class Edge {
 
   HalfEdge makeHalfEdge(NodePos begin, NodePos end) const;
 
-  static Edge createFromText(const std::string& text);
+  static Edge createFromText(std::istream& text);
   static void administerEdges(std::vector<Edge>& edges);
   static const Edge& getEdge(EdgeId id);
   static Edge& getMutEdge(EdgeId id);
@@ -229,7 +229,7 @@ class Node {
   NodeId id() const;
   friend std::ostream& operator<<(std::ostream& os, const Node& n);
 
-  static Node createFromText(const std::string& text);
+  static Node createFromText(std::istream& text);
   friend void testNodeInternals(const Node& n, NodeId id, Lat lat, Lng lng, size_t level);
 
   Lat lat() const;
