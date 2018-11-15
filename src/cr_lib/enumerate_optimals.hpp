@@ -192,7 +192,7 @@ class EnumerateOptimals {
       ++constraint_count;
     }
 
-    if (constraint_count <= 1) {
+    if (constraint_count <= DIMENSION - 2) {
       throw std::runtime_error("Could not create enough constraints");
     }
 
@@ -503,6 +503,10 @@ class EnumerateOptimals {
       } catch (std::out_of_range& e) {
         continue;
       }
+    }
+    if (routes.empty()) {
+      routes.push_back(this->routes.front());
+      configs.push_back(this->configs.front());
     }
 
     return { routes, configs, edges };

@@ -497,18 +497,6 @@ function enumerateRoutes() {
           }
         });
       }
-      let edges = xmlhttp.response.edges;
-      let ctx = canvasRgb.getContext("2d");
-      ctx.fillStyle = "black";
-      for (let e in edges) {
-        let coord0 = coords[edges[e][0]];
-        let coord1 = coords[edges[e][1]];
-
-        ctx.moveTo(coord0.x, coord0.y);
-        ctx.beginPath();
-        ctx.lineTo(coord1.x, coord1.y);
-        ctx.stroke();
-      }
     }
   };
 
