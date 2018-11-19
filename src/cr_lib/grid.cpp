@@ -38,7 +38,7 @@ Grid::Grid(const std::vector<Node>& nodes, long sideLength)
     : sideLength(sideLength)
 {
   if (sideLength < 0) {
-    throw new std::invalid_argument("Side length has to be positive");
+    throw std::invalid_argument("Side length has to be positive");
   }
 
   for (size_t i = 0; i < nodes.size(); ++i) {

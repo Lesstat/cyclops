@@ -19,7 +19,6 @@
 #define ENUMERATE_OPTIMALS_H
 
 #include "dijkstra.hpp"
-#include "glpk.h"
 #include "ilp_independent_set.hpp"
 #include "routeComparator.hpp"
 
@@ -28,6 +27,7 @@
 #include <CGAL/Triangulation_ds_full_cell.h>
 #include <CGAL/point_generators_d.h>
 #include <CGAL/random_selection.h>
+#include <Eigen/Dense>
 #include <chrono>
 #include <queue>
 
@@ -142,93 +142,48 @@ class EnumerateOptimals {
     return similarity;
   }
 
-  typedef std::unique_ptr<glp_prob, decltype(&glp_delete_prob)> lp_ptr;
-
-  void defineVariables(const lp_ptr& lp)
-  {
-    glp_add_cols(lp.get(), DIMENSION + 1);
-    for (size_t i = 0; i < DIMENSION; ++i) {
-      glp_set_col_bnds(lp.get(), i + 1, GLP_DB, 0, 1);
-      glp_set_col_kind(lp.get(), i + 1, GLP_CV);
-      glp_set_obj_coef(lp.get(), i + 1, 0);
-    }
-    glp_set_col_bnds(lp.get(), DIMENSION + 1, GLP_LO, 0, 0);
-    glp_set_col_kind(lp.get(), DIMENSION + 1, GLP_CV);
-    glp_set_obj_coef(lp.get(), DIMENSION + 1, 0);
-  }
-
-  void addConstraints(const lp_ptr& lp, const TDS::Full_cell& f)
-  {
-    // Cost * alpha - V = 0 for all paths of f
-    std::vector ind(1, 0);
-    for (size_t i = 1; i <= DIMENSION + 1; ++i) {
-      ind.push_back(i);
-    }
-    size_t constraint_count = 0;
-    for (auto vertex = f.vertices_begin(); vertex != f.vertices_end(); ++vertex) {
-      if (*vertex == TDS::Vertex_const_handle() || tri.is_infinite(*vertex)) {
-        continue;
-      }
-      int slack = glp_add_cols(lp.get(), 1);
-      glp_set_col_bnds(lp.get(), slack, GLP_LO, 0, 0);
-      glp_set_col_kind(lp.get(), slack, GLP_CV);
-      glp_set_obj_coef(lp.get(), slack, 1);
-
-      int row = glp_add_rows(lp.get(), 1);
-      std::vector val(1, 0.0);
-      auto& p = (*vertex)->point();
-      for (auto comp = p.cartesian_begin(); comp != p.cartesian_end(); ++comp) {
-        val.push_back(*comp);
-      }
-      val.push_back(-1);
-
-      ind.push_back(slack);
-      val.push_back(-1);
-
-      glp_set_row_bnds(lp.get(), row, GLP_FX, 0.0, 0.0);
-      glp_set_mat_row(lp.get(), row, ind.size() - 1, &ind[0], &val[0]);
-
-      ind.pop_back();
-      ++constraint_count;
-    }
-
-    if (constraint_count <= DIMENSION - 2) {
-      throw std::runtime_error("Could not create enough constraints");
-    }
-
-    // sum(alpha) = 1
-    std::vector val(DIMENSION + 2, 1.0);
-    val[0] = 0.0;
-    val.back() = 0.0;
-
-    int row = glp_add_rows(lp.get(), 1);
-    glp_set_row_bnds(lp.get(), row, GLP_FX, 1.0, 1.0);
-    glp_set_mat_row(lp.get(), row, DIMENSION + 1, &ind[0], &val[0]);
-  }
-
   Config findConfig(const TDS::Full_cell& f)
   {
-    lp_ptr lp(glp_create_prob(), glp_delete_prob);
-    glp_set_obj_dir(lp.get(), GLP_MIN);
-    defineVariables(lp);
-    addConstraints(lp, f);
+    using namespace Eigen;
 
-    glp_smcp params;
-    glp_init_smcp(&params);
-    params.msg_lev = GLP_MSG_OFF;
-    params.presolve = GLP_ON;
-    int simplex = glp_simplex(lp.get(), &params);
-    int lp_status = glp_get_status(lp.get());
-    if (simplex == 0 && (lp_status == GLP_OPT || lp_status == GLP_FEAS)) {
-      std::vector values(DIMENSION, 0.0);
-      for (size_t i = 0; i < DIMENSION; ++i) {
-        values[i] = glp_get_col_prim(lp.get(), i + 1);
+    auto vert_count = f.maximal_dimension() + 1;
+    Matrix<double, Dynamic, DIMENSION> A(vert_count, DIMENSION);
+    VectorXd b = VectorXd::Ones(vert_count);
+    int row = -1;
+    for (auto vert = f.vertices_begin(); vert != f.vertices_end(); ++vert) {
+      ++row;
+      if (*vert == TDS::Vertex_const_handle() || tri.is_infinite(*vert)) {
+        for (size_t col = 0; col < DIMENSION; ++col) {
+          A(row, col) = 0;
+        }
+        b[row] = 0;
+        continue;
       }
-      return values;
-    } else {
-      throw std::runtime_error("no suitable config found. Simplex: " + std::to_string(simplex)
-          + " lp: " + std::to_string(lp_status));
+      int col = -1;
+      auto& p = (*vert)->point();
+      for (auto cord = p.cartesian_begin(); cord != p.cartesian_end(); ++cord) {
+        ++col;
+        A(row, col) = *cord;
+      }
     }
+    VectorXd solution = A.fullPivHouseholderQr().solve(b);
+    std::vector<double> conf_values;
+
+    double sum = 0;
+    for (long i = 0; i < solution.size(); ++i) {
+      if (solution[i] < -0.001)
+        throw std::runtime_error("solution component too negative pre normalization");
+      sum += solution[i];
+      conf_values.push_back(solution[i]);
+    }
+
+    for (auto& val : conf_values) {
+      val /= sum;
+      if (val < -0.001)
+        throw std::runtime_error("solution component too negative after normalization");
+    }
+
+    return Config(conf_values);
   }
 
   void addToTriangulation()
