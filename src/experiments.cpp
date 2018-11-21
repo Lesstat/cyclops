@@ -22,7 +22,6 @@
 #include "grid.hpp"
 #include "ilp_independent_set.hpp"
 #include "naive_exploration.hpp"
-#include "posvector.hpp"
 #include "routeComparator.hpp"
 #include <boost/program_options.hpp>
 #include <chrono>
@@ -111,8 +110,10 @@ void enumerate(std::ifstream& file, std::ofstream& output, Dijkstra& d, size_t m
     if (++counter % 20 == 0) {
       output.flush();
     }
+    std::vector<double> conf(DIMENSION, 0);
+    conf[0] = 1;
 
-    if (!d.findBestRoute(NodePos{ from }, NodePos{ to }, PosVector{ { 1, 0, 0 } })) {
+    if (!d.findBestRoute(NodePos{ from }, NodePos{ to }, conf)) {
       std::cout << "did not find routes"
                 << "\n";
       continue;
@@ -147,8 +148,10 @@ void enumerate_all(std::ifstream& file, std::ofstream& output, Dijkstra& d, std:
   size_t from;
   size_t to;
   int counter = 0;
+  std::vector<double> conf(DIMENSION, 0);
+  conf[0] = 1;
   while (file >> from >> to) {
-    if (!d.findBestRoute(NodePos{ from }, NodePos{ to }, PosVector{ { 1, 0, 0 } })) {
+    if (!d.findBestRoute(NodePos{ from }, NodePos{ to }, conf)) {
       std::cout << "did not find routes"
                 << "\n";
       continue;
@@ -196,7 +199,9 @@ void search_candidates(Graph& g)
   std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
 
   auto d = g.createDijkstra();
-  Config c = PosVector{ { 1, 0, 0 } };
+  std::vector<double> conf(DIMENSION, 0.0);
+  conf[0] = 1;
+  Config c = conf;
 
   for (size_t i = 0; i < 1000; ++i) {
     if (i % 100 == 0) {
@@ -231,7 +236,9 @@ void search_commuting_candidates(Graph& g)
   std::vector<NodePos> candidates;
 
   auto d = g.createDijkstra();
-  Config c = PosVector{ { 1, 0, 0 } };
+  std::vector<double> values(DIMENSION, 0.0);
+  values[0] = 1;
+  Config c = values;
 
   std::random_device rd{};
   std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
@@ -411,8 +418,11 @@ int main(int argc, char* argv[])
     // enumerate_all(week, output, d, "week");
   } else if (vm.count("dijkstra") > 0) {
     if (output.tellp() == 0) {
-      output << "from,to,alpha1,alpha2,alpha3,length,heigh_gain,unsuitabiltiy,edgeCount,pqPolls,"
-                "time\n";
+      output << "from,to,";
+      for (size_t i = 0; i <= DIMENSION; ++i) {
+        output << "alpha" << i << ",";
+      }
+      output << "length,heigh_gain,unsuitabiltiy,edgeCount,pqPolls,time\n";
     }
     while (!params.eof()) {
       size_t sampleSize = 0;
@@ -433,10 +443,14 @@ int main(int argc, char* argv[])
           continue;
         }
         auto route = *optRoute;
-        output << from << "," << to << "," << conf.values[0] << "," << conf.values[1] << ","
-               << conf.values[2] << "," << route.costs.values[0] << "," << route.costs.values[1]
-               << "," << route.costs.values[2] << "," << route.edges.size() << "," << d.pqPops
-               << "," << time << '\n';
+        output << from << "," << to << ",";
+        for (auto& val : conf.values) {
+          output << val << ",";
+        }
+        for (auto& cost : route.costs.values) {
+          output << cost << ",";
+        }
+        output << route.edges.size() << "," << d.pqPops << "," << time << '\n';
         curRoute++;
       }
     }
