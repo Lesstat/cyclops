@@ -272,13 +272,16 @@ std::ostream& operator<<(std::ostream& stream, const Config& c)
 Config generateRandomConfig()
 {
   std::random_device rd{};
-  std::uniform_real_distribution lenDist(0.0, 1.0);
-  LengthConfig l(lenDist(rd));
-  std::uniform_real_distribution heightDist(0.0, 1.0 - l.get());
-  HeightConfig h(heightDist(rd));
-  UnsuitabilityConfig u(1 - l - h);
+  std::vector<double> conf;
+  double current_sum = 0;
 
-  return Config{ l, h, u };
+  for (size_t i = 0; i < DIMENSION - 1; ++i) {
+    std::uniform_real_distribution distribution(0.0, 1.0 - current_sum);
+    auto& val = conf.emplace_back(distribution(rd));
+    current_sum += val;
+  }
+  conf.emplace_back(1.0 - current_sum);
+  return conf;
 }
 
 void Dijkstra::calcScalingFactor(NodePos from, NodePos to, ScalingFactor& f)
