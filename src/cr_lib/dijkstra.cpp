@@ -291,12 +291,17 @@ void Dijkstra::calcScalingFactor(NodePos from, NodePos to, ScalingFactor& f)
   for (size_t i = 0; i < DIMENSION; ++i) {
     std::vector conf(DIMENSION, 0.0);
     conf[i] = 1.0;
-    auto costs = findBestRoute(from, to, conf)->costs;
+    auto& costs = findBestRoute(from, to, conf)->costs;
     bestValues[i] = costs.values[i];
   }
   double maxCosts = *std::max_element(&bestValues[0], &bestValues[DIMENSION]);
 
   for (size_t i = 0; i < DIMENSION; ++i) {
     f[i] = maxCosts / bestValues[i];
+  }
+  if (std::any_of(&f[0], &f[DIMENSION - 1], [](auto& v) { return std::isnan(v); })) {
+    for (auto& v : f) {
+      v = 1.0;
+    }
   }
 }
