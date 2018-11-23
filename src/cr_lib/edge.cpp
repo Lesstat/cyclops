@@ -100,17 +100,24 @@ void Edge::setId(EdgeId id) { this->internalId = id; }
 
 double HalfEdge::costByConfiguration(const Config& conf) const { return cost * conf; }
 
-void Edge::administerEdges(std::vector<Edge>& edges)
+std::vector<EdgeId> Edge::administerEdges(std::vector<Edge>&& edges)
 {
-  for (auto& edge : edges) {
+  std::vector<EdgeId> ids;
+  ids.reserve(edges.size());
+  for (size_t i = 0; i < edges.size(); ++i) {
+    size_t new_id = Edge::edges.size() + i;
+    auto& edge = edges[i];
     if (edge.getId() == 0) {
-      edge.setId(EdgeId{ Edge::edges.size() });
-    } else if (edge.getId() != Edge::edges.size()) {
+      edge.setId(EdgeId{ new_id });
+    } else if (edge.getId() != new_id) {
       std::cerr << "Edge ids dont align: " << '\n';
       std::terminate();
     }
-    Edge::edges.emplace_back(edge);
+    ids.emplace_back(new_id);
   }
+
+  std::move(edges.begin(), edges.end(), std::back_inserter(Edge::edges));
+  return ids;
 }
 const Edge& Edge::getEdge(EdgeId id) { return edges.at(id); }
 Edge& Edge::getMutEdge(EdgeId id) { return edges.at(id); }

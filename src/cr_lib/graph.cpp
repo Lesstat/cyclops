@@ -21,6 +21,8 @@
 
 void Graph::connectEdgesToNodes(const std::vector<Node>& nodes, const std::vector<EdgeId>& edges)
 {
+  inEdges.reserve(edges.size());
+  outEdges.reserve(edges.size());
   std::unordered_map<NodeId, NodePos> map;
   map.reserve(nodes.size());
   for (size_t i = 0; i < nodes.size(); i++) {
@@ -89,11 +91,7 @@ void calculateOffsets(
 Graph::Graph(std::vector<Node>&& nodes, std::vector<Edge>&& edges)
     : edgeCount(edges.size())
 {
-  Edge::administerEdges(edges);
-  std::vector<EdgeId> ids;
-  ids.reserve(edgeCount);
-  std::transform(
-      edges.begin(), edges.end(), std::back_inserter(ids), [](auto e) { return e.getId(); });
+  auto ids = Edge::administerEdges(std::move(edges));
   init(std::move(nodes), std::move(ids));
 }
 Graph::Graph(std::vector<Node>&& nodes, std::vector<EdgeId>&& edges)

@@ -180,7 +180,7 @@ class Edge {
   HalfEdge makeHalfEdge(NodePos begin, NodePos end) const;
 
   static Edge createFromText(std::istream& text);
-  static void administerEdges(std::vector<Edge>& edges);
+  static std::vector<EdgeId> administerEdges(std::vector<Edge>&& edges);
   static const Edge& getEdge(EdgeId id);
   static Edge& getMutEdge(EdgeId id);
 
