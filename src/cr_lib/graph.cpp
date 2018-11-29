@@ -21,12 +21,17 @@
 
 void Graph::connectEdgesToNodes(const std::vector<Node>& nodes, const std::vector<EdgeId>& edges)
 {
+  if (nodes.empty()) {
+    return;
+  }
   inEdges.reserve(edges.size());
   outEdges.reserve(edges.size());
-  std::unordered_map<NodeId, NodePos> map;
-  map.reserve(nodes.size());
-  for (size_t i = 0; i < nodes.size(); i++) {
-    map.insert({ nodes[i].id(), NodePos{ i } });
+  const auto max_id = std::max_element(
+      nodes.begin(), nodes.end(), [](const auto& a, const auto& b) { return a.id() < b.id(); });
+
+  std::vector<NodePos> map(max_id->id() + 1, NodePos{ 0 });
+  for (size_t i = 0; i < nodes.size(); ++i) {
+    map[nodes[i].id()] = NodePos{ i };
   }
 
   std::for_each(begin(edges), end(edges), [&map, this](const auto& id) {
@@ -105,6 +110,7 @@ void Graph::init(std::vector<Node>&& nodes, std::vector<EdgeId>&& edges)
       [](const Node& a, const Node& b) { return a.getLevel() < b.getLevel(); });
 
   connectEdgesToNodes(nodes, edges);
+  level.reserve(nodes.size());
   for (const auto& node : nodes) {
     level.push_back(node.getLevel());
   }

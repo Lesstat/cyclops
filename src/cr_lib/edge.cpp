@@ -117,6 +117,7 @@ std::vector<EdgeId> Edge::administerEdges(std::vector<Edge>&& edges)
   }
 
   std::move(edges.begin(), edges.end(), std::back_inserter(Edge::edges));
+  edges = std::vector<Edge>();
   return ids;
 }
 const Edge& Edge::getEdge(EdgeId id) { return edges.at(id); }
