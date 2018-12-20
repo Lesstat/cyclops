@@ -181,19 +181,9 @@ void enumerate_all(std::ifstream& file, std::ofstream& output, Dijkstra& d, std:
 void search_candidates(Graph& g)
 {
   std::cout << "searching for candidates" << '\n';
-  std::ofstream day;
-  day.open("daytour", std::ios::app);
-  day.seekp(0, std::ios_base::end);
-  std::ofstream week;
-  week.open("weektour", std::ios::app);
-  week.seekp(0, std::ios_base::end);
-
-  size_t daycount = 0;
-  size_t weekcount = 0;
-
-  const double minDay = 40000;
-  const double maxDay = 80000;
-  const double minWeek = 120000;
+  std::ofstream candidates;
+  candidates.open("candidates", std::ios::app);
+  candidates.seekp(0, std::ios_base::end);
 
   std::random_device rd{};
   std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
@@ -203,10 +193,11 @@ void search_candidates(Graph& g)
   conf[0] = 1;
   Config c = conf;
 
-  for (size_t i = 0; i < 1000; ++i) {
-    if (i % 100 == 0) {
-      std::cout << "found " << daycount << " daytours and " << weekcount << " more day tours."
-                << "\n";
+  size_t found_routes = 0;
+
+  while (found_routes < 90) {
+    if (found_routes % 10 == 0) {
+      std::cout << "found " << found_routes << " routes." << '\n';
     }
     NodePos from{ dist(rd) };
     NodePos to{ dist(rd) };
@@ -215,14 +206,12 @@ void search_candidates(Graph& g)
     if (!mayRoute) {
       continue;
     }
-    auto route = *mayRoute;
-    if (minDay <= route.costs.values[0] && route.costs.values[0] <= maxDay) {
-      daycount++;
-      day << from.get() << " " << to.get() << '\n';
-    } else if (route.costs.values[0] >= minWeek) {
-      weekcount++;
-      week << from.get() << " " << to.get() << '\n';
-    }
+    found_routes++;
+
+    auto& from_node = g.getNode(from);
+    candidates << from_node.lat() << ' ' << from_node.lng() << ' ';
+    auto& to_node = g.getNode(to);
+    candidates << to_node.lat() << ' ' << to_node.lng() << '\n';
   }
 }
 
@@ -339,7 +328,7 @@ int main(int argc, char* argv[])
 
   po::options_description experiment{ "Experiment to conduct" };
   dataConfiguration.add_options()("dijkstra,d", "Run dijkstra for random s-t queries ")(
-      "candidates,c", "find candidates for one and more day tours")("commute",
+      "candidates,c", "find 90 candidate s-t pairs ")("commute",
       "find candidates for commuting tours")("random,r", "explore random configurations")("naive,n",
       "naive exploration")("enumerate,e", "enumerate paths")("all", "enumerate all paths");
 
@@ -354,21 +343,6 @@ int main(int argc, char* argv[])
   if (vm.count("help") > 0) {
     std::cout << all << '\n';
     return 0;
-  }
-
-  std::ifstream params{};
-  params.open(parameterInputFile);
-  if (!params.good()) {
-    printErrorAndHelp("Parameter file " + parameterInputFile + " could not be read", all);
-    return 1;
-  }
-
-  std::ofstream output{};
-  output.open(saveFileName, std::ios::app);
-  output.seekp(0, std::ios::end);
-  if (!output.good()) {
-    printErrorAndHelp("Output file " + parameterInputFile + " could not be read", all);
-    return 1;
   }
 
   Graph g{ std::vector<Node>(), std::vector<Edge>() };
@@ -386,7 +360,28 @@ int main(int argc, char* argv[])
   Dijkstra d = g.createDijkstra();
   std::random_device rd{};
   std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
+  if (vm.count("candidates") > 0) {
+    search_candidates(g);
+    return 0;
+  } else if (vm.count("commute") > 0) {
+    search_commuting_candidates(g);
+    return 0;
+  }
 
+  std::ifstream params{};
+  params.open(parameterInputFile);
+  if (!params.good()) {
+    printErrorAndHelp("Parameter file " + parameterInputFile + " could not be read", all);
+    return 1;
+  }
+
+  std::ofstream output{};
+  output.open(saveFileName, std::ios::app);
+  output.seekp(0, std::ios::end);
+  if (!output.good()) {
+    printErrorAndHelp("Output file " + parameterInputFile + " could not be read", all);
+    return 1;
+  }
   if (vm.count("enumerate") > 0) {
     if (output.tellp() == 0) {
       output << "type,from,to,maxRoutes,maxSimilarity,routeCount,ilpRecommendedRouteCount,"
@@ -454,10 +449,6 @@ int main(int argc, char* argv[])
         curRoute++;
       }
     }
-  } else if (vm.count("candidates") > 0) {
-    search_candidates(g);
-  } else if (vm.count("commute") > 0) {
-    search_commuting_candidates(g);
   } else if (vm.count("random") > 0) {
     if (output.tellp() == 0) {
       output << "type,from,to,maxRoutes,maxSimilarity,routeCount,ilpRecommendedRouteCount,"
