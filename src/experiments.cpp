@@ -307,11 +307,13 @@ void explore_naive(std::ifstream& route_input, std::ofstream& output, Dijkstra& 
   }
 }
 
-void explore_s_t_pairs(std::ifstream& input, std::ofstream& output, Grid& g, Dijkstra& d)
+void explore_s_t_pairs(
+    std::ifstream& input, std::ofstream& output, Grid& g, Dijkstra& d, const std::string& graphfile)
 {
   if (output.tellp() == 0) {
-    output << "s_lat,s_lng,t_lat,t_lng,metrics,R,K,time,#routes,min_similarity,max_similarity,avg_"
-              "similarity\n";
+    output
+        << "s_lat,s_lng,t_lat,t_lng,inputgraph,R,K,time,#routes,min_similarity,max_similarity,avg_"
+           "similarity\n";
   }
 
   double s_lat, s_lng, t_lat, t_lng;
@@ -350,9 +352,9 @@ void explore_s_t_pairs(std::ifstream& input, std::ofstream& output, Grid& g, Dij
     }
     double avg_sim = sum_sim / count_sim;
 
-    output << s_lat << ',' << s_lng << ',' << t_lat << ',' << t_lng << ',' << "metricstring" << ','
-           << 40 << ',' << 0.5 << ',' << time << ',' << route_count << ',' << min_sim << ','
-           << max_sim << ',' << avg_sim << '\n';
+    output << s_lat << ',' << s_lng << ',' << t_lat << ',' << t_lng << ',' << graphfile << ',' << 40
+           << ',' << 0.5 << ',' << time << ',' << route_count << ',' << min_sim << ',' << max_sim
+           << ',' << avg_sim << '\n';
   }
 }
 
@@ -537,7 +539,7 @@ int main(int argc, char* argv[])
     }
   } else if (vm.count("enumerate") > 0) {
     Grid grid = g.createGrid();
-    explore_s_t_pairs(params, output, grid, d);
+    explore_s_t_pairs(params, output, grid, d, loadFileName);
   }
   return 0;
 }
