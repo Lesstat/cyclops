@@ -23,6 +23,7 @@
 #include "ilp_independent_set.hpp"
 #include "naive_exploration.hpp"
 #include "routeComparator.hpp"
+#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <chrono>
 #include <iostream>
@@ -311,13 +312,18 @@ void explore_s_t_pairs(
     std::ifstream& input, std::ofstream& output, Grid& g, Dijkstra& d, const std::string& graphfile)
 {
   if (output.tellp() == 0) {
-    output
-        << "s_lat,s_lng,t_lat,t_lng,inputgraph,R,K,time,#routes,min_similarity,max_similarity,avg_"
-           "similarity\n";
+    output << "s_lat,s_lng,t_lat,t_lng,inputgraph,starttime,R,K,time,#routes,min_similarity,"
+              "max_similarity,avg_similarity\n";
   }
+  boost::filesystem::path p(graphfile);
+  auto graph_file_name = p.filename();
+  auto now = c::system_clock::to_time_t(c::system_clock::now());
+  auto starttime = std::localtime(&now);
 
+  const size_t refinements = 40;
+  const double max_similarity = 0.5;
   double s_lat, s_lng, t_lat, t_lng;
-  EnumerateOptimals e(d, 0.5, 40);
+  EnumerateOptimals e(d, max_similarity, refinements);
   while (input >> s_lat >> s_lng >> t_lat >> t_lng) {
     auto s = g.findNextNode(Lat(s_lat), Lng(s_lng));
     auto t = g.findNextNode(Lat(t_lat), Lng(t_lng));
@@ -351,10 +357,16 @@ void explore_s_t_pairs(
       }
     }
     double avg_sim = sum_sim / count_sim;
+    if (count_sim <= 1) {
+      min_sim = 0;
+      max_sim = 0;
+    }
 
-    output << s_lat << ',' << s_lng << ',' << t_lat << ',' << t_lng << ',' << graphfile << ',' << 40
-           << ',' << 0.5 << ',' << time << ',' << route_count << ',' << min_sim << ',' << max_sim
-           << ',' << avg_sim << '\n';
+    output << s_lat << ',' << s_lng << ',' << t_lat << ',' << t_lng << ',' << graph_file_name << ','
+           << std::put_time(starttime, "%Y-%m-%d %T") << ',' << refinements << ',' << max_similarity
+           << ',' << time << ',' << route_count << ',' << min_sim << ',' << max_sim << ','
+           << avg_sim << '\n';
+    output.flush();
   }
 }
 
@@ -538,7 +550,7 @@ int main(int argc, char* argv[])
       explore_naive(day, output, d, epsilon, maxSimilarity, "day");
       explore_naive(week, output, d, epsilon, maxSimilarity, "week");
     }
-  } else if (vm.count("enumerate") > 0) {
+  } else if (vm.count("st") > 0) {
     Grid grid = g.createGrid();
     explore_s_t_pairs(params, output, grid, d, loadFileName);
   }
