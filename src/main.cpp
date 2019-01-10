@@ -36,7 +36,7 @@ void saveToBinaryFile(Graph& ch, std::string& filename)
 {
   {
     std::ofstream ofs(filename, std::ios::binary);
-    boost::archive::binary_oarchive oa{ ofs };
+    boost::archive::binary_oarchive oa { ofs };
     oa << ch;
   }
 }
@@ -62,7 +62,7 @@ void runWebServer(Graph& g)
     Logger::initLogger();
     auto web_root_path = boost::filesystem::canonical("web");
 
-    std::string pathWithoutWeb{};
+    std::string pathWithoutWeb {};
     if (request->path.length() > 4) {
       pathWithoutWeb = request->path.substr(4);
     }
@@ -78,7 +78,7 @@ void runWebServer(Graph& g)
       path /= "index.html";
     }
 
-    std::ifstream ifs{};
+    std::ifstream ifs {};
     ifs.open(path.string(), std::ifstream::in | std::ios::binary | std::ios::ate);
 
     if (!ifs) {
@@ -111,7 +111,7 @@ void runWebServer(Graph& g)
           "Request needs to contain lat and lng parameters for query");
       return;
     }
-    auto pos = grid.findNextNode(Lat{ lat }, Lng{ lng });
+    auto pos = grid.findNextNode(Lat { lat }, Lng { lng });
     SimpleWeb::CaseInsensitiveMultimap header;
     header.emplace("Content-Type", "text/plain");
     response->write(SimpleWeb::StatusCode::success_ok, std::to_string(pos->get()), header);
@@ -120,7 +120,7 @@ void runWebServer(Graph& g)
   server.resource["^/route"]["GET"] = [&g](Response response, Request request) {
     auto log = Logger::initLogger();
 
-    std::optional<size_t> s{}, t{}, length{}, height{}, unsuitability{};
+    std::optional<size_t> s {}, t {}, length {}, height {}, unsuitability {};
     extractQueryFields(request->parse_query_string(), s, t, length, height, unsuitability);
     if (s > g.getNodeCount() || t > g.getNodeCount()) {
       response->write(
@@ -138,18 +138,18 @@ void runWebServer(Graph& g)
       auto dijkstra = g.createDijkstra();
 
       Dijkstra::ScalingFactor f;
-      dijkstra.calcScalingFactor(NodePos{ *s }, NodePos{ *t }, f);
+      dijkstra.calcScalingFactor(NodePos { *s }, NodePos { *t }, f);
 
-      Config c{ LengthConfig{ (static_cast<double>(*length) / 100.0) },
-        HeightConfig{ (static_cast<double>(*height) / 100.0) },
-        UnsuitabilityConfig{ (static_cast<double>(*unsuitability) / 100.0) } };
+      Config c { LengthConfig { (static_cast<double>(*length) / 100.0) },
+        HeightConfig { (static_cast<double>(*height) / 100.0) },
+        UnsuitabilityConfig { (static_cast<double>(*unsuitability) / 100.0) } };
 
       for (size_t i = 0; i < DIMENSION; ++i) {
         c.values[i] *= f[i];
       }
 
       auto start = std::chrono::high_resolution_clock::now();
-      auto route = dijkstra.findBestRoute(NodePos{ *s }, NodePos{ *t }, c);
+      auto route = dijkstra.findBestRoute(NodePos { *s }, NodePos { *t }, c);
       auto end = std::chrono::high_resolution_clock::now();
       size_t dur = std::chrono::duration_cast<ms>(end - start).count();
       *log << "Dijkstra took " << dur << "ms"
@@ -174,7 +174,7 @@ void runWebServer(Graph& g)
               << "\n";
     auto log = Logger::initLogger();
 
-    std::optional<size_t> s{}, t{}, dummy{}, maxOverlap{}, maxRoutes{};
+    std::optional<size_t> s {}, t {}, dummy {}, maxOverlap {}, maxRoutes {};
 
     auto queryParams = request->parse_query_string();
     extractQueryFields(queryParams, s, t, dummy, dummy, dummy);
@@ -202,7 +202,7 @@ void runWebServer(Graph& g)
 
       std::cout << "starting computation"
                 << "\n";
-      enumerate.find(NodePos{ *s }, NodePos{ *t });
+      enumerate.find(NodePos { *s }, NodePos { *t });
       auto [routes, configs, edges] = enumerate.recommend_routes(false);
 
       std::stringstream result;
@@ -253,10 +253,10 @@ int testGraph(Graph& g)
 
   Dijkstra d = g.createDijkstra();
   NormalDijkstra n = g.createNormalDijkstra(true);
-  std::random_device rd{};
+  std::random_device rd {};
   std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
-  Config c{ LengthConfig{ 1.0 / 3.0 }, HeightConfig{ 1.0 / 3.0 },
-    UnsuitabilityConfig{ 1.0 / 3.0 } };
+  Config c { LengthConfig { 1.0 / 3.0 }, HeightConfig { 1.0 / 3.0 },
+    UnsuitabilityConfig { 1.0 / 3.0 } };
 
   size_t route = 0;
   size_t noRoute = 0;
@@ -268,8 +268,8 @@ int testGraph(Graph& g)
   size_t nPops = 0;
 
   for (int i = 0; i < 1000; ++i) {
-    NodePos from{ dist(rd) };
-    NodePos to{ dist(rd) };
+    NodePos from { dist(rd) };
+    NodePos to { dist(rd) };
 
     auto dStart = std::chrono::high_resolution_clock::now();
     auto dRoute = d.findBestRoute(from, to, c);
@@ -299,7 +299,7 @@ int testGraph(Graph& g)
 
         std::cout << "total cost d: " << dRoute->costs * c
                   << ", total cost n: " << nRoute->costs * c << '\n';
-        std::ofstream wholeRoute{ "/tmp/whole-" + std::to_string(from) + "-" + std::to_string(to)
+        std::ofstream wholeRoute { "/tmp/whole-" + std::to_string(from) + "-" + std::to_string(to)
           + ".dot" };
         printRoutes(wholeRoute, g, *nRoute, *dRoute, c);
         std::unordered_set<NodeId> nodeIds;
@@ -344,7 +344,7 @@ int testGraph(Graph& g)
               }
               std::cout << '\n';
 
-              std::ofstream falsePart{ "/tmp/false-" + std::to_string(from) + "-"
+              std::ofstream falsePart { "/tmp/false-" + std::to_string(from) + "-"
                 + std::to_string(to) + ".dot" };
               printRoutes(falsePart, g, *nTest, *dTest, c);
 
@@ -384,16 +384,16 @@ int main(int argc, char* argv[])
 {
   std::cout.imbue(std::locale(""));
 
-  std::string loadFileName{};
-  std::string saveFileName{};
+  std::string loadFileName {};
+  std::string saveFileName {};
 
-  po::options_description loading{ "loading options" };
-  loading.add_options()(
-      "text,t", po::value<std::string>(&loadFileName), "load graph from text file")(
-      "bin,b", po::value<std::string>(&loadFileName), "load graph form binary file")(
-      "multi,m", po::value<std::string>(&loadFileName), "load graph from multiple files");
+  po::options_description loading { "loading options" };
+  loading.add_options()("text,t", po::value<std::string>(&loadFileName),
+      "load graph from text file")("bin,b", po::value<std::string>(&loadFileName),
+      "load graph form binary file")("multi,m", po::value<std::string>(&loadFileName),
+      "load graph from multiple files")("zi", "input text file is gzipped");
 
-  po::options_description action{ "actions" };
+  po::options_description action { "actions" };
   action.add_options()("save", po::value<std::string>(&saveFileName), "save graph to binary file");
   action.add_options()("test", "runs normal dijkstra and CH dijktra for comparison");
   action.add_options()("web,w", "start webserver for interaction via browser");
@@ -402,7 +402,7 @@ int main(int argc, char* argv[])
   all.add_options()("help,h", "prints help message");
   all.add(loading).add(action);
 
-  po::variables_map vm{};
+  po::variables_map vm {};
   po::store(po::parse_command_line(argc, argv, all), vm);
   po::notify(vm);
 
@@ -410,9 +410,10 @@ int main(int argc, char* argv[])
     std::cout << all << '\n';
     return 0;
   }
-  Graph g{ std::vector<Node>(), std::vector<Edge>() };
+  Graph g { std::vector<Node>(), std::vector<Edge>() };
   if (vm.count("text") > 0) {
-    g = loadGraphFromTextFile(loadFileName);
+    bool zipped_input = vm.count("zi") > 0;
+    g = loadGraphFromTextFile(loadFileName, zipped_input);
   } else if (vm.count("bin") > 0) {
     g = loadGraphFromBinaryFile(loadFileName);
   } else if (vm.count("multi") > 0) {

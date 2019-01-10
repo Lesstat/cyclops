@@ -130,8 +130,8 @@ struct HalfEdge {
 };
 
 struct NodeOffset {
-  size_t in{ 0 };
-  size_t out{ 0 };
+  size_t in { 0 };
+  size_t out { 0 };
   NodeOffset() = default;
   NodeOffset(size_t in, size_t out)
       : in(in)
@@ -310,7 +310,7 @@ class Graph {
   template <class Archive> void save(Archive& ar, const unsigned int /*version*/) const
   {
     ar& nodes;
-    std::vector<Edge> edges{};
+    std::vector<Edge> edges {};
     edges.reserve(edgeCount);
     for (const auto& e : inEdges) {
       edges.push_back(Edge::getEdge(e.id));

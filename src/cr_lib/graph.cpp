@@ -29,9 +29,9 @@ void Graph::connectEdgesToNodes(const std::vector<Node>& nodes, const std::vecto
   const auto max_id = std::max_element(
       nodes.begin(), nodes.end(), [](const auto& a, const auto& b) { return a.id() < b.id(); });
 
-  std::vector<NodePos> map(max_id->id() + 1, NodePos{ 0 });
+  std::vector<NodePos> map(max_id->id() + 1, NodePos { 0 });
   for (size_t i = 0; i < nodes.size(); ++i) {
-    map[nodes[i].id()] = NodePos{ i };
+    map[nodes[i].id()] = NodePos { i };
   }
 
   std::for_each(begin(edges), end(edges), [&map, this](const auto& id) {
@@ -117,7 +117,7 @@ void Graph::init(std::vector<Node>&& nodes, std::vector<EdgeId>&& edges)
   this->nodes = std::move(nodes);
   offsets.reserve(this->nodes.size() + 1);
   for (size_t i = 0; i < this->nodes.size() + 1; ++i) {
-    offsets.emplace_back(NodeOffset{});
+    offsets.emplace_back(NodeOffset {});
   }
 
   auto fut = std::async(
@@ -148,16 +148,16 @@ std::ostream& operator<<(std::ostream& s, const Graph& g)
 
 std::vector<NodeOffset> const& Graph::getOffsets() const { return offsets; }
 
-Dijkstra Graph::createDijkstra() { return Dijkstra{ this, nodes.size() }; }
+Dijkstra Graph::createDijkstra() { return Dijkstra { this, nodes.size() }; }
 
 NormalDijkstra Graph::createNormalDijkstra(bool unpack)
 {
-  return NormalDijkstra{ this, nodes.size(), unpack };
+  return NormalDijkstra { this, nodes.size(), unpack };
 }
 
 Grid Graph::createGrid(long sideLength) const
 {
-  Grid b{ nodes, sideLength };
+  Grid b { nodes, sideLength };
 
   return b;
 }
@@ -178,9 +178,9 @@ template <class Obj> void parseLines(std::vector<Obj>& v, std::istream& file, si
 
 Graph Graph::createFromStream(std::istream& file)
 {
-  std::vector<Node> nodes{};
-  std::vector<Edge> edges{};
-  std::string line{};
+  std::vector<Node> nodes {};
+  std::vector<Edge> edges {};
+  std::string line {};
 
   std::getline(file, line);
   while (line.front() == '#') {
@@ -202,7 +202,7 @@ Graph Graph::createFromStream(std::istream& file)
   parseLines(nodes, file, nodeCount);
   parseLines(edges, file, edgeCount);
 
-  return Graph{ std::move(nodes), std::move(edges) };
+  return Graph { std::move(nodes), std::move(edges) };
 }
 
 const Node& Graph::getNode(NodePos pos) const { return nodes[pos]; }
@@ -213,7 +213,7 @@ EdgeRange Graph::getOutgoingEdgesOf(NodePos pos) const
   std::advance(start, offsets[pos].out);
   auto end = outEdges.begin();
   std::advance(end, offsets[pos + 1].out);
-  return EdgeRange{ start, end };
+  return EdgeRange { start, end };
 }
 
 EdgeRange Graph::getIngoingEdgesOf(NodePos pos) const
@@ -222,7 +222,7 @@ EdgeRange Graph::getIngoingEdgesOf(NodePos pos) const
   std::advance(start, offsets[pos].in);
   auto end = inEdges.begin();
   std::advance(end, offsets[pos + 1].in);
-  return EdgeRange{ start, end };
+  return EdgeRange { start, end };
 }
 
 size_t Graph::getLevelOf(NodePos pos) const { return level[pos]; }
@@ -231,7 +231,7 @@ std::optional<NodePos> Graph::nodePosById(NodeId id) const
 {
   for (size_t i = 0; i < nodes.size(); ++i) {
     if (nodes[i].id() == id) {
-      return NodePos{ i };
+      return NodePos { i };
     }
   }
   return {};
@@ -243,7 +243,7 @@ size_t Graph::getEdgeCount() const { return edgeCount; }
 
 Graph Graph::createFromBinaryFile(boost::archive::binary_iarchive& bin)
 {
-  Graph g{ std::vector<Node>(), std::vector<Edge>() };
+  Graph g { std::vector<Node>(), std::vector<Edge>() };
   bin >> g;
   return g;
 }
@@ -269,5 +269,5 @@ std::unordered_map<NodeId, const Node*> Graph::getNodePosByIds(
 
 NodePos Graph::getNodePos(const Node* n) const
 {
-  return NodePos{ static_cast<size_t>(n - nodes.data()) };
+  return NodePos { static_cast<size_t>(n - nodes.data()) };
 }

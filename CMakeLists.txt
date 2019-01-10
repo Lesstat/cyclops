@@ -22,7 +22,7 @@ find_package(CGAL REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_library(gmp REQUIRED)
 
-find_package(Boost 1.58 REQUIRED COMPONENTS serialization program_options filesystem)
+find_package(Boost 1.58 REQUIRED COMPONENTS serialization program_options filesystem iostreams)
 
 # Actual Implementation of project in static library
 file(GLOB lib_src src/cr_lib/*.cpp )

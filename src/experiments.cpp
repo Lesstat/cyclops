@@ -366,10 +366,10 @@ int main(int argc, char* argv[])
   std::string saveFileName {};
 
   po::options_description loading { "Graph Loading Options" };
-  loading.add_options()(
-      "text,t", po::value<std::string>(&loadFileName), "load graph from text file")(
-      "bin,b", po::value<std::string>(&loadFileName), "load graph form binary file")(
-      "multi,m", po::value<std::string>(&loadFileName), "load graph from multiple files");
+  loading.add_options()("text,t", po::value<std::string>(&loadFileName),
+      "load graph from text file")("bin,b", po::value<std::string>(&loadFileName),
+      "load graph form binary file")("multi,m", po::value<std::string>(&loadFileName),
+      "load graph from multiple files")("zi", "input text file is gzipped");
 
   std::string parameterInputFile {};
   po::options_description dataConfiguration { "Data Configuration options" };
@@ -399,7 +399,8 @@ int main(int argc, char* argv[])
 
   Graph g { std::vector<Node>(), std::vector<Edge>() };
   if (vm.count("text") > 0) {
-    g = loadGraphFromTextFile(loadFileName);
+    bool zipped_input = vm.count("zi") > 0;
+    g = loadGraphFromTextFile(loadFileName, zipped_input);
   } else if (vm.count("bin") > 0) {
     g = loadGraphFromBinaryFile(loadFileName);
   } else if (vm.count("multi") > 0) {
