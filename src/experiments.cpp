@@ -479,7 +479,7 @@ int main(int argc, char* argv[])
   } else if (vm.count("dijkstra") > 0) {
     if (output.tellp() == 0) {
       output << "from,to,";
-      for (size_t i = 0; i <= DIMENSION; ++i) {
+      for (size_t i = 0; i < DIMENSION; ++i) {
         output << "alpha" << i << ",";
       }
       output << "length,heigh_gain,unsuitabiltiy,edgeCount,pqPolls,time\n";
