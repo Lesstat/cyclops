@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(cycle-routing)
 add_compile_options(-Wall -Wextra -Wpedantic -std=c++17 -Wno-register)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Set a default build type if none was specified
 set(default_build_type "Release")

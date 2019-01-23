@@ -34,12 +34,12 @@ struct Config {
   template <class configType> void asureNonNegativity(configType& c)
   {
     if (c < 0) {
-      c = configType{ 0 };
+      c = configType { 0 };
     } else if (!std::isfinite(c)) {
       std::cout << "Masking infinity" << '\n';
-      c = configType{ 1 };
+      c = configType { 1 };
     } else if (c > 1) {
-      c = configType{ 1 };
+      c = configType { 1 };
     }
   }
 
@@ -110,8 +110,11 @@ class Dijkstra {
 
   size_t pqPops = 0;
 
+  void count_excludable_nodes();
+
   private:
-  using QueueElem = std::pair<NodePos, double>;
+  enum class Direction { S, T };
+  using QueueElem = std::tuple<NodePos, double, Direction>;
   struct QueueComparator {
     bool operator()(QueueElem left, QueueElem right);
   };
@@ -123,17 +126,17 @@ class Dijkstra {
   Route buildRoute(NodePos node, NodeToEdgeMap previousEdgeS, NodeToEdgeMap previousEdgeT,
       NodePos from, NodePos to);
 
-  enum class Direction { S, T };
-
   void relaxEdges(
       const NodePos& node, double cost, Direction dir, Queue& heap, NodeToEdgeMap& previousEdge);
 
   bool stallOnDemand(const NodePos& node, double cost, Direction dir);
 
+  double minCandidate;
   std::vector<double> costS;
   std::vector<double> costT;
   std::vector<NodePos> touchedS;
   std::vector<NodePos> touchedT;
+  Dijkstra::Queue heap;
   Config config = Config(LengthConfig(0), HeightConfig(0), UnsuitabilityConfig(0));
   Graph* graph;
 };

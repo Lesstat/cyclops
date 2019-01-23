@@ -271,3 +271,5 @@ NodePos Graph::getNodePos(const Node* n) const
 {
   return NodePos { static_cast<size_t>(n - nodes.data()) };
 }
+
+size_t Graph::get_max_level() { return *std::max_element(level.begin(), level.end()); }

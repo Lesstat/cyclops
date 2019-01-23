@@ -293,6 +293,7 @@ class Graph {
       const std::unordered_set<NodeId>& ids) const;
 
   NodePos getNodePos(const Node* n) const;
+  size_t get_max_level();
 
   private:
   friend class boost::serialization::access;

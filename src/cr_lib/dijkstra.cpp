@@ -20,17 +20,22 @@
 #include <queue>
 
 const double dmax = std::numeric_limits<double>::max();
-const Cost maxCost{ std::vector<double>(Cost::dim, dmax) };
+const Cost maxCost { std::vector<double>(Cost::dim, dmax) };
 
 Dijkstra::Dijkstra(Graph* g, size_t nodeCount)
-    : costS(nodeCount, dmax)
+    : minCandidate(dmax)
+    , costS(nodeCount, dmax)
     , costT(nodeCount, dmax)
+    , heap(QueueComparator {})
     , graph(g)
 {
 }
 
 void Dijkstra::clearState()
 {
+  while (!heap.empty()) {
+    heap.pop();
+  }
   pqPops = 0;
   for (auto nodeId : touchedS) {
     costS[nodeId] = dmax;
@@ -68,7 +73,7 @@ Route Dijkstra::buildRoute(NodePos node, NodeToEdgeMap previousEdgeS, NodeToEdge
     NodePos from, NodePos to)
 {
 
-  Route route{};
+  Route route {};
   auto curNode = node;
   while (curNode != from) {
     const auto& edge = previousEdgeS[curNode];
@@ -101,31 +106,27 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
 
   clearState();
   this->config = config;
-  Dijkstra::Queue heapS{ QueueComparator{} };
 
-  heapS.push(std::make_pair(from, 0));
+  heap.push(std::make_tuple(from, 0, Direction::S));
   touchedS.push_back(from);
   costS[from] = 0;
 
-  NodeToEdgeMap previousEdgeS{};
+  NodeToEdgeMap previousEdgeS {};
 
-  Queue heapT{ QueueComparator{} };
-
-  heapT.push(std::make_pair(to, 0));
+  heap.push(std::make_tuple(to, 0, Direction::T));
   touchedT.push_back(to);
   costT[to] = 0;
 
-  NodeToEdgeMap previousEdgeT{};
+  NodeToEdgeMap previousEdgeT {};
 
   bool sBigger = false;
   bool tBigger = false;
-  double minCandidate = dmax;
+  minCandidate = dmax;
   std::optional<NodePos> minNode = {};
 
   while (true) {
     // Quit if both are empty or one is empty and the other is bigger than minCandidate
-    if ((heapS.empty() && heapT.empty()) || (heapS.empty() && tBigger)
-        || (heapT.empty() && sBigger)) {
+    if ((heap.empty()) || (sBigger && tBigger)) {
       *log << "Dijkstra popped " << pqPops << " nodes from PQ"
            << "\\n";
       if (minNode.has_value()) {
@@ -139,55 +140,53 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
       return buildRoute(minNode.value(), previousEdgeS, previousEdgeT, from, to);
     }
 
-    if (!heapS.empty() && !sBigger) {
-      auto [node, cost] = heapS.top();
-      heapS.pop();
+    if (!heap.empty()) {
+      auto [node, cost, dir] = heap.top();
+      heap.pop();
       pqPops++;
-      if (cost > costS[node]) {
-        continue;
-      }
-      if (stallOnDemand(node, cost, Direction::S)) {
-        continue;
-      }
-
-      if (cost > minCandidate) {
-        sBigger = true;
-        continue;
-      }
-      if (costT[node] != dmax) {
-        double candidate = costT[node] + costS[node];
-        if (candidate < minCandidate) {
-          minCandidate = candidate;
-          minNode = node;
+      if (dir == Direction::S) {
+        if (cost > costS[node]) {
+          continue;
         }
-      }
-
-      relaxEdges(node, cost, Direction::S, heapS, previousEdgeS);
-    }
-
-    if (!heapT.empty() && !tBigger) {
-      auto [node, cost] = heapT.top();
-      heapT.pop();
-      pqPops++;
-      if (cost > costT[node]) {
-        continue;
-      }
-      if (stallOnDemand(node, cost, Direction::T)) {
-        continue;
-      }
-
-      if (cost > minCandidate) {
-        tBigger = true;
-        continue;
-      }
-      if (costS[node] != dmax) {
-        double candidate = costS[node] + costT[node];
-        if (candidate < minCandidate) {
-          minCandidate = candidate;
-          minNode = node;
+        if (stallOnDemand(node, cost, Direction::S)) {
+          continue;
         }
+
+        if (cost > minCandidate) {
+          sBigger = true;
+          continue;
+        }
+        if (costT[node] != dmax) {
+          double candidate = costT[node] + costS[node];
+          if (candidate < minCandidate) {
+            minCandidate = candidate;
+            minNode = node;
+          }
+        }
+
+        relaxEdges(node, cost, Direction::S, heap, previousEdgeS);
+
+      } else {
+        if (cost > costT[node]) {
+          continue;
+        }
+        if (stallOnDemand(node, cost, Direction::T)) {
+          continue;
+        }
+
+        if (cost > minCandidate) {
+          tBigger = true;
+          continue;
+        }
+        if (costS[node] != dmax) {
+          double candidate = costS[node] + costT[node];
+          if (candidate < minCandidate) {
+            minCandidate = candidate;
+            minNode = node;
+          }
+        }
+        relaxEdges(node, cost, Direction::T, heap, previousEdgeT);
       }
-      relaxEdges(node, cost, Direction::T, heapT, previousEdgeT);
     }
   }
 }
@@ -218,7 +217,7 @@ void Dijkstra::relaxEdges(
         costs[*lastNode] = *lastCost;
         touched.push_back(*lastNode);
         previousEdge[*lastNode] = *lastEdge;
-        heap.push({ *lastNode, *lastCost });
+        heap.push({ *lastNode, *lastCost, dir });
       }
       lastNode = nextNode;
       lastCost = {};
@@ -235,7 +234,7 @@ void Dijkstra::relaxEdges(
       costs[*lastNode] = *lastCost;
       touched.push_back(*lastNode);
       previousEdge[*lastNode] = *lastEdge;
-      heap.push({ *lastNode, *lastCost });
+      heap.push({ *lastNode, *lastCost, dir });
     }
   }
 }
@@ -271,7 +270,7 @@ std::ostream& operator<<(std::ostream& stream, const Config& c)
 
 Config generateRandomConfig()
 {
-  std::random_device rd{};
+  std::random_device rd {};
   std::vector<double> conf;
   double current_sum = 0;
 
@@ -304,4 +303,24 @@ void Dijkstra::calcScalingFactor(NodePos from, NodePos to, ScalingFactor& f)
       v = 1.0;
     }
   }
+}
+
+void Dijkstra::count_excludable_nodes()
+{
+  const size_t max_level = graph->get_max_level();
+  size_t excludable = 0;
+  size_t core = 0;
+  for (size_t i = 0; i < costS.size(); ++i) {
+    double s = costS[i];
+    double t = costT[i];
+    if ((s == dmax && t == dmax) || (s < dmax && t < dmax && s + t > 1.5 * minCandidate)) {
+      excludable++;
+      if (graph->getLevelOf(NodePos { i }) == max_level) {
+        core++;
+      }
+    }
+  }
+
+  std::cout << "I found " << excludable << " excludable nodes. " << core
+            << " of those within the core" << '\n';
 }
