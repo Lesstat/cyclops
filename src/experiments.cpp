@@ -179,7 +179,7 @@ void enumerate_all(std::ifstream& file, std::ofstream& output, Dijkstra& d, std:
   }
 }
 
-void search_candidates(Graph& g)
+void search_candidates(Graph& g, size_t count)
 {
   std::cout << "searching for candidates" << '\n';
   std::ofstream candidates;
@@ -196,7 +196,7 @@ void search_candidates(Graph& g)
 
   size_t found_routes = 0;
 
-  while (found_routes < 90) {
+  while (found_routes < count) {
     if (found_routes % 10 == 0) {
       std::cout << "found " << found_routes << " routes." << '\n';
     }
@@ -376,6 +376,7 @@ int main(int argc, char* argv[])
 
   std::string loadFileName {};
   std::string saveFileName {};
+  size_t candidate_count = 0;
 
   po::options_description loading { "Graph Loading Options" };
   loading.add_options()("text,t", po::value<std::string>(&loadFileName),
@@ -391,7 +392,7 @@ int main(int argc, char* argv[])
 
   po::options_description experiment { "Experiment to conduct" };
   dataConfiguration.add_options()("dijkstra,d", "Run dijkstra for random s-t queries ")(
-      "candidates,c", "find 90 candidate s-t pairs ")("commute",
+      "candidates,c", po::value<size_t>(&candidate_count), "find candidates s-t pairs ")("commute",
       "find candidates for commuting tours")("random,r", "explore random configurations")(
       "naive,n", "naive exploration")("enumerate,e", "enumerate paths")(
       "all", "enumerate all paths")("st", "Run enumerate on s-t pairs");
@@ -426,7 +427,7 @@ int main(int argc, char* argv[])
   std::random_device rd {};
   std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
   if (vm.count("candidates") > 0) {
-    search_candidates(g);
+    search_candidates(g, candidate_count);
     return 0;
   } else if (vm.count("commute") > 0) {
     search_commuting_candidates(g);
@@ -484,35 +485,31 @@ int main(int argc, char* argv[])
       }
       output << "length,heigh_gain,unsuitabiltiy,edgeCount,pqPolls,time\n";
     }
-    while (!params.eof()) {
-      size_t sampleSize = 0;
-      params >> sampleSize;
-      std::cout << "Computing " << sampleSize << " dijkstra runs." << '\n';
+    auto grid = g.createGrid();
+    double lat_f, lng_f, lat_t, lng_t;
+    while (params >> lat_f >> lng_f >> lat_t >> lng_t) {
 
-      size_t curRoute = 0;
-      while (curRoute < sampleSize) {
-        NodePos from { dist(rd) };
-        NodePos to { dist(rd) };
-        Config conf = generateRandomConfig();
-        auto start = std::chrono::high_resolution_clock::now();
-        auto optRoute = d.findBestRoute(from, to, conf);
-        auto end = std::chrono::high_resolution_clock::now();
-        auto time = std::chrono::duration_cast<ms>(end - start).count();
+      NodePos from = *grid.findNextNode(Lat { lat_f }, Lng { lng_f });
+      NodePos to = *grid.findNextNode(Lat { lat_t }, Lng { lng_t });
+      Config conf = generateRandomConfig();
+      auto start = std::chrono::high_resolution_clock::now();
+      auto optRoute = d.findBestRoute(from, to, conf);
+      auto end = std::chrono::high_resolution_clock::now();
+      auto time = std::chrono::duration_cast<ms>(end - start).count();
 
-        if (!optRoute) {
-          continue;
-        }
-        auto route = *optRoute;
-        output << from << "," << to << ",";
-        for (auto& val : conf.values) {
-          output << val << ",";
-        }
-        for (auto& cost : route.costs.values) {
-          output << cost << ",";
-        }
-        output << route.edges.size() << "," << d.pqPops << "," << time << '\n';
-        curRoute++;
+      if (!optRoute) {
+        std::cerr << "no route found between " << from << " and " << to << '\n';
+        continue;
       }
+      auto route = *optRoute;
+      output << from << "," << to << ",";
+      for (auto& val : conf.values) {
+        output << val << ",";
+      }
+      for (auto& cost : route.costs.values) {
+        output << cost << ",";
+      }
+      output << route.edges.size() << "," << d.pqPops << "," << time << '\n';
     }
   } else if (vm.count("random") > 0) {
     if (output.tellp() == 0) {
