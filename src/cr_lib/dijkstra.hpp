@@ -126,17 +126,16 @@ class Dijkstra {
   Route buildRoute(NodePos node, NodeToEdgeMap previousEdgeS, NodeToEdgeMap previousEdgeT,
       NodePos from, NodePos to);
 
-  void relaxEdges(
-      const NodePos& node, double cost, Direction dir, Queue& heap, NodeToEdgeMap& previousEdge);
+  void relaxEdges(const NodePos& node, double cost, Direction dir, Queue& heap,
+      NodeToEdgeMap& previousEdge, std::vector<double>& costs);
 
-  bool stallOnDemand(const NodePos& node, double cost, Direction dir);
+  bool stallOnDemand(const NodePos& node, double cost, Direction dir, std::vector<double>& costs);
 
   double minCandidate;
   std::vector<double> costS;
   std::vector<double> costT;
   std::vector<NodePos> touchedS;
   std::vector<NodePos> touchedT;
-  Dijkstra::Queue heap;
   Config config = Config(LengthConfig(0), HeightConfig(0), UnsuitabilityConfig(0));
   Graph* graph;
 };

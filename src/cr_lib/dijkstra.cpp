@@ -26,16 +26,12 @@ Dijkstra::Dijkstra(Graph* g, size_t nodeCount)
     : minCandidate(dmax)
     , costS(nodeCount, dmax)
     , costT(nodeCount, dmax)
-    , heap(QueueComparator {})
     , graph(g)
 {
 }
 
 void Dijkstra::clearState()
 {
-  while (!heap.empty()) {
-    heap.pop();
-  }
   pqPops = 0;
   for (auto nodeId : touchedS) {
     costS[nodeId] = dmax;
@@ -106,6 +102,7 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
 
   clearState();
   this->config = config;
+  Dijkstra::Queue heap { QueueComparator {} };
 
   heap.push(std::make_tuple(from, 0, Direction::S));
   touchedS.push_back(from);
@@ -134,69 +131,42 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
       }
       return {};
     }
-    if (sBigger && tBigger) {
-      *log << "Dijkstra popped " << pqPops << " nodes from PQ"
-           << "\\n";
-      return buildRoute(minNode.value(), previousEdgeS, previousEdgeT, from, to);
-    }
 
     if (!heap.empty()) {
       auto [node, cost, dir] = heap.top();
       heap.pop();
       pqPops++;
-      if (dir == Direction::S) {
-        if (cost > costS[node]) {
-          continue;
-        }
-        if (stallOnDemand(node, cost, Direction::S)) {
-          continue;
-        }
-
-        if (cost > minCandidate) {
-          sBigger = true;
-          continue;
-        }
-        if (costT[node] != dmax) {
-          double candidate = costT[node] + costS[node];
-          if (candidate < minCandidate) {
-            minCandidate = candidate;
-            minNode = node;
-          }
-        }
-
-        relaxEdges(node, cost, Direction::S, heap, previousEdgeS);
-
-      } else {
-        if (cost > costT[node]) {
-          continue;
-        }
-        if (stallOnDemand(node, cost, Direction::T)) {
-          continue;
-        }
-
-        if (cost > minCandidate) {
-          tBigger = true;
-          continue;
-        }
-        if (costS[node] != dmax) {
-          double candidate = costS[node] + costT[node];
-          if (candidate < minCandidate) {
-            minCandidate = candidate;
-            minNode = node;
-          }
-        }
-        relaxEdges(node, cost, Direction::T, heap, previousEdgeT);
+      auto& my_costs = dir == Direction::S ? costS : costT;
+      auto& other_costs = dir == Direction::S ? costT : costS;
+      auto& bigger = dir == Direction::S ? sBigger : tBigger;
+      auto& previous = dir == Direction::S ? previousEdgeS : previousEdgeT;
+      if (cost > my_costs[node]) {
+        continue;
       }
+      if (stallOnDemand(node, cost, dir, my_costs)) {
+        continue;
+      }
+
+      if (cost > minCandidate) {
+        bigger = true;
+        continue;
+      }
+      if (other_costs[node] != dmax) {
+        double candidate = other_costs[node] + my_costs[node];
+        if (candidate < minCandidate) {
+          minCandidate = candidate;
+          minNode = node;
+        }
+      }
+      relaxEdges(node, cost, dir, heap, previous, my_costs);
     }
   }
 }
 
-void Dijkstra::relaxEdges(
-    const NodePos& node, double cost, Direction dir, Queue& heap, NodeToEdgeMap& previousEdge)
+void Dijkstra::relaxEdges(const NodePos& node, double cost, Direction dir, Queue& heap,
+    NodeToEdgeMap& previousEdge, std::vector<double>& costs)
 {
-  std::vector<double>& costs = dir == Direction::S ? costS : costT;
-  std::vector<NodePos>& touched = dir == Direction::S ? touchedS : touchedT;
-
+  auto& touched = dir == Direction::S ? touchedS : touchedT;
   auto myLevel = graph->getLevelOf(node);
   auto edges
       = dir == Direction::S ? graph->getOutgoingEdgesOf(node) : graph->getIngoingEdgesOf(node);
@@ -239,12 +209,12 @@ void Dijkstra::relaxEdges(
   }
 }
 
-bool Dijkstra::stallOnDemand(const NodePos& node, double cost, Direction dir)
+bool Dijkstra::stallOnDemand(
+    const NodePos& node, double cost, Direction dir, std::vector<double>& costs)
 {
   auto myLevel = graph->getLevelOf(node);
   const auto& edges
       = dir == Direction::S ? graph->getIngoingEdgesOf(node) : graph->getOutgoingEdgesOf(node);
-  auto& costs = dir == Direction::S ? costS : costT;
   for (const auto& edge : edges) {
     if (graph->getLevelOf(edge.end) < myLevel) {
       return false;
