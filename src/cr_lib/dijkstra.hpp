@@ -110,7 +110,7 @@ class Dijkstra {
 
   size_t pqPops = 0;
 
-  void count_excludable_nodes();
+  std::deque<bool> excluded_nodes(double slack);
 
   private:
   enum class Direction { S, T };

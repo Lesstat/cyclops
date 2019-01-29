@@ -122,7 +122,6 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
   std::optional<NodePos> minNode = {};
 
   while (true) {
-    // Quit if both are empty or one is empty and the other is bigger than minCandidate
     if ((heap.empty()) || (sBigger && tBigger)) {
       *log << "Dijkstra popped " << pqPops << " nodes from PQ"
            << "\\n";
@@ -140,17 +139,18 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
       auto& other_costs = dir == Direction::S ? costT : costS;
       auto& bigger = dir == Direction::S ? sBigger : tBigger;
       auto& previous = dir == Direction::S ? previousEdgeS : previousEdgeT;
+
       if (cost > my_costs[node]) {
         continue;
       }
       if (stallOnDemand(node, cost, dir, my_costs)) {
         continue;
       }
-
       if (cost > minCandidate) {
         bigger = true;
         continue;
       }
+
       if (other_costs[node] != dmax) {
         double candidate = other_costs[node] + my_costs[node];
         if (candidate < minCandidate) {
@@ -275,22 +275,15 @@ void Dijkstra::calcScalingFactor(NodePos from, NodePos to, ScalingFactor& f)
   }
 }
 
-void Dijkstra::count_excludable_nodes()
+std::deque<bool> Dijkstra::excluded_nodes(double slack)
 {
-  const size_t max_level = graph->get_max_level();
-  size_t excludable = 0;
-  size_t core = 0;
+  std::deque<bool> result(costS.size(), false);
   for (size_t i = 0; i < costS.size(); ++i) {
     double s = costS[i];
     double t = costT[i];
-    if ((s == dmax && t == dmax) || (s < dmax && t < dmax && s + t > 1.5 * minCandidate)) {
-      excludable++;
-      if (graph->getLevelOf(NodePos { i }) == max_level) {
-        core++;
-      }
+    if ((s == dmax && t == dmax) || (s < dmax && t < dmax && s + t > slack * minCandidate)) {
+      result[i] = true;
     }
   }
-
-  std::cout << "I found " << excludable << " excludable nodes. " << core
-            << " of those within the core" << '\n';
+  return result;
 }
