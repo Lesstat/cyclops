@@ -19,6 +19,7 @@
 #define DIJKSTRA_H
 
 #include "graph.hpp"
+#include "restricted_set.hpp"
 #include <cmath>
 #include <iostream>
 #include <queue>
@@ -110,7 +111,7 @@ class Dijkstra {
 
   size_t pqPops = 0;
 
-  std::deque<bool> excluded_nodes(double slack);
+  exclusion_set excluded_nodes(double slack);
 
   private:
   enum class Direction { S, T };

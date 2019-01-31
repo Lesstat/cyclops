@@ -275,7 +275,7 @@ void Dijkstra::calcScalingFactor(NodePos from, NodePos to, ScalingFactor& f)
   }
 }
 
-std::deque<bool> Dijkstra::excluded_nodes(double slack)
+exclusion_set Dijkstra::excluded_nodes(double slack)
 {
   std::deque<bool> result(costS.size(), false);
   for (size_t i = 0; i < costS.size(); ++i) {
