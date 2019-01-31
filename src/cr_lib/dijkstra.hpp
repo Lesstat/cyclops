@@ -101,10 +101,10 @@ class Dijkstra {
 
   Dijkstra(Graph* g, size_t nodeCount);
   Dijkstra(const Dijkstra& other) = default;
-  Dijkstra(Dijkstra&& other) noexcept = default;
+  Dijkstra(Dijkstra&& other) = default;
   virtual ~Dijkstra() noexcept = default;
   Dijkstra& operator=(const Dijkstra& other) = default;
-  Dijkstra& operator=(Dijkstra&& other) noexcept = default;
+  Dijkstra& operator=(Dijkstra&& other) = default;
 
   std::optional<Route> findBestRoute(NodePos from, NodePos to, Config config);
   void calcScalingFactor(NodePos from, NodePos to, ScalingFactor& f);
@@ -112,6 +112,7 @@ class Dijkstra {
   size_t pqPops = 0;
 
   exclusion_set excluded_nodes(double slack);
+  void exclude(exclusion_set e);
 
   private:
   enum class Direction { S, T };
@@ -139,6 +140,7 @@ class Dijkstra {
   std::vector<NodePos> touchedT;
   Config config = Config(LengthConfig(0), HeightConfig(0), UnsuitabilityConfig(0));
   Graph* graph;
+  std::optional<exclusion_set> excluded_;
 };
 
 #endif /* DIJKSTRA_H */
