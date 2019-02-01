@@ -170,8 +170,6 @@ void runWebServer(Graph& g)
   };
 
   server.resource["^/enumerate"]["GET"] = [&g](Response response, Request request) {
-    std::cout << "enumerate request"
-              << "\n";
     auto log = Logger::initLogger();
 
     std::optional<size_t> s {}, t {}, dummy {}, maxOverlap {}, maxRoutes {};
@@ -199,15 +197,10 @@ void runWebServer(Graph& g)
     auto d = g.createDijkstra();
     EnumerateOptimals enumerate(d, *maxOverlap / 100.0, *maxRoutes);
     try {
-
-      std::cout << "starting computation"
-                << "\n";
       enumerate.find(NodePos { *s }, NodePos { *t });
       auto [routes, configs, edges] = enumerate.recommend_routes(false);
 
       std::stringstream result;
-
-      std::cout << "building json for " << routes.size() << " routes" << '\n';
 
       result << "{ \"points\": [";
       for (size_t i = 0; i < routes.size(); ++i) {
