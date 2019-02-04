@@ -29,7 +29,7 @@ find_package(Boost 1.58 REQUIRED COMPONENTS serialization program_options filesy
 file(GLOB lib_src src/cr_lib/*.cpp )
 add_library(cr_lib STATIC ${lib_src})
 target_include_directories(cr_lib PUBLIC src/cr_lib)
-target_include_directories(cr_lib SYSTEM INTERFACE ${EIGEN3_INCLUDE_DIR})
+target_include_directories(cr_lib PUBLIC ${EIGEN3_INCLUDE_DIR})
 target_link_libraries(cr_lib ${GLPK_LIBRARIES})
 target_link_libraries(cr_lib ${Boost_LIBRARIES})
 target_link_libraries(cr_lib ${CMAKE_THREAD_LIBS_INIT})
