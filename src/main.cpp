@@ -194,8 +194,7 @@ void runWebServer(Graph& g)
       return;
     }
     *log << "from " << *s << " to " << *t << "\\n";
-    auto d = g.createDijkstra();
-    EnumerateOptimals enumerate(d, *maxOverlap / 100.0, *maxRoutes);
+    EnumerateOptimals enumerate(&g, *maxOverlap / 100.0, *maxRoutes);
     try {
       enumerate.find(NodePos { *s }, NodePos { *t });
       auto [routes, configs, edges] = enumerate.recommend_routes(false);

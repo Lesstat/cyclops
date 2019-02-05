@@ -88,32 +88,34 @@ class EnumerateOptimals {
   typedef std::vector<std::pair<size_t, size_t>> Edges;
 
   private:
-  Dijkstra& d;
+  Graph* g;
   Triangulation tri { DIMENSION };
   std::vector<Route> routes;
   std::vector<Config> configs;
   std::map<std::pair<size_t, size_t>, double> similarities;
   double maxOverlap;
   size_t maxRoutes;
+  Dijkstra d;
   Dijkstra::ScalingFactor factor;
+  bool important[DIMENSION];
+  double slack[DIMENSION];
 
   double compare(size_t i, size_t j);
-
   Config findConfig(const TDS::Full_cell& f);
-
   void addToTriangulation();
-
   void includeConvexHullCells(CellContainer& cont);
-
   std::vector<size_t> extract_independent_set(const std::vector<size_t>& vertices, bool ilp);
-
   std::tuple<std::vector<size_t>, EnumerateOptimals::Edges> vertex_ids_and_edges();
+  exclusion_set create_exclusion_set_from_important_metrics(NodePos s, NodePos t);
+  void run_not_important_metrics(NodePos s, NodePos t);
 
   public:
   size_t enumeration_time;
   size_t recommendation_time;
 
-  EnumerateOptimals(Dijkstra& d, double maxOverlap, size_t maxRoutes);
+  EnumerateOptimals(Graph* g, double maxOverlap, size_t maxRoutes);
+  EnumerateOptimals(Graph* g, double maxOverlap, size_t maxRoutes, bool important[DIMENSION],
+      double slack[DIMENSION]);
 
   void find(NodePos s, NodePos t);
 

@@ -47,12 +47,11 @@ TEST_CASE("Find all optimals in small graph")
 
   std::istringstream stream { sixNodeGraph };
   auto g = Graph::createFromStream(stream);
-  auto d = g.createDijkstra();
 
   NodePos s { 0 };
   NodePos t { 4 };
 
-  EnumerateOptimals o { d, 20, 100 };
+  EnumerateOptimals o { &g, 20, 100 };
   o.find(s, t);
   auto result = o.recommend_routes(true);
   auto routes = std::get<std::vector<Route>>(result);

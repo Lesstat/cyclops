@@ -121,6 +121,10 @@ Config EnumerateOptimals::findConfig(const TDS::Full_cell& f)
     conf_values.push_back(solution[i]);
   }
 
+  if (sum == 0) {
+    throw std::runtime_error("All components zero");
+  }
+
   for (auto& val : conf_values) {
     val /= sum;
     if (val < -0.001)
@@ -265,11 +269,29 @@ std::tuple<std::vector<size_t>, EnumerateOptimals::Edges> EnumerateOptimals::ver
   return { vertices, edges };
 }
 
-EnumerateOptimals::EnumerateOptimals(Dijkstra& d, double maxOverlap, size_t maxRoutes)
-    : d(d)
+EnumerateOptimals::EnumerateOptimals(Graph* g, double maxOverlap, size_t maxRoutes)
+    : g(g)
     , maxOverlap(maxOverlap)
     , maxRoutes(maxRoutes)
+    , d(g->createDijkstra())
 {
+  for (size_t i = 0; i < DIMENSION; ++i) {
+    this->important[i] = true;
+    this->slack[i] = std::numeric_limits<double>::max();
+  }
+}
+
+EnumerateOptimals::EnumerateOptimals(Graph* g, double maxOverlap, size_t maxRoutes,
+    bool important[DIMENSION], double slack[DIMENSION])
+    : g(g)
+    , maxOverlap(maxOverlap)
+    , maxRoutes(maxRoutes)
+    , d(g->createDijkstra())
+{
+  for (size_t i = 0; i < DIMENSION; ++i) {
+    this->important[i] = important[i];
+    this->slack[i] = slack[i];
+  }
 }
 
 void EnumerateOptimals::find(NodePos s, NodePos t)
@@ -280,27 +302,17 @@ void EnumerateOptimals::find(NodePos s, NodePos t)
   similarities.clear();
   tri.clear();
 
+  auto exclude = create_exclusion_set_from_important_metrics(s, t);
+  d.exclude(exclude);
+
+  run_not_important_metrics(s, t);
+
   Config conf(std::vector(DIMENSION, 1.0 / DIMENSION));
   auto route = d.findBestRoute(s, t, conf);
-  if (!route) {
-    throw std::runtime_error(
-        "No route found from " + std::to_string(s) + " to " + std::to_string(t));
-  }
 
   routes.push_back(std::move(*route));
   configs.push_back(std::move(conf));
   addToTriangulation();
-
-  for (size_t i = 0; i < DIMENSION; ++i) {
-    Config conf(std::vector(DIMENSION, 0.0));
-    conf.values[i] = 1.0;
-
-    auto route = d.findBestRoute(s, t, conf);
-    factor[i] = route->costs.values[i];
-    routes.push_back(std::move(*route));
-    configs.push_back(std::move(conf));
-    addToTriangulation();
-  }
   double maxValue = *std::max_element(&factor[0], &factor[DIMENSION]);
 
   for (double& value : factor) {
@@ -407,4 +419,53 @@ EnumerateOptimals::recommend_routes(bool ilp)
   }
 
   return { routes, configs, edges };
+}
+
+exclusion_set EnumerateOptimals::create_exclusion_set_from_important_metrics(NodePos s, NodePos t)
+{
+  exclusion_set exclude(g->getNodeCount(), false);
+  for (size_t i = 0; i < DIMENSION; ++i) {
+    if (!important[i])
+      continue;
+
+    Config conf(std::vector(DIMENSION, 0.0));
+    conf.values[i] = 1.0;
+
+    auto route = d.findBestRoute(s, t, conf);
+    if (!route) {
+      throw std::runtime_error(
+          "No route found from " + std::to_string(s) + " to " + std::to_string(t));
+    }
+
+    exclude = combine(d.excluded_nodes(slack[i]), exclude);
+
+    factor[i] = route->costs.values[i];
+    routes.push_back(std::move(*route));
+    configs.push_back(std::move(conf));
+    addToTriangulation();
+  }
+  return exclude;
+}
+
+void EnumerateOptimals::run_not_important_metrics(NodePos s, NodePos t)
+{
+
+  for (size_t i = 0; i < DIMENSION; ++i) {
+    if (important[i])
+      continue;
+
+    Config conf(std::vector(DIMENSION, 0.0));
+    conf.values[i] = 1.0;
+
+    auto route = d.findBestRoute(s, t, conf);
+    if (!route) {
+      throw std::runtime_error(
+          "No route found from " + std::to_string(s) + " to " + std::to_string(t));
+    }
+
+    factor[i] = route->costs.values[i];
+    routes.push_back(std::move(*route));
+    configs.push_back(std::move(conf));
+    addToTriangulation();
+  }
 }

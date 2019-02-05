@@ -94,9 +94,10 @@ void explore_random(std::ifstream& file, std::ofstream& output, Dijkstra& d, siz
   }
 }
 
-void enumerate(std::ifstream& file, std::ofstream& output, Dijkstra& d, size_t maxRoutes,
+void enumerate(std::ifstream& file, std::ofstream& output, Graph* g, size_t maxRoutes,
     double maxSimilarity, std::string type)
 {
+  auto d = g->createDijkstra();
   auto counter = 0;
   while (!file.eof()) {
     size_t from;
@@ -120,7 +121,7 @@ void enumerate(std::ifstream& file, std::ofstream& output, Dijkstra& d, size_t m
       continue;
     }
     try {
-      EnumerateOptimals o(d, maxSimilarity, maxRoutes);
+      EnumerateOptimals o(g, maxSimilarity, maxRoutes);
 
       std::vector<Route> routes;
       o.find(NodePos { from }, NodePos { to });
@@ -144,13 +145,14 @@ void enumerate(std::ifstream& file, std::ofstream& output, Dijkstra& d, size_t m
   }
 }
 
-void enumerate_all(std::ifstream& file, std::ofstream& output, Dijkstra& d, std::string type)
+void enumerate_all(std::ifstream& file, std::ofstream& output, Graph* g, std::string type)
 {
   size_t from;
   size_t to;
   int counter = 0;
   std::vector<double> conf(DIMENSION, 0);
   conf[0] = 1;
+  auto d = g->createDijkstra();
   while (file >> from >> to) {
     if (!d.findBestRoute(NodePos { from }, NodePos { to }, conf)) {
       std::cout << "did not find routes"
@@ -162,7 +164,7 @@ void enumerate_all(std::ifstream& file, std::ofstream& output, Dijkstra& d, std:
         std::cout << "finished " << counter << " s-t pairs" << '\n';
         output.flush();
       }
-      EnumerateOptimals o(d, 1.1, std::numeric_limits<size_t>::max());
+      EnumerateOptimals o(g, 1.1, std::numeric_limits<size_t>::max());
 
       std::vector<Route> routes;
       o.find(NodePos { from }, NodePos { to });
@@ -308,8 +310,8 @@ void explore_naive(std::ifstream& route_input, std::ofstream& output, Dijkstra& 
   }
 }
 
-void explore_s_t_pairs(
-    std::ifstream& input, std::ofstream& output, Grid& g, Dijkstra& d, const std::string& graphfile)
+void explore_s_t_pairs(std::ifstream& input, std::ofstream& output, Grid& g, Graph* graph,
+    const std::string& graphfile)
 {
   if (output.tellp() == 0) {
     output << "s_lat,s_lng,t_lat,t_lng,inputgraph,starttime,R,K,time,#routes,min_similarity,"
@@ -323,7 +325,7 @@ void explore_s_t_pairs(
   const size_t refinements = 40;
   const double max_similarity = 0.5;
   double s_lat, s_lng, t_lat, t_lng;
-  EnumerateOptimals e(d, max_similarity, refinements);
+  EnumerateOptimals e(graph, max_similarity, refinements);
   while (input >> s_lat >> s_lng >> t_lat >> t_lng) {
     auto s = g.findNextNode(Lat(s_lat), Lng(s_lng));
     auto t = g.findNextNode(Lat(t_lat), Lng(t_lng));
@@ -463,9 +465,9 @@ int main(int argc, char* argv[])
       std::ifstream day { "daytour" };
       std::ifstream week { "weektour" };
       std::ifstream commute { "commute" };
-      enumerate(day, output, d, maxRoutes, maxSimilarity, "day");
-      enumerate(week, output, d, maxRoutes, maxSimilarity, "week");
-      enumerate(commute, output, d, maxRoutes, maxSimilarity, "commute");
+      enumerate(day, output, &g, maxRoutes, maxSimilarity, "day");
+      enumerate(week, output, &g, maxRoutes, maxSimilarity, "week");
+      enumerate(commute, output, &g, maxRoutes, maxSimilarity, "commute");
     }
   } else if (vm.count("all") > 0) {
     if (output.tellp() == 0) {
@@ -474,8 +476,8 @@ int main(int argc, char* argv[])
     std::ifstream day { "daytour" };
     std::ifstream week { "weektour" };
     std::ifstream commute { "commute" };
-    enumerate_all(commute, output, d, "commute");
-    enumerate_all(day, output, d, "day");
+    enumerate_all(commute, output, &g, "commute");
+    enumerate_all(day, output, &g, "day");
     // enumerate_all(week, output, d, "week");
   } else if (vm.count("dijkstra") > 0) {
     if (output.tellp() == 0) {
@@ -549,7 +551,7 @@ int main(int argc, char* argv[])
     }
   } else if (vm.count("st") > 0) {
     Grid grid = g.createGrid();
-    explore_s_t_pairs(params, output, grid, d, loadFileName);
+    explore_s_t_pairs(params, output, grid, &g, loadFileName);
   }
   return 0;
 }

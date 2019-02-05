@@ -86,7 +86,7 @@ TEST_CASE("Restricted Dijkstra does not choose long path")
   REQUIRE(b_route->edges.size() == 1);
 }
 
-TEST_CASE("Exclude route which second metric")
+TEST_CASE("Exclude route which exceeds second metric slack")
 {
 
   const std::string sixNodeGraph { R"!!(# Build by: pbfextractor
@@ -113,15 +113,26 @@ TEST_CASE("Exclude route which second metric")
 
   std::istringstream stream { sixNodeGraph };
   auto g = Graph::createFromStream(stream);
-  auto d = g.createDijkstra();
 
   NodePos s { 0 };
   NodePos t { 4 };
 
-  EnumerateOptimals o { d, 20, 100 };
-  o.find(s, t);
-  auto result = o.recommend_routes(true);
-  auto routes = std::get<std::vector<Route>>(result);
+  {
+    EnumerateOptimals o { &g, 20, 100 };
+    o.find(s, t);
+    auto result = o.recommend_routes(true);
+    auto routes = std::get<std::vector<Route>>(result);
 
-  REQUIRE(routes.size() == 3);
+    REQUIRE(routes.size() == 3);
+  }
+
+  {
+    bool important[DIMENSION] = { false, true, false };
+    double slack[DIMENSION] = { 0, 2.5, 0 };
+    EnumerateOptimals r { &g, 20, 100, important, slack };
+    r.find(s, t);
+    auto result = r.recommend_routes(true);
+    auto routes = std::get<std::vector<Route>>(result);
+    REQUIRE(routes.size() == 2);
+  }
 }

@@ -176,8 +176,12 @@ void Dijkstra::relaxEdges(const NodePos& node, double cost, Direction dir, Queue
   std::optional<HalfEdge> lastEdge = {};
   for (const auto& edge : edges) {
     NodePos nextNode = edge.end;
-    if (graph->getLevelOf(nextNode) < myLevel || (excluded_ && (*excluded_)[nextNode])) {
+    if (graph->getLevelOf(nextNode) < myLevel) {
       break;
+    }
+
+    if (excluded_ && (*excluded_)[nextNode]) {
+      continue;
     }
     if (!lastNode) {
       lastNode = nextNode;
