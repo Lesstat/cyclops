@@ -311,9 +311,11 @@ void EnumerateOptimals::find(NodePos s, NodePos t)
   Config conf(std::vector(DIMENSION, 1.0 / DIMENSION));
   auto route = d.findBestRoute(s, t, conf);
 
-  routes.push_back(std::move(*route));
-  configs.push_back(std::move(conf));
-  addToTriangulation();
+  if (route) {
+    routes.push_back(std::move(*route));
+    configs.push_back(std::move(conf));
+    addToTriangulation();
+  }
   double maxValue = *std::max_element(&factor[0], &factor[DIMENSION]);
 
   for (double& value : factor) {
@@ -338,6 +340,8 @@ void EnumerateOptimals::find(NodePos s, NodePos t)
       try {
         Config conf = findConfig(f);
         auto route = d.findBestRoute(s, t, conf);
+        if (!route)
+          continue;
 
         routes.push_back(std::move(*route));
         configs.push_back(std::move(conf));
@@ -460,8 +464,7 @@ void EnumerateOptimals::run_not_important_metrics(NodePos s, NodePos t)
 
     auto route = d.findBestRoute(s, t, conf);
     if (!route) {
-      throw std::runtime_error(
-          "No route found from " + std::to_string(s) + " to " + std::to_string(t));
+      continue;
     }
 
     factor[i] = route->costs.values[i];
