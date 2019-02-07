@@ -24,7 +24,9 @@
 #include "ndijkstra.hpp"
 #include "routeComparator.hpp"
 #include "server_http.hpp"
+#include "url_parsing.hpp"
 #include "webUtilities.hpp"
+
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
@@ -173,6 +175,7 @@ void runWebServer(Graph& g)
     auto log = Logger::initLogger();
 
     std::optional<size_t> s {}, t {}, dummy {}, maxOverlap {}, maxRoutes {};
+    std::vector<ImportantMetric> important_metrics;
 
     auto queryParams = request->parse_query_string();
     extractQueryFields(queryParams, s, t, dummy, dummy, dummy);
@@ -181,6 +184,12 @@ void runWebServer(Graph& g)
         maxRoutes = stoull(param.second);
       } else if (param.first == "maxOverlap") {
         maxOverlap = stoull(param.second);
+      } else if (param.first == "important") {
+        try {
+          important_metrics = parse_important_metric_list(param.second);
+        } catch (std::exception& e) {
+          response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
+        }
       }
     }
     if (s > g.getNodeCount() || t > g.getNodeCount()) {
@@ -194,7 +203,15 @@ void runWebServer(Graph& g)
       return;
     }
     *log << "from " << *s << " to " << *t << "\\n";
-    EnumerateOptimals enumerate(&g, *maxOverlap / 100.0, *maxRoutes);
+    EnumerateOptimals enumerate = [&g, &maxOverlap, &maxRoutes, &important_metrics]() {
+      if (important_metrics.empty()) {
+        return EnumerateOptimals(&g, *maxOverlap / 100.0, *maxRoutes);
+      } else {
+        auto [metrics, slacks] = EnumerateOptimals::important_metrics_to_arrays(important_metrics);
+        return EnumerateOptimals(&g, *maxOverlap / 100.0, *maxRoutes, metrics, slacks);
+      }
+    }();
+
     try {
       enumerate.find(NodePos { *s }, NodePos { *t });
       auto [routes, configs, edges] = enumerate.recommend_routes(false);
