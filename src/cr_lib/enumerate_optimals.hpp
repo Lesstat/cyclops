@@ -83,6 +83,15 @@ typedef std::priority_queue<TDS::Full_cell, std::vector<TDS::Full_cell>, decltyp
     CellContainer;
 
 namespace c = std::chrono;
+
+struct ImportantMetric {
+  size_t metric;
+  double slack;
+};
+
+typedef std::array<bool, DIMENSION> Important;
+typedef std::array<double, DIMENSION> Slack;
+
 class EnumerateOptimals {
   public:
   typedef std::vector<std::pair<size_t, size_t>> Edges;
@@ -97,8 +106,8 @@ class EnumerateOptimals {
   size_t maxRoutes;
   Dijkstra d;
   Dijkstra::ScalingFactor factor;
-  bool important[DIMENSION];
-  double slack[DIMENSION];
+  Important important;
+  Slack slack;
 
   double compare(size_t i, size_t j);
   Config findConfig(const TDS::Full_cell& f);
@@ -114,8 +123,8 @@ class EnumerateOptimals {
   size_t recommendation_time;
 
   EnumerateOptimals(Graph* g, double maxOverlap, size_t maxRoutes);
-  EnumerateOptimals(Graph* g, double maxOverlap, size_t maxRoutes, bool important[DIMENSION],
-      double slack[DIMENSION]);
+  EnumerateOptimals(
+      Graph* g, double maxOverlap, size_t maxRoutes, Important important, Slack slack);
 
   void find(NodePos s, NodePos t);
 
@@ -124,6 +133,9 @@ class EnumerateOptimals {
 
   std::tuple<std::vector<Route>, std::vector<Config>, EnumerateOptimals::Edges> recommend_routes(
       bool ilp);
+
+  static std::pair<Important, Slack> important_metrics_to_arrays(
+      std::vector<ImportantMetric> metrics);
 };
 
 #endif /* ENUMERATE_OPTIMALS_H */

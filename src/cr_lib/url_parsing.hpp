@@ -17,10 +17,7 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-struct ImportantMetric {
-  size_t metric;
-  double slack;
-};
+struct ImportantMetric;
 
 ImportantMetric parse_important_metric(const std::string& value);
 std::vector<ImportantMetric> parse_important_metric_list(const std::string& metrics);

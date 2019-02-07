@@ -17,6 +17,7 @@
 */
 
 #include "catch.hpp"
+#include "enumerate_optimals.hpp"
 #include "url_parsing.hpp"
 
 TEST_CASE("Empty metric Query String throws") { REQUIRE_THROWS(parse_important_metric("")); }
@@ -73,4 +74,33 @@ TEST_CASE("Metric list parser can parse two metrics at once")
     REQUIRE(metric.metric == 3);
     REQUIRE(metric.slack == 1.2);
   }
+}
+
+TEST_CASE("Convert Empty Important Metrics Vector to only false arrays for Enumerate Optimals")
+{
+  std::vector<ImportantMetric> m;
+  auto arrays = EnumerateOptimals::important_metrics_to_arrays(m);
+
+  for (auto& metric : arrays.first)
+    REQUIRE_FALSE(metric);
+
+  for (auto& slack : arrays.second)
+    REQUIRE(slack == std::numeric_limits<double>::max());
+}
+
+TEST_CASE("Convert place Important Metric and slack at right position")
+{
+  std::vector<ImportantMetric> m;
+  m.push_back(ImportantMetric { 1, 1.3 });
+
+  auto arrays = EnumerateOptimals::important_metrics_to_arrays(m);
+
+  for (size_t i = 0; i < DIMENSION; ++i)
+    if (i == 1) {
+      REQUIRE(arrays.first[i]);
+      REQUIRE(arrays.second[i] == 1.3);
+    } else {
+      REQUIRE_FALSE(arrays.first[i]);
+      REQUIRE(arrays.second[i] == std::numeric_limits<double>::max());
+    }
 }

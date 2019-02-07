@@ -17,6 +17,7 @@
 */
 
 #include "enumerate_optimals.hpp"
+#include "url_parsing.hpp"
 
 int FullCellId::currentId = 0;
 std::vector<int> FullCellId::alive_ = std::vector<int>();
@@ -281,8 +282,8 @@ EnumerateOptimals::EnumerateOptimals(Graph* g, double maxOverlap, size_t maxRout
   }
 }
 
-EnumerateOptimals::EnumerateOptimals(Graph* g, double maxOverlap, size_t maxRoutes,
-    bool important[DIMENSION], double slack[DIMENSION])
+EnumerateOptimals::EnumerateOptimals(
+    Graph* g, double maxOverlap, size_t maxRoutes, Important important, Slack slack)
     : g(g)
     , maxOverlap(maxOverlap)
     , maxRoutes(maxRoutes)
@@ -468,4 +469,19 @@ void EnumerateOptimals::run_not_important_metrics(NodePos s, NodePos t)
     configs.push_back(std::move(conf));
     addToTriangulation();
   }
+}
+
+std::pair<Important, Slack> EnumerateOptimals::important_metrics_to_arrays(
+    std::vector<ImportantMetric> metrics)
+{
+  Important important;
+  Slack slack;
+  slack.fill(std::numeric_limits<double>::max());
+
+  for (const auto& metric : metrics) {
+    important[metric.metric] = true;
+    slack[metric.metric] = metric.slack;
+  }
+
+  return std::make_pair(important, slack);
 }

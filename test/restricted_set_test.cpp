@@ -127,8 +127,8 @@ TEST_CASE("Exclude route which exceeds second metric slack")
   }
 
   {
-    bool important[DIMENSION] = { false, true, false };
-    double slack[DIMENSION] = { 0, 2.5, 0 };
+    Important important = { false, true, false };
+    Slack slack = { 0, 2.5, 0 };
     EnumerateOptimals r { &g, 20, 100, important, slack };
     r.find(s, t);
     auto result = r.recommend_routes(true);

@@ -17,7 +17,7 @@
 */
 
 #include "url_parsing.hpp"
-#include <regex>
+#include "enumerate_optimals.hpp"
 #include <sstream>
 
 ImportantMetric parse_important_metric(const std::string& value)
@@ -26,13 +26,13 @@ ImportantMetric parse_important_metric(const std::string& value)
     throw std::runtime_error(
         "Illegal format for important metric and slack. Expected \"Index,slack\"");
 
-  std::regex regex("([0-9]*),([0-9]*[.0-9]*)");
-  std::smatch sm;
+  std::istringstream ss(value);
+  std::string line;
+  std::getline(ss, line, ',');
+  size_t metric = std::stoi(line);
 
-  std::regex_match(value, sm, regex);
-
-  size_t metric = std::stoi(sm[1]);
-  double slack = std::stod(sm[2]);
+  std::getline(ss, line);
+  double slack = std::stod(line);
 
   return ImportantMetric { metric, slack };
 }
