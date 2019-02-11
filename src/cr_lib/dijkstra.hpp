@@ -19,7 +19,6 @@
 #define DIJKSTRA_H
 
 #include "graph.hpp"
-#include "restricted_set.hpp"
 #include <cmath>
 #include <iostream>
 #include <queue>
@@ -28,6 +27,7 @@
 using LengthConfig = NamedType<double, struct LengthConfigParameter>;
 using HeightConfig = NamedType<double, struct HeightConfigParameter>;
 using UnsuitabilityConfig = NamedType<double, struct UnsuitabilityConfigParameter>;
+using exclusion_set = std::deque<bool>;
 
 struct Config {
   double values[Cost::dim];
@@ -111,7 +111,7 @@ class Dijkstra {
 
   size_t pqPops = 0;
 
-  exclusion_set excluded_nodes(double slack);
+  void excluded_nodes(double slack, exclusion_set& e);
   void exclude(exclusion_set e);
 
   private:

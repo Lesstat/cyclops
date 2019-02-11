@@ -19,29 +19,6 @@
 #include "dijkstra.hpp"
 #include "enumerate_optimals.hpp"
 #include "graph.hpp"
-#include "restricted_set.hpp"
-
-TEST_CASE("Combining Empty exclusion_sets yields empty exclusion_set")
-{
-  auto result = combine({}, {});
-  REQUIRE(result.empty());
-}
-
-TEST_CASE("Exclusion_sets must be same size for combining")
-{
-  REQUIRE_THROWS(combine({}, { true }));
-}
-
-TEST_CASE("Any excluded node must be avoided in combined exclusion_set")
-{
-
-  auto result = combine({ false, true, true, false }, { false, false, true, true });
-  exclusion_set expected = { false, true, true, true };
-  REQUIRE(result.size() == expected.size());
-  for (size_t i = 0; i < result.size(); ++i) {
-    REQUIRE(result[i] == expected[i]);
-  }
-}
 
 TEST_CASE("Restricted Dijkstra does not choose long path")
 {
@@ -71,8 +48,8 @@ TEST_CASE("Restricted Dijkstra does not choose long path")
   Config a = std::vector<double> { 0, 1, 0 };
   auto a_route = d.findBestRoute(s, t, a);
   REQUIRE(a_route->edges.size() == 1);
-
-  auto excluded = d.excluded_nodes(1.1);
+  exclusion_set excluded(3, false);
+  d.excluded_nodes(1.1, excluded);
   exclusion_set expected_exclusions = { false, true, false };
   for (size_t i = 0; i < excluded.size(); ++i)
     REQUIRE(excluded[i] == expected_exclusions[i]);

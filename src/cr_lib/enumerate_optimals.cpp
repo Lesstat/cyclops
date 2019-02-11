@@ -277,8 +277,7 @@ EnumerateOptimals::EnumerateOptimals(Graph* g, double maxOverlap, size_t maxRout
     , d(g->createDijkstra())
 {
   for (size_t i = 0; i < DIMENSION; ++i) {
-    this->important[i] = true;
-    this->slack[i] = std::numeric_limits<double>::max();
+    this->important[i] = false;
   }
 }
 
@@ -442,7 +441,7 @@ exclusion_set EnumerateOptimals::create_exclusion_set_from_important_metrics(Nod
           "No route found from " + std::to_string(s) + " to " + std::to_string(t));
     }
 
-    exclude = combine(d.excluded_nodes(slack[i]), exclude);
+    d.excluded_nodes(slack[i], exclude);
 
     factor[i] = route->costs.values[i];
     routes.push_back(std::move(*route));

@@ -279,17 +279,17 @@ void Dijkstra::calcScalingFactor(NodePos from, NodePos to, ScalingFactor& f)
   }
 }
 
-exclusion_set Dijkstra::excluded_nodes(double slack)
+void Dijkstra::excluded_nodes(double slack, exclusion_set& e)
 {
-  std::deque<bool> result(costS.size(), false);
   for (size_t i = 0; i < costS.size(); ++i) {
+    if (e[i])
+      continue;
     double s = costS[i];
     double t = costT[i];
     if ((s == dmax && t == dmax) || (s < dmax && t < dmax && s + t > slack * minCandidate)) {
-      result[i] = true;
+      e[i] = true;
     }
   }
-  return result;
 }
 
 void Dijkstra::exclude(exclusion_set e) { excluded_ = std::move(e); }
