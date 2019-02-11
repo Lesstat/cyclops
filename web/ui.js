@@ -174,9 +174,9 @@ function gradientToColor(config) {
   let myMax = Math.max(...rgb);
   var decColor =
     0x1000000 +
-    Math.round(rgb[0] * 255.0 / myMax) +
-    0x100 * Math.round(rgb[1] * 255.0 / myMax) +
-    0x10000 * Math.round(rgb[2] * 255.0 / myMax);
+    Math.round((rgb[0] * 255.0) / myMax) +
+    0x100 * Math.round((rgb[1] * 255.0) / myMax) +
+    0x10000 * Math.round((rgb[2] * 255.0) / myMax);
   return "#" + decColor.toString(16).substr(1);
 }
 
@@ -260,10 +260,10 @@ function moveDot(event) {
 
     let areaSum = lengthArea + heightArea + unsuitabilityArea;
 
-    let lengthPercent = Math.round(lengthArea / areaSum * 100);
-    let heightPercent = Math.round(heightArea / areaSum * 100);
+    let lengthPercent = Math.round((lengthArea / areaSum) * 100);
+    let heightPercent = Math.round((heightArea / areaSum) * 100);
 
-    let unsuitabilityPercent = Math.round(unsuitabilityArea / areaSum * 100);
+    let unsuitabilityPercent = Math.round((unsuitabilityArea / areaSum) * 100);
 
     lengthSpan.innerHTML = lengthPercent;
     heightSpan.innerHTML = heightPercent;
@@ -504,6 +504,7 @@ function enumerateRoutes() {
   let t = document.getElementById("end").innerHTML;
   let maxRefinements = document.getElementById("maxRefinements").value;
   let maxOverlap = document.getElementById("maxOverlap").value;
+  let important = document.getElementById("important").value;
 
   let uri =
     "/enumerate" +
@@ -514,7 +515,9 @@ function enumerateRoutes() {
     "&maxRoutes=" +
     maxRefinements +
     "&maxOverlap=" +
-    maxOverlap;
+    maxOverlap +
+    "&important=" +
+    important;
 
   xmlhttp.open("GET", uri);
   xmlhttp.send();
