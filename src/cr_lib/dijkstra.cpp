@@ -65,7 +65,7 @@ void insertUnpackedEdge(const Edge& e, std::deque<Edge>& route, bool front)
   }
 }
 
-Route Dijkstra::buildRoute(NodePos node, NodeToEdgeMap previousEdgeS, NodeToEdgeMap previousEdgeT,
+Route Dijkstra::buildRoute(NodePos node, NodeToEdgeMap& previousEdgeS, NodeToEdgeMap& previousEdgeT,
     NodePos from, NodePos to)
 {
 
