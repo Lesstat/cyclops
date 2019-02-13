@@ -72,18 +72,20 @@ Route Dijkstra::buildRoute(NodePos node, NodeToEdgeMap& previousEdgeS, NodeToEdg
   Route route {};
   auto curNode = node;
   while (curNode != from) {
-    const auto& edge = previousEdgeS[curNode];
-    route.costs = route.costs + edge.cost;
-    insertUnpackedEdge(Edge::getEdge(edge.id), route.edges, true);
-    curNode = edge.begin;
+    const auto& edge_id = previousEdgeS[curNode];
+    const auto& edge = Edge::getEdge(edge_id);
+    route.costs = route.costs + edge.getCost();
+    insertUnpackedEdge(edge, route.edges, true);
+    curNode = edge.sourcePos();
   }
 
   curNode = node;
   while (curNode != to) {
-    const auto& edge = previousEdgeT[curNode];
-    route.costs = route.costs + edge.cost;
-    insertUnpackedEdge(Edge::getEdge(edge.id), route.edges, false);
-    curNode = edge.begin;
+    const auto& edge_id = previousEdgeT[curNode];
+    const auto& edge = Edge::getEdge(edge_id);
+    route.costs = route.costs + edge.getCost();
+    insertUnpackedEdge(edge, route.edges, false);
+    curNode = edge.destPos();
   }
 
   return route;
@@ -173,7 +175,7 @@ void Dijkstra::relaxEdges(const NodePos& node, double cost, Direction dir, Queue
 
   std::optional<NodePos> lastNode = {};
   std::optional<double> lastCost = {};
-  std::optional<HalfEdge> lastEdge = {};
+  std::optional<EdgeId> lastEdge = {};
   for (const auto& edge : edges) {
     NodePos nextNode = edge.end;
     if (graph->getLevelOf(nextNode) < myLevel) {
@@ -200,7 +202,7 @@ void Dijkstra::relaxEdges(const NodePos& node, double cost, Direction dir, Queue
     double nextCost = cost + edge.costByConfiguration(config);
     if (!lastCost || *lastCost > nextCost) {
       lastCost = nextCost;
-      lastEdge = edge;
+      lastEdge = edge.id;
     }
   }
   if (lastNode && lastCost) {

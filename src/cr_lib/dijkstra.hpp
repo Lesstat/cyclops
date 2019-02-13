@@ -124,7 +124,7 @@ class Dijkstra {
 
   void clearState();
 
-  using NodeToEdgeMap = std::unordered_map<NodePos, HalfEdge>;
+  using NodeToEdgeMap = std::unordered_map<NodePos, EdgeId>;
   Route buildRoute(NodePos node, NodeToEdgeMap& previousEdgeS, NodeToEdgeMap& previousEdgeT,
       NodePos from, NodePos to);
 
