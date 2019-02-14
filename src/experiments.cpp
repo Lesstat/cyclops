@@ -23,6 +23,7 @@
 #include "ilp_independent_set.hpp"
 #include "naive_exploration.hpp"
 #include "routeComparator.hpp"
+
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <chrono>
@@ -489,11 +490,13 @@ int main(int argc, char* argv[])
     }
     auto grid = g.createGrid();
     double lat_f, lng_f, lat_t, lng_t;
+    Config conf = { { 1.0, 0.0, 0.0 } };
+
     while (params >> lat_f >> lng_f >> lat_t >> lng_t) {
 
       NodePos from = *grid.findNextNode(Lat { lat_f }, Lng { lng_f });
       NodePos to = *grid.findNextNode(Lat { lat_t }, Lng { lng_t });
-      Config conf = generateRandomConfig();
+      // Config conf = generateRandomConfig();
       auto start = std::chrono::high_resolution_clock::now();
       auto optRoute = d.findBestRoute(from, to, conf);
       auto end = std::chrono::high_resolution_clock::now();
@@ -513,6 +516,7 @@ int main(int argc, char* argv[])
       }
       output << route.edges.size() << "," << d.pqPops << "," << time << '\n';
     }
+
   } else if (vm.count("random") > 0) {
     if (output.tellp() == 0) {
       output << "type,from,to,maxRoutes,maxSimilarity,routeCount,ilpRecommendedRouteCount,"

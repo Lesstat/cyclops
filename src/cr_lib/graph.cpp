@@ -46,10 +46,14 @@ void Graph::connectEdgesToNodes(const std::vector<Node>& nodes, const std::vecto
 }
 
 enum class Pos { source, dest };
-void sortEdgesByNodePos(std::vector<HalfEdge>& edges, const Graph& g)
+void sortEdgesByNodePos(std::vector<HalfEdge>& edges, const Graph& g, Pos p)
 {
-  auto comparator = [&g](const HalfEdge& a, const HalfEdge& b) {
-    if (a.begin == b.begin) {
+  auto comparator = [&g, &p](const HalfEdge& a, const HalfEdge& b) {
+    const auto& a_full_edge = Edge::getEdge(a.id);
+    const auto& b_full_edge = Edge::getEdge(b.id);
+    const auto& a_begin = p == Pos::source ? a_full_edge.sourcePos() : a_full_edge.destPos();
+    const auto& b_begin = p == Pos::source ? b_full_edge.sourcePos() : b_full_edge.destPos();
+    if (a_begin == b_begin) {
       auto aLevel = g.getLevelOf(a.end);
       auto bLevel = g.getLevelOf(b.end);
       if (aLevel == bLevel) {
@@ -57,7 +61,7 @@ void sortEdgesByNodePos(std::vector<HalfEdge>& edges, const Graph& g)
       }
       return aLevel > bLevel;
     }
-    return a.begin < b.begin;
+    return a_begin < b_begin;
   };
   std::sort(edges.begin(), edges.end(), comparator);
 }
@@ -65,8 +69,8 @@ void sortEdgesByNodePos(std::vector<HalfEdge>& edges, const Graph& g)
 void calculateOffsets(
     std::vector<HalfEdge>& edges, std::vector<NodeOffset>& offsets, Pos p, const Graph& g)
 {
-  auto sourcePos = [&edges](size_t j) { return edges[j].begin; };
-  auto destPos = [&edges](size_t j) { return edges[j].begin; };
+  auto sourcePos = [&edges](size_t j) { return Edge::getEdge(edges[j].id).sourcePos(); };
+  auto destPos = [&edges](size_t j) { return Edge::getEdge(edges[j].id).destPos(); };
   auto setOut = [&offsets](size_t i, size_t j) { offsets[i].out = j; };
   auto setIn = [&offsets](size_t i, size_t j) { offsets[i].in = j; };
 
@@ -76,7 +80,7 @@ void calculateOffsets(
   auto setOffset
       = [p, setOut, setIn](size_t i, size_t j) { p == Pos::source ? setOut(i, j) : setIn(i, j); };
 
-  sortEdgesByNodePos(edges, g);
+  sortEdgesByNodePos(edges, g, p);
 
   size_t lastNode = 0;
 

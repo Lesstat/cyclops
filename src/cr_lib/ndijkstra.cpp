@@ -24,9 +24,9 @@ NormalDijkstra::NormalDijkstra(Graph* g, size_t nodeCount, bool unpack)
     , paths(nodeCount, 0)
     , previousEdge(nodeCount)
     , pathCount(0)
-    , usedConfig(LengthConfig{ 0.0 }, HeightConfig{ 0.0 }, UnsuitabilityConfig{ 0.0 })
+    , usedConfig(LengthConfig { 0.0 }, HeightConfig { 0.0 }, UnsuitabilityConfig { 0.0 })
     , graph(g)
-    , heap(BiggerPathCost{})
+    , heap(BiggerPathCost {})
     , unpack(unpack)
 {
 }
@@ -93,7 +93,7 @@ void NormalDijkstra::clearState()
     heap.pop();
   }
   touched.clear();
-  pathCost = Cost{};
+  pathCost = Cost {};
   pathCount = 0;
   pqPops = 0;
 }
@@ -127,14 +127,15 @@ RouteWithCount NormalDijkstra::buildRoute(const NodePos& from, const NodePos& to
   route.pathCount = paths[to];
   auto currentNode = to;
   while (currentNode != from) {
-    auto& edge = previousEdge.at(currentNode).front();
-    route.costs = route.costs + edge.cost;
+    auto& half_edge = previousEdge.at(currentNode).front();
+    const auto& edge = Edge::getEdge(half_edge.id);
+    route.costs = route.costs + edge.getCost();
     if (unpack) {
-      insertUnpackedEdge(Edge::getEdge(edge.id), route.edges, true);
+      insertUnpackedEdge(edge, route.edges, true);
     } else {
-      route.edges.push_front(edge.id);
+      route.edges.push_front(edge.getId());
     }
-    currentNode = edge.begin;
+    currentNode = edge.sourcePos();
   }
 
   pathCost = route.costs;
@@ -181,7 +182,7 @@ std::optional<RouteWithCount> RouteIterator::next()
       return hRoute;
     }
     for (const auto& edge : dijkstra->previousEdge[hTo]) {
-      const auto& source = edge.begin;
+      const auto& source = Edge::getEdge(edge.id).sourcePos();
       if (std::find_if(hRoute.edges.begin(), hRoute.edges.end(),
               [&source](const auto& e) { return source == Edge::getEdge(e).sourcePos(); })
           != hRoute.edges.end()) {
@@ -206,7 +207,7 @@ std::optional<RouteWithCount> RouteIterator::next()
 void NormalDijkstra::saveDotGraph(const EdgeId& inId, const EdgeId& outId)
 {
 
-  std::ofstream dotFile{ "/tmp/" + std::to_string(from) + "-" + std::to_string(to) + ".dot" };
+  std::ofstream dotFile { "/tmp/" + std::to_string(from) + "-" + std::to_string(to) + ".dot" };
   dotFile << "digraph G{" << '\n';
   dotFile << "rankdir=LR;" << '\n';
   dotFile << "size=8;" << '\n';

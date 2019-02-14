@@ -477,6 +477,7 @@ std::pair<Important, Slack> EnumerateOptimals::important_metrics_to_arrays(
     std::vector<ImportantMetric> metrics)
 {
   Important important;
+  important.fill(false);
   Slack slack;
   slack.fill(std::numeric_limits<double>::max());
 

@@ -42,7 +42,7 @@ void printEdge(std::ofstream& dotFile, const HalfEdge& edge, const std::set<Edge
   } else {
     color = "black";
   }
-  printNode(dotFile, g, edge.begin);
+  // printNode(dotFile, g, edge.begin);
   dotFile << " -> ";
   printNode(dotFile, g, edge.end);
   dotFile << " [label = \"";
@@ -113,8 +113,8 @@ void printRoutes(std::ofstream& dotFile, const Graph& graph, const RouteWithCoun
       printedNodes.insert(edge.end);
       HalfEdge e;
       e.id = edge.id;
-      e.begin = edge.end;
-      e.end = edge.begin;
+      // e.begin = edge.end;
+      // e.end = edge.begin;
       e.cost = edge.cost;
       printEdge(dotFile, e, route1Edges, route2Edges, config, graph);
     }

@@ -114,7 +114,6 @@ struct Cost {
 struct HalfEdge {
   EdgeId id;
   NodePos end;
-  NodePos begin;
   Cost cost;
 
   double costByConfiguration(const Config& conf) const;

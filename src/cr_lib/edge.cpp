@@ -20,7 +20,7 @@
 #include <algorithm>
 #include <cassert>
 
-std::vector<Edge> Edge::edges{};
+std::vector<Edge> Edge::edges {};
 
 Edge::Edge(NodeId source, NodeId dest)
     : Edge(source, dest, {}, {})
@@ -60,10 +60,10 @@ Edge Edge::createFromText(std::istream& text)
   }
   text >> edgeA >> edgeB;
 
-  Edge e{ NodeId(source), NodeId(dest) };
+  Edge e { NodeId(source), NodeId(dest) };
   if (edgeA > 0) {
-    e.edgeA = EdgeId{ static_cast<size_t>(edgeA) };
-    e.edgeB = EdgeId{ static_cast<size_t>(edgeB) };
+    e.edgeA = EdgeId { static_cast<size_t>(edgeA) };
+    e.edgeB = EdgeId { static_cast<size_t>(edgeB) };
   }
   e.cost = c;
   for (double c : e.cost.values) {
@@ -86,11 +86,10 @@ void Edge::setCost(Cost c) { this->cost = c; }
 const ReplacedEdge& Edge::getEdgeA() const { return edgeA; }
 const ReplacedEdge& Edge::getEdgeB() const { return edgeB; }
 
-HalfEdge Edge::makeHalfEdge(NodePos begin, NodePos end) const
+HalfEdge Edge::makeHalfEdge(NodePos, NodePos end) const
 {
   HalfEdge e;
   e.id = internalId;
-  e.begin = begin;
   e.end = end;
   e.cost = cost;
   return e;
@@ -108,7 +107,7 @@ std::vector<EdgeId> Edge::administerEdges(std::vector<Edge>&& edges)
     size_t new_id = Edge::edges.size() + i;
     auto& edge = edges[i];
     if (edge.getId() == 0) {
-      edge.setId(EdgeId{ new_id });
+      edge.setId(EdgeId { new_id });
     } else if (edge.getId() != new_id) {
       std::cerr << "Edge ids dont align: " << '\n';
       std::terminate();
