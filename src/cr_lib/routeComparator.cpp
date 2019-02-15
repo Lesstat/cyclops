@@ -20,18 +20,18 @@
 DiscreteFrechet::DiscreteFrechet(const Route& reference, const Route& other, const Graph& g)
 {
   for (const auto& e : reference.edges) {
-    this->reference.push_back(g.getNode(e.sourcePos()));
+    this->reference.push_back(g.getNode(Edge::sourcePos(e)));
   }
   if (!reference.edges.empty()) {
     const auto& lastEdge = reference.edges[reference.edges.size() - 1];
-    this->reference.push_back(g.getNode(lastEdge.destPos()));
+    this->reference.push_back(g.getNode(Edge::destPos(lastEdge)));
   }
   for (const auto& e : other.edges) {
-    this->other.push_back(g.getNode(e.sourcePos()));
+    this->other.push_back(g.getNode(Edge::sourcePos(e)));
   }
   if (!other.edges.empty()) {
     const auto& lastEdge = other.edges[other.edges.size() - 1];
-    this->other.push_back(g.getNode(lastEdge.destPos()));
+    this->other.push_back(g.getNode(Edge::destPos(lastEdge)));
   }
 
   ca = std::vector(reference.edges.size() - 1, std::vector<double>(other.edges.size() - 1, -1));
@@ -86,11 +86,11 @@ double calculateSharing(const Route& referenceRoute, const Route& otherRoute)
 {
   std::set<EdgeId> edges;
   std::transform(begin(referenceRoute.edges), end(referenceRoute.edges),
-      std::inserter(edges, begin(edges)), [](const auto& edge) { return edge.getId(); });
+      std::inserter(edges, begin(edges)), [](const auto& edge) { return edge; });
   double sharedLength = 0;
   for (const auto& edge : otherRoute.edges) {
-    if (edges.find(edge.getId()) != edges.end()) {
-      sharedLength += edge.getCost().values[0];
+    if (edges.find(edge) != edges.end()) {
+      sharedLength += Edge::getCost(edge).values[0];
     }
   }
 

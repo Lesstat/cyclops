@@ -30,7 +30,7 @@ void printEdge(std::ofstream& dotFile, const HalfEdge& edge, const std::set<Edge
   std::string color;
   bool partOfShortcut = route2Edges.count(edge.id) > 0;
   bool partOfRoute = route1Edges.count(edge.id) > 0;
-  bool isShortcut = Edge::getEdge(edge.id).getEdgeA().has_value();
+  bool isShortcut = Edge::getEdgeA(edge.id).has_value();
   if (partOfRoute && partOfShortcut) {
     color = "green";
   } else if (partOfShortcut) {
@@ -66,8 +66,8 @@ void printRoutes(std::ofstream& dotFile, const Graph& graph, const RouteWithCoun
   dotFile << "rankdir=LR;" << '\n';
   dotFile << "size=8;" << '\n';
 
-  auto from = Edge::getEdge(route1.edges.front()).sourcePos();
-  auto to = Edge::getEdge(route1.edges.back()).destPos();
+  auto from = Edge::sourcePos(route1.edges.front());
+  auto to = Edge::destPos(route1.edges.back());
   dotFile << "node[ shape = doublecircle color = red]; ";
   printNode(dotFile, graph, from);
   dotFile << " ";
@@ -85,12 +85,10 @@ void printRoutes(std::ofstream& dotFile, const Graph& graph, const RouteWithCoun
 
   std::set<EdgeId> route2Edges;
   std::transform(route2.edges.begin(), route2.edges.end(),
-      std::inserter(route2Edges, route2Edges.begin()),
-      [](const auto& edge) { return edge.getId(); });
+      std::inserter(route2Edges, route2Edges.begin()), [](const auto& edge) { return edge; });
 
   for (auto& routeEdgeId : route1.edges) {
-    auto& routeEdge = Edge::getEdge(routeEdgeId);
-    auto node = routeEdge.sourcePos();
+    auto node = Edge::sourcePos(routeEdgeId);
     for (auto& edge : graph.getOutgoingEdgesOf(node)) {
       if (printedEdges.count(edge.id) == 0) {
         printedEdges.insert(edge.id);
@@ -121,7 +119,7 @@ void printRoutes(std::ofstream& dotFile, const Graph& graph, const RouteWithCoun
   }
 
   for (auto& routeEdge : route2.edges) {
-    for (auto& edge : graph.getOutgoingEdgesOf(routeEdge.sourcePos())) {
+    for (auto& edge : graph.getOutgoingEdgesOf(Edge::sourcePos(routeEdge))) {
       if (printedEdges.count(edge.id) == 0) {
         printedEdges.insert(edge.id);
         printedNodes.insert(edge.end);

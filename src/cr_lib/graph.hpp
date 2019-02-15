@@ -162,26 +162,36 @@ class Edge {
 
   NodeId getSourceId() const;
   NodeId getDestId() const;
+
+  static NodeId getSourceId(EdgeId i);
+  static NodeId getDestId(EdgeId i);
   const ReplacedEdge& getEdgeA() const;
   const ReplacedEdge& getEdgeB() const;
+
+  static const ReplacedEdge& getEdgeA(EdgeId i);
+  static const ReplacedEdge& getEdgeB(EdgeId i);
 
   NodePos sourcePos() const;
   NodePos destPos() const;
   void sourcePos(NodePos source);
   void destPos(NodePos dest);
+  static NodePos sourcePos(EdgeId i);
+  static NodePos destPos(EdgeId i);
+  static void sourcePos(EdgeId i, NodePos source);
+  static void destPos(EdgeId i, NodePos dest);
 
   EdgeId getId() const;
   void setId(EdgeId id);
   const Cost& getCost() const;
+  static const Cost& getCost(EdgeId id);
   double costByConfiguration(const Config& conf) const;
   void setCost(Cost c);
 
-  HalfEdge makeHalfEdge(NodePos begin, NodePos end) const;
+  static HalfEdge makeHalfEdge(EdgeId id, NodePos begin, NodePos end);
 
   static Edge createFromText(std::istream& text);
   static std::vector<EdgeId> administerEdges(std::vector<Edge>&& edges);
-  static const Edge& getEdge(EdgeId id);
-  static Edge& getMutEdge(EdgeId id);
+  static const Edge getEdge(EdgeId id);
 
   friend void testEdgeInternals(const Edge& e, NodeId source, NodeId destination, Length length,
       Height height, Unsuitability unsuitability, const ReplacedEdge& edgeA,
@@ -200,7 +210,14 @@ class Edge {
   NodePos sourcePos_;
   NodePos destPos_;
 
-  static std::vector<Edge> edges;
+  static std::vector<EdgeId> internalId_vec;
+  static std::vector<NodeId> source_vec;
+  static std::vector<NodeId> destination_vec;
+  static std::vector<Cost> cost_vec;
+  static std::vector<ReplacedEdge> edgeA_vec;
+  static std::vector<ReplacedEdge> edgeB_vec;
+  static std::vector<NodePos> sourcePos__vec;
+  static std::vector<NodePos> destPos__vec;
 
   template <class Archive> void serialize(Archive& ar, const unsigned int /*version*/)
   {

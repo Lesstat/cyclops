@@ -20,7 +20,14 @@
 #include <algorithm>
 #include <cassert>
 
-std::vector<Edge> Edge::edges {};
+std::vector<EdgeId> Edge::internalId_vec;
+std::vector<NodeId> Edge::source_vec;
+std::vector<NodeId> Edge::destination_vec;
+std::vector<Cost> Edge::cost_vec;
+std::vector<ReplacedEdge> Edge::edgeA_vec;
+std::vector<ReplacedEdge> Edge::edgeB_vec;
+std::vector<NodePos> Edge::sourcePos__vec;
+std::vector<NodePos> Edge::destPos__vec;
 
 Edge::Edge(NodeId source, NodeId dest)
     : Edge(source, dest, {}, {})
@@ -34,10 +41,8 @@ Edge::Edge(NodeId source, NodeId dest, ReplacedEdge edgeA, ReplacedEdge edgeB)
     , edgeB(std::move(edgeB))
 {
   assert(source != dest);
-  if (edges.size() > 0 && (edgeA || edgeB)) {
-    auto& e1 = Edge::getEdge(*edgeA);
-    auto& e2 = Edge::getEdge(*edgeB);
-    if (e1.getSourceId() == e2.getSourceId()) {
+  if (internalId_vec.size() > 0 && (edgeA || edgeB)) {
+    if (Edge::getSourceId(*edgeA) == Edge::getSourceId(*edgeB)) {
       std::cerr << "Same starting point" << '\n';
       std::terminate();
     }
@@ -46,6 +51,9 @@ Edge::Edge(NodeId source, NodeId dest, ReplacedEdge edgeA, ReplacedEdge edgeB)
 
 NodeId Edge::getSourceId() const { return source; }
 NodeId Edge::getDestId() const { return destination; }
+
+NodeId Edge::getSourceId(EdgeId id) { return source_vec[id]; }
+NodeId Edge::getDestId(EdgeId id) { return destination_vec[id]; }
 
 Edge Edge::createFromText(std::istream& text)
 {
@@ -81,17 +89,22 @@ EdgeId Edge::getId() const { return internalId; }
 
 const Cost& Edge::getCost() const { return cost; }
 
+const Cost& Edge::getCost(EdgeId id) { return cost_vec[id]; }
+
 void Edge::setCost(Cost c) { this->cost = c; }
 
 const ReplacedEdge& Edge::getEdgeA() const { return edgeA; }
 const ReplacedEdge& Edge::getEdgeB() const { return edgeB; }
 
-HalfEdge Edge::makeHalfEdge(NodePos, NodePos end) const
+const ReplacedEdge& Edge::getEdgeA(EdgeId id) { return edgeA_vec[id]; }
+const ReplacedEdge& Edge::getEdgeB(EdgeId id) { return edgeB_vec[id]; }
+
+HalfEdge Edge::makeHalfEdge(EdgeId id, NodePos, NodePos end)
 {
   HalfEdge e;
-  e.id = internalId;
+  e.id = id;
   e.end = end;
-  e.cost = cost;
+  e.cost = getCost(id);
   return e;
 }
 
@@ -104,7 +117,7 @@ std::vector<EdgeId> Edge::administerEdges(std::vector<Edge>&& edges)
   std::vector<EdgeId> ids;
   ids.reserve(edges.size());
   for (size_t i = 0; i < edges.size(); ++i) {
-    size_t new_id = Edge::edges.size() + i;
+    size_t new_id = internalId_vec.size() + i;
     auto& edge = edges[i];
     if (edge.getId() == 0) {
       edge.setId(EdgeId { new_id });
@@ -115,12 +128,30 @@ std::vector<EdgeId> Edge::administerEdges(std::vector<Edge>&& edges)
     ids.emplace_back(new_id);
   }
 
-  std::move(edges.begin(), edges.end(), std::back_inserter(Edge::edges));
+  // std::move(edges.begin(), edges.end(), std::back_inserter(Edge::edges));
+  for (const auto& edge : edges) {
+
+    internalId_vec.push_back(edge.internalId);
+    source_vec.push_back(edge.source);
+    destination_vec.push_back(edge.destination);
+    cost_vec.push_back(edge.cost);
+    edgeA_vec.push_back(edge.edgeA);
+    edgeB_vec.push_back(edge.edgeB);
+    sourcePos__vec.push_back(edge.sourcePos_);
+    destPos__vec.push_back(edge.destPos_);
+  }
   edges = std::vector<Edge>();
   return ids;
 }
-const Edge& Edge::getEdge(EdgeId id) { return edges.at(id); }
-Edge& Edge::getMutEdge(EdgeId id) { return edges.at(id); }
+const Edge Edge::getEdge(EdgeId id)
+{
+  Edge e(source_vec[id], destination_vec[id], edgeA_vec[id], edgeB_vec[id]);
+  e.internalId = id;
+  e.cost = cost_vec[id];
+  e.sourcePos_ = sourcePos__vec[id];
+  e.destPos_ = destPos__vec[id];
+  return e;
+}
 
 double Cost::operator*(const Config& conf) const
 {
@@ -144,3 +175,8 @@ NodePos Edge::sourcePos() const { return sourcePos_; }
 NodePos Edge::destPos() const { return destPos_; }
 void Edge::sourcePos(NodePos source) { sourcePos_ = source; }
 void Edge::destPos(NodePos dest) { destPos_ = dest; }
+
+NodePos Edge::sourcePos(EdgeId id) { return sourcePos__vec[id]; }
+NodePos Edge::destPos(EdgeId id) { return destPos__vec[id]; }
+void Edge::sourcePos(EdgeId id, NodePos source) { sourcePos__vec[id] = source; }
+void Edge::destPos(EdgeId id, NodePos dest) { destPos__vec[id] = dest; }

@@ -43,18 +43,18 @@ void Dijkstra::clearState()
   touchedT.clear();
 }
 
-void insertUnpackedEdge(const Edge& e, std::deque<Edge>& route, bool front)
+void insertUnpackedEdge(const EdgeId& e, std::deque<EdgeId>& route, bool front)
 {
-  const auto& edgeA = e.getEdgeA();
-  const auto& edgeB = e.getEdgeB();
+  const auto& edgeA = Edge::getEdgeA(e);
+  const auto& edgeB = Edge::getEdgeB(e);
 
   if (edgeA) {
     if (front) {
-      insertUnpackedEdge(Edge::getEdge(*edgeB), route, front);
-      insertUnpackedEdge(Edge::getEdge(*edgeA), route, front);
+      insertUnpackedEdge(*edgeB, route, front);
+      insertUnpackedEdge(*edgeA, route, front);
     } else {
-      insertUnpackedEdge(Edge::getEdge(*edgeA), route, front);
-      insertUnpackedEdge(Edge::getEdge(*edgeB), route, front);
+      insertUnpackedEdge(*edgeA, route, front);
+      insertUnpackedEdge(*edgeB, route, front);
     }
   } else {
     if (front) {
@@ -73,19 +73,17 @@ Route Dijkstra::buildRoute(NodePos node, NodeToEdgeMap& previousEdgeS, NodeToEdg
   auto curNode = node;
   while (curNode != from) {
     const auto& edge_id = previousEdgeS[curNode];
-    const auto& edge = Edge::getEdge(edge_id);
-    route.costs = route.costs + edge.getCost();
-    insertUnpackedEdge(edge, route.edges, true);
-    curNode = edge.sourcePos();
+    route.costs = route.costs + Edge::getCost(edge_id);
+    insertUnpackedEdge(edge_id, route.edges, true);
+    curNode = Edge::sourcePos(edge_id);
   }
 
   curNode = node;
   while (curNode != to) {
     const auto& edge_id = previousEdgeT[curNode];
-    const auto& edge = Edge::getEdge(edge_id);
-    route.costs = route.costs + edge.getCost();
-    insertUnpackedEdge(edge, route.edges, false);
-    curNode = edge.destPos();
+    route.costs = route.costs + Edge::getCost(edge_id);
+    insertUnpackedEdge(edge_id, route.edges, false);
+    curNode = Edge::destPos(edge_id);
   }
 
   return route;

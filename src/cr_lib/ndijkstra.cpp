@@ -60,7 +60,7 @@ std::optional<RouteWithCount> NormalDijkstra::findBestRoute(
 
     const auto& outEdges = graph->getOutgoingEdgesOf(node);
     for (const auto& edge : outEdges) {
-      if (unpack && Edge::getEdge(edge.id).getEdgeA()) {
+      if (unpack && Edge::getEdgeA(edge.id)) {
         continue;
       }
       const NodePos& nextNode = edge.end;
@@ -97,28 +97,7 @@ void NormalDijkstra::clearState()
   pathCount = 0;
   pqPops = 0;
 }
-void insertUnpackedEdge(const Edge& e, std::deque<EdgeId>& route, bool front)
-{
-  const auto& edgeA = e.getEdgeA();
-  const auto& edgeB = e.getEdgeB();
-
-  if (edgeA) {
-    if (front) {
-      insertUnpackedEdge(Edge::getEdge(*edgeB), route, front);
-      insertUnpackedEdge(Edge::getEdge(*edgeA), route, front);
-    } else {
-
-      insertUnpackedEdge(Edge::getEdge(*edgeA), route, front);
-      insertUnpackedEdge(Edge::getEdge(*edgeB), route, front);
-    }
-  } else {
-    if (front) {
-      route.push_front(e.getId());
-    } else {
-      route.push_back(e.getId());
-    }
-  }
-}
+void insertUnpackedEdge(const EdgeId& e, std::deque<EdgeId>& route, bool front);
 
 RouteWithCount NormalDijkstra::buildRoute(const NodePos& from, const NodePos& to)
 {
@@ -128,14 +107,13 @@ RouteWithCount NormalDijkstra::buildRoute(const NodePos& from, const NodePos& to
   auto currentNode = to;
   while (currentNode != from) {
     auto& half_edge = previousEdge.at(currentNode).front();
-    const auto& edge = Edge::getEdge(half_edge.id);
-    route.costs = route.costs + edge.getCost();
+    route.costs = route.costs + Edge::getCost(half_edge.id);
     if (unpack) {
-      insertUnpackedEdge(edge, route.edges, true);
+      insertUnpackedEdge(half_edge.id, route.edges, true);
     } else {
-      route.edges.push_front(edge.getId());
+      route.edges.push_front(half_edge.id);
     }
-    currentNode = edge.sourcePos();
+    currentNode = Edge::sourcePos(half_edge.id);
   }
 
   pathCost = route.costs;
@@ -182,9 +160,9 @@ std::optional<RouteWithCount> RouteIterator::next()
       return hRoute;
     }
     for (const auto& edge : dijkstra->previousEdge[hTo]) {
-      const auto& source = Edge::getEdge(edge.id).sourcePos();
+      const auto& source = Edge::sourcePos(edge.id);
       if (std::find_if(hRoute.edges.begin(), hRoute.edges.end(),
-              [&source](const auto& e) { return source == Edge::getEdge(e).sourcePos(); })
+              [&source](const auto& e) { return source == Edge::sourcePos(e); })
           != hRoute.edges.end()) {
         continue;
       }

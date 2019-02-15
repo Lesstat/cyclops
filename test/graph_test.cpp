@@ -27,12 +27,12 @@ TEST_CASE("Offset array is correctly initialized")
   nodes.emplace_back(NodeId(3), Lat(3.4), Lng(4.6), 0);
 
   std::vector<Edge> edges;
-  edges.emplace_back(Edge{ NodeId(1), NodeId(0) });
-  edges.emplace_back(Edge{ NodeId(0), NodeId(2) });
-  edges.emplace_back(Edge{ NodeId(0), NodeId(2) });
-  edges.emplace_back(Edge{ NodeId(1), NodeId(2) });
+  edges.emplace_back(Edge { NodeId(1), NodeId(0) });
+  edges.emplace_back(Edge { NodeId(0), NodeId(2) });
+  edges.emplace_back(Edge { NodeId(0), NodeId(2) });
+  edges.emplace_back(Edge { NodeId(1), NodeId(2) });
 
-  Graph g{ std::move(nodes), std::move(edges) };
+  Graph g { std::move(nodes), std::move(edges) };
 
   auto offsets = g.getOffsets();
 
@@ -51,7 +51,7 @@ TEST_CASE("Offset array is correctly initialized")
 
 TEST_CASE("Read small file into graph")
 {
-  std::string file{ R"!!(# Type : chgraph
+  std::string file { R"!!(# Type : chgraph
 # Id : f5c398be8e451b8fe2b170dca6a87563
 # Revision : 1
 # Timestamp : 1493032504
@@ -75,13 +75,13 @@ TEST_CASE("Read small file into graph")
   Graph g = Graph::createFromStream(iss);
 
   auto dij = g.createDijkstra();
-  auto optionalRoute = dij.findBestRoute(NodePos{ 0 }, NodePos{ 2 },
-      Config{ LengthConfig{ 1.0 }, HeightConfig{ 0 }, UnsuitabilityConfig{ 0 } });
+  auto optionalRoute = dij.findBestRoute(NodePos { 0 }, NodePos { 2 },
+      Config { LengthConfig { 1.0 }, HeightConfig { 0 }, UnsuitabilityConfig { 0 } });
 
   REQUIRE(optionalRoute.has_value());
   auto route = optionalRoute.value();
-  REQUIRE(route.edges[0].getSourceId() == 0);
-  REQUIRE(route.edges[1].getSourceId() == 1);
+  REQUIRE(Edge::getSourceId(route.edges[0]) == 0);
+  REQUIRE(Edge::getSourceId(route.edges[1]) == 1);
   REQUIRE(route.costs.values[0] == 101);
   REQUIRE(route.costs.values[1] == 4);
   REQUIRE(route.costs.values[2] == 140);

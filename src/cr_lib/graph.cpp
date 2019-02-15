@@ -35,13 +35,13 @@ void Graph::connectEdgesToNodes(const std::vector<Node>& nodes, const std::vecto
   }
 
   std::for_each(begin(edges), end(edges), [&map, this](const auto& id) {
-    auto& e = Edge::getMutEdge(id);
-    auto sourcePos = map[e.getSourceId()];
-    auto destPos = map[e.getDestId()];
-    inEdges.push_back(e.makeHalfEdge(destPos, sourcePos));
-    outEdges.push_back(e.makeHalfEdge(sourcePos, destPos));
-    e.sourcePos(sourcePos);
-    e.destPos(destPos);
+    // auto& e = Edge::getMutEdge(id);
+    auto sourcePos = map[Edge::getSourceId(id)];
+    auto destPos = map[Edge::getDestId(id)];
+    inEdges.push_back(Edge::makeHalfEdge(id, destPos, sourcePos));
+    outEdges.push_back(Edge::makeHalfEdge(id, sourcePos, destPos));
+    Edge::sourcePos(id, sourcePos);
+    Edge::destPos(id, destPos);
   });
 }
 
@@ -49,10 +49,8 @@ enum class Pos { source, dest };
 void sortEdgesByNodePos(std::vector<HalfEdge>& edges, const Graph& g, Pos p)
 {
   auto comparator = [&g, &p](const HalfEdge& a, const HalfEdge& b) {
-    const auto& a_full_edge = Edge::getEdge(a.id);
-    const auto& b_full_edge = Edge::getEdge(b.id);
-    const auto& a_begin = p == Pos::source ? a_full_edge.sourcePos() : a_full_edge.destPos();
-    const auto& b_begin = p == Pos::source ? b_full_edge.sourcePos() : b_full_edge.destPos();
+    const auto& a_begin = p == Pos::source ? Edge::sourcePos(a.id) : Edge::destPos(a.id);
+    const auto& b_begin = p == Pos::source ? Edge::sourcePos(b.id) : Edge::destPos(b.id);
     if (a_begin == b_begin) {
       auto aLevel = g.getLevelOf(a.end);
       auto bLevel = g.getLevelOf(b.end);
@@ -69,8 +67,8 @@ void sortEdgesByNodePos(std::vector<HalfEdge>& edges, const Graph& g, Pos p)
 void calculateOffsets(
     std::vector<HalfEdge>& edges, std::vector<NodeOffset>& offsets, Pos p, const Graph& g)
 {
-  auto sourcePos = [&edges](size_t j) { return Edge::getEdge(edges[j].id).sourcePos(); };
-  auto destPos = [&edges](size_t j) { return Edge::getEdge(edges[j].id).destPos(); };
+  auto sourcePos = [&edges](size_t j) { return Edge::sourcePos(edges[j].id); };
+  auto destPos = [&edges](size_t j) { return Edge::destPos(edges[j].id); };
   auto setOut = [&offsets](size_t i, size_t j) { offsets[i].out = j; };
   auto setIn = [&offsets](size_t i, size_t j) { offsets[i].in = j; };
 

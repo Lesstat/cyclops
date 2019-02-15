@@ -92,7 +92,7 @@ std::ostream& operator<<(std::ostream& stream, const Config& c);
 
 struct Route {
   Cost costs;
-  std::deque<Edge> edges;
+  std::deque<EdgeId> edges;
 };
 
 class Dijkstra {

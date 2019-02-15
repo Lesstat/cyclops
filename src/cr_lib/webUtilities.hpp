@@ -37,17 +37,17 @@ std::string routeToJson(const Route& route, const Graph& g, bool writeLogs = fal
   std::unordered_set<NodeId> nodes;
   nodes.reserve(route.edges.size());
   for (const auto& edge : route.edges) {
-    nodes.insert(edge.getSourceId());
-    nodes.insert(edge.getDestId());
+    nodes.insert(Edge::getSourceId(edge));
+    nodes.insert(Edge::getDestId(edge));
   }
 
   for (const auto& edge : route.edges) {
-    const auto& node = g.getNode(edge.sourcePos());
+    const auto& node = g.getNode(Edge::sourcePos(edge));
     resultJson << '[' << node.lng() << ", " << node.lat() << ", " << node.height() << "],";
   }
   if (!route.edges.empty()) {
     const auto& lastEdge = route.edges[route.edges.size() - 1];
-    const auto& endNode = g.getNode(lastEdge.destPos());
+    const auto& endNode = g.getNode(Edge::destPos(lastEdge));
     resultJson << '[' << endNode.lng() << ", " << endNode.lat() << "]] } } }";
   }
   return resultJson.str();
