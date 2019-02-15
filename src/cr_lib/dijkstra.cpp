@@ -143,9 +143,6 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
       if (cost > my_costs[node]) {
         continue;
       }
-      if (stallOnDemand(node, cost, dir, my_costs)) {
-        continue;
-      }
       if (cost > minCandidate) {
         bigger = true;
         continue;
