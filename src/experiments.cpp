@@ -492,10 +492,15 @@ int main(int argc, char* argv[])
     double lat_f, lng_f, lat_t, lng_t;
     Config conf = { { 1.0, 0.0, 0.0 } };
 
+    std::vector<std::pair<NodePos, NodePos>> st_pairs;
     while (params >> lat_f >> lng_f >> lat_t >> lng_t) {
-
       NodePos from = *grid.findNextNode(Lat { lat_f }, Lng { lng_f });
       NodePos to = *grid.findNextNode(Lat { lat_t }, Lng { lng_t });
+      st_pairs.emplace_back(from, to);
+    }
+
+    for (auto& [from, to] : st_pairs) {
+
       // Config conf = generateRandomConfig();
       auto start = std::chrono::high_resolution_clock::now();
       auto optRoute = d.findBestRoute(from, to, conf);
