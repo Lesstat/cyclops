@@ -128,7 +128,15 @@ std::vector<EdgeId> Edge::administerEdges(std::vector<Edge>&& edges)
     ids.emplace_back(new_id);
   }
 
-  // std::move(edges.begin(), edges.end(), std::back_inserter(Edge::edges));
+  internalId_vec.reserve(internalId_vec.size() + edges.size());
+  source_vec.reserve(source_vec.size() + edges.size());
+  destination_vec.reserve(destination_vec.size() + edges.size());
+  cost_vec.reserve(cost_vec.size() + edges.size());
+  edgeA_vec.reserve(edgeA_vec.size() + edges.size());
+  edgeB_vec.reserve(edgeB_vec.size() + edges.size());
+  sourcePos__vec.reserve(sourcePos__vec.size() + edges.size());
+  destPos__vec.reserve(destPos__vec.size() + edges.size());
+
   for (const auto& edge : edges) {
 
     internalId_vec.push_back(edge.internalId);
