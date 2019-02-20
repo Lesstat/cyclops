@@ -48,7 +48,7 @@ const size_t DIMENSION = 3;
 
 struct Cost {
   static const size_t dim = DIMENSION;
-  double values[dim];
+  std::array<double, dim> values;
   Cost(const std::vector<double>& values)
   {
     for (size_t i = 0; i < dim; ++i) {
@@ -107,7 +107,8 @@ struct Cost {
   friend class boost::serialization::access;
   template <class Archive> void serialize(Archive& ar, const unsigned int /*version*/)
   {
-    ar& values;
+    for (auto& val : values)
+      ar& val;
   }
 };
 
