@@ -20,8 +20,11 @@
 
 #include "routeComparator.hpp"
 
-std::string routeToJson(const Route& route, const Graph& g, bool writeLogs = false)
+template <int Dim>
+std::string routeToJson(const Route<Dim>& route, const Graph<Dim>& g, bool writeLogs = false)
 {
+  using Edge = Edge<Dim>;
+
   std::stringstream resultJson;
   resultJson.precision(7);
   resultJson << "{ \"length\": " << route.costs.values[0]
@@ -52,6 +55,7 @@ std::string routeToJson(const Route& route, const Graph& g, bool writeLogs = fal
   }
   return resultJson.str();
 }
+
 void extractQueryFields(const SimpleWeb::CaseInsensitiveMultimap& queryFields,
     std::optional<size_t>& s, std::optional<size_t>& t, std::optional<size_t>& length,
     std::optional<size_t>& height, std::optional<size_t>& unsuitability)

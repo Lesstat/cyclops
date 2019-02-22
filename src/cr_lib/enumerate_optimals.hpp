@@ -68,19 +68,7 @@ struct VertexData {
   size_t id;
 };
 
-typedef CGAL::Dimension_tag<DIMENSION> Dim;
-typedef CGAL::Epick_d<Dim> Traits;
-typedef CGAL::Triangulation_vertex<Traits, VertexData> Vertex;
-typedef CGAL::Triangulation_full_cell<Traits, FullCellId> FullCell;
-typedef CGAL::Triangulation_data_structure<Dim, Vertex, FullCell> TDS;
-typedef CGAL::Triangulation<Traits, TDS> Triangulation;
-typedef Triangulation::Facet Facet;
-typedef TDS::Vertex_iterator VertexIter;
-
 auto compare_prio = [](auto left, auto right) { return left.data().prio() > right.data().prio(); };
-
-typedef std::priority_queue<TDS::Full_cell, std::vector<TDS::Full_cell>, decltype(compare_prio)>
-    CellContainer;
 
 namespace c = std::chrono;
 
@@ -89,28 +77,44 @@ struct ImportantMetric {
   double slack;
 };
 
-typedef std::array<bool, DIMENSION> Important;
-typedef std::array<double, DIMENSION> Slack;
-
-class EnumerateOptimals {
+template <int Dim> class EnumerateOptimals {
   public:
+  using CgalDim = CGAL::Dimension_tag<Dim>;
+  using Traits = CGAL::Epick_d<CgalDim>;
+  using Vertex = CGAL::Triangulation_vertex<Traits, VertexData>;
+  using FullCell = CGAL::Triangulation_full_cell<Traits, FullCellId>;
+  using TDS = CGAL::Triangulation_data_structure<CgalDim, Vertex, FullCell>;
+  using Triangulation = CGAL::Triangulation<Traits, TDS>;
+  using Facet = typename Triangulation::Facet;
+  using VertexIter = typename TDS::Vertex_iterator;
+  using CellContainer = std::priority_queue<typename TDS::Full_cell,
+      std::vector<typename TDS::Full_cell>, decltype(compare_prio)>;
+
+  using Important = std::array<bool, Dim>;
+  using Slack = std::array<double, Dim>;
+
+  using Graph = Graph<Dim>;
+  using Route = Route<Dim>;
+  using Config = Config<Dim>;
+  using Dijkstra = Dijkstra<Dim>;
+
   typedef std::vector<std::pair<size_t, size_t>> Edges;
 
   private:
   Graph* g;
-  Triangulation tri { DIMENSION };
+  Triangulation tri { Dim };
   std::vector<Route> routes;
   std::vector<Config> configs;
   std::map<std::pair<size_t, size_t>, double> similarities;
   double maxOverlap;
   size_t maxRoutes;
   Dijkstra d;
-  Dijkstra::ScalingFactor factor;
+  typename Dijkstra::ScalingFactor factor;
   Important important;
   Slack slack;
 
   double compare(size_t i, size_t j);
-  Config findConfig(const TDS::Full_cell& f);
+  Config findConfig(const typename TDS::Full_cell& f);
   void addToTriangulation();
   void includeConvexHullCells(CellContainer& cont);
   std::vector<size_t> extract_independent_set(const std::vector<size_t>& vertices, bool ilp);
@@ -138,4 +142,5 @@ class EnumerateOptimals {
       std::vector<ImportantMetric> metrics);
 };
 
+#include "enumerate_optimals.inc"
 #endif /* ENUMERATE_OPTIMALS_H */

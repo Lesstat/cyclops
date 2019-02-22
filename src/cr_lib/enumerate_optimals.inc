@@ -19,61 +19,7 @@
 #include "enumerate_optimals.hpp"
 #include "url_parsing.hpp"
 
-int FullCellId::currentId = 0;
-std::vector<int> FullCellId::alive_ = std::vector<int>();
-std::vector<bool> FullCellId::checked_ = std::vector<bool>();
-std::vector<double> FullCellId::prio_ = std::vector<double>();
-
-FullCellId::FullCellId()
-    : id_(currentId++)
-{
-  alive_.push_back(1);
-  checked_.push_back(false);
-  prio_.push_back(-1.0);
-}
-
-FullCellId::FullCellId(const FullCellId& other)
-    : id_(other.id_)
-{
-  alive_[id_]++;
-}
-
-FullCellId& FullCellId::operator=(const FullCellId& rhs)
-{
-  // Check for self-assignment!
-  if (this == &rhs)
-    return *this;
-
-  alive_[id_]--;
-  id_ = rhs.id_;
-  alive_[id_]++;
-  return *this;
-}
-
-FullCellId& FullCellId::operator=(const FullCellId&& rhs)
-{
-  *this = rhs;
-  return *this;
-}
-
-FullCellId::FullCellId(FullCellId&& other)
-{
-  id_ = other.id_;
-  alive_[id_]++;
-}
-
-FullCellId::~FullCellId() { alive_[id_]--; }
-
-bool FullCellId::alive() const { return alive_[id_] > 1; }
-bool FullCellId::checked() const { return checked_[id_]; }
-void FullCellId::checked(bool check) { checked_[id_] = check; }
-size_t FullCellId::id() const { return id_; }
-double FullCellId::prio() const { return prio_[id_]; }
-void FullCellId::prio(double p) const { prio_[id_] = p; }
-
-bool FullCellId::operator==(const FullCellId& other) const { return id_ == other.id_; }
-
-double EnumerateOptimals::compare(size_t i, size_t j)
+template <int Dim> double EnumerateOptimals<Dim>::compare(size_t i, size_t j)
 {
   if (i > j) {
     std::swap(i, j);
@@ -87,18 +33,18 @@ double EnumerateOptimals::compare(size_t i, size_t j)
   return similarity;
 }
 
-Config EnumerateOptimals::findConfig(const TDS::Full_cell& f)
+template <int Dim> Config<Dim> EnumerateOptimals<Dim>::findConfig(const typename TDS::Full_cell& f)
 {
   using namespace Eigen;
 
   auto vert_count = f.maximal_dimension() + 1;
-  Matrix<double, Dynamic, DIMENSION> A(vert_count, DIMENSION);
+  Matrix<double, Dynamic, Dim> A(vert_count, Dim);
   VectorXd b = VectorXd::Ones(vert_count);
   int row = -1;
   for (auto vert = f.vertices_begin(); vert != f.vertices_end(); ++vert) {
     ++row;
-    if (*vert == TDS::Vertex_const_handle() || tri.is_infinite(*vert)) {
-      for (size_t col = 0; col < DIMENSION; ++col) {
+    if (*vert == typename TDS::Vertex_const_handle() || tri.is_infinite(*vert)) {
+      for (size_t col = 0; col < Dim; ++col) {
         A(row, col) = 0;
       }
       b[row] = 0;
@@ -135,31 +81,31 @@ Config EnumerateOptimals::findConfig(const TDS::Full_cell& f)
   return Config(conf_values);
 }
 
-void EnumerateOptimals::addToTriangulation()
+template <int Dim> void EnumerateOptimals<Dim>::addToTriangulation()
 {
   auto vertId = routes.size() - 1;
   auto& routeCosts = routes[vertId].costs;
-  Triangulation::Point p(DIMENSION, &routeCosts.values[0], &routeCosts.values[DIMENSION]);
+  typename Triangulation::Point p(Dim, &routeCosts.values[0], &routeCosts.values[Dim]);
   auto vertex = tri.insert(p);
   auto& vertexdata = vertex->data();
   vertexdata.id = vertId;
 }
 
-void EnumerateOptimals::includeConvexHullCells(CellContainer& cont)
+template <int Dim> void EnumerateOptimals<Dim>::includeConvexHullCells(CellContainer& cont)
 {
-  std::vector<TDS::Full_cell_handle> handles;
+  std::vector<typename TDS::Full_cell_handle> handles;
   tri.incident_full_cells(tri.infinite_vertex(), std::back_inserter(handles));
   for (size_t i = 0; i < handles.size(); ++i) {
-    TDS::Full_cell& c = *handles[i];
+    typename TDS::Full_cell& c = *handles[i];
     if (c.data().checked()) {
       continue;
     }
 
     if (c.data().prio() < 0.0 && maxOverlap < 1.0) {
-      std::vector<TDS::Vertex_handle> vertices;
+      std::vector<typename TDS::Vertex_handle> vertices;
       for (auto v = c.vertices_begin(); v != c.vertices_end(); ++v) {
         auto& vertex = *v;
-        if (vertex == TDS::Vertex_const_handle() || tri.is_infinite(vertex)) {
+        if (vertex == typename TDS::Vertex_const_handle() || tri.is_infinite(vertex)) {
           continue;
         }
         vertices.push_back(vertex);
@@ -180,7 +126,8 @@ void EnumerateOptimals::includeConvexHullCells(CellContainer& cont)
   }
 }
 
-std::vector<size_t> EnumerateOptimals::extract_independent_set(
+template <int Dim>
+std::vector<size_t> EnumerateOptimals<Dim>::extract_independent_set(
     const std::vector<size_t>& vertices, bool ilp)
 {
 
@@ -213,9 +160,11 @@ std::vector<size_t> EnumerateOptimals::extract_independent_set(
   return independent_set;
 }
 
-std::tuple<std::vector<size_t>, EnumerateOptimals::Edges> EnumerateOptimals::vertex_ids_and_edges()
+template <int Dim>
+std::tuple<std::vector<size_t>, typename EnumerateOptimals<Dim>::Edges>
+EnumerateOptimals<Dim>::vertex_ids_and_edges()
 {
-  typedef Triangulation::Face Face;
+  typedef typename Triangulation::Face Face;
   typedef std::vector<Face> Faces;
 
   std::vector<size_t> vertices;
@@ -239,14 +188,14 @@ std::tuple<std::vector<size_t>, EnumerateOptimals::Edges> EnumerateOptimals::ver
     }
   };
 
-  if (tri.number_of_vertices() >= DIMENSION) {
+  if (tri.number_of_vertices() >= Dim) {
     Faces ch_edges;
     std::back_insert_iterator<Faces> out(ch_edges);
     tri.tds().incident_faces(tri.infinite_vertex(), 1, out);
 
     vertices.reserve(ch_edges.size());
     for (auto& f : ch_edges) {
-      TDS::Vertex_handle v = f.vertex(0);
+      typename TDS::Vertex_handle v = f.vertex(0);
       if (tri.is_infinite(v)) {
         v = f.vertex(1);
       }
@@ -254,9 +203,9 @@ std::tuple<std::vector<size_t>, EnumerateOptimals::Edges> EnumerateOptimals::ver
       get_edges(v);
     }
   } else {
-    for (TDS::Vertex_iterator vertex = tri.vertices_begin(); vertex != tri.vertices_end();
+    for (typename TDS::Vertex_iterator vertex = tri.vertices_begin(); vertex != tri.vertices_end();
          ++vertex) {
-      if (vertex == TDS::Vertex_handle() || tri.is_infinite(*vertex)) {
+      if (vertex == typename TDS::Vertex_handle() || tri.is_infinite(*vertex)) {
         continue;
       }
       vertices.push_back(vertex->data().id);
@@ -270,31 +219,33 @@ std::tuple<std::vector<size_t>, EnumerateOptimals::Edges> EnumerateOptimals::ver
   return { vertices, edges };
 }
 
-EnumerateOptimals::EnumerateOptimals(Graph* g, double maxOverlap, size_t maxRoutes)
+template <int Dim>
+EnumerateOptimals<Dim>::EnumerateOptimals(Graph* g, double maxOverlap, size_t maxRoutes)
     : g(g)
     , maxOverlap(maxOverlap)
     , maxRoutes(maxRoutes)
     , d(g->createDijkstra())
 {
-  for (size_t i = 0; i < DIMENSION; ++i) {
+  for (size_t i = 0; i < Dim; ++i) {
     this->important[i] = false;
   }
 }
 
-EnumerateOptimals::EnumerateOptimals(
+template <int Dim>
+EnumerateOptimals<Dim>::EnumerateOptimals(
     Graph* g, double maxOverlap, size_t maxRoutes, Important important, Slack slack)
     : g(g)
     , maxOverlap(maxOverlap)
     , maxRoutes(maxRoutes)
     , d(g->createDijkstra())
 {
-  for (size_t i = 0; i < DIMENSION; ++i) {
+  for (size_t i = 0; i < Dim; ++i) {
     this->important[i] = important[i];
     this->slack[i] = slack[i];
   }
 }
 
-void EnumerateOptimals::find(NodePos s, NodePos t)
+template <int Dim> void EnumerateOptimals<Dim>::find(NodePos s, NodePos t)
 {
   auto start = c::high_resolution_clock::now();
   routes.clear();
@@ -307,7 +258,7 @@ void EnumerateOptimals::find(NodePos s, NodePos t)
 
   run_not_important_metrics(s, t);
 
-  Config conf(std::vector(DIMENSION, 1.0 / DIMENSION));
+  Config conf(std::vector(Dim, 1.0 / Dim));
   auto route = d.findBestRoute(s, t, conf);
 
   if (route) {
@@ -315,7 +266,7 @@ void EnumerateOptimals::find(NodePos s, NodePos t)
     configs.push_back(std::move(conf));
     addToTriangulation();
   }
-  double maxValue = *std::max_element(&factor[0], &factor[DIMENSION]);
+  double maxValue = *std::max_element(&factor[0], &factor[Dim]);
 
   for (double& value : factor) {
     value = maxValue / value;
@@ -348,10 +299,10 @@ void EnumerateOptimals::find(NodePos s, NodePos t)
         auto lastRoute = routes.size() - 1;
         bool include = true;
         for (auto vertex = f.vertices_begin(); vertex != f.vertices_end(); ++vertex) {
-          if (*vertex == TDS::Vertex_const_handle() || tri.is_infinite(*vertex)) {
+          if (*vertex == typename TDS::Vertex_const_handle() || tri.is_infinite(*vertex)) {
             continue;
           } else {
-            TDS::Vertex_handle v = *vertex;
+            typename TDS::Vertex_handle v = *vertex;
             if (compare(v->data().id, lastRoute) == 1.0) {
               include = false;
             }
@@ -374,11 +325,19 @@ void EnumerateOptimals::find(NodePos s, NodePos t)
   enumeration_time = c::duration_cast<c::milliseconds>(end - start).count();
 }
 
-size_t EnumerateOptimals::found_route_count() const { return routes.size(); }
-size_t EnumerateOptimals::vertex_count() const { return tri.number_of_vertices(); }
+template <int Dim> size_t EnumerateOptimals<Dim>::found_route_count() const
+{
+  return routes.size();
+}
+template <int Dim> size_t EnumerateOptimals<Dim>::vertex_count() const
+{
+  return tri.number_of_vertices();
+}
 
-std::tuple<std::vector<Route>, std::vector<Config>, EnumerateOptimals::Edges>
-EnumerateOptimals::recommend_routes(bool ilp)
+template <int Dim>
+std::tuple<std::vector<Route<Dim>>, std::vector<Config<Dim>>,
+    typename EnumerateOptimals<Dim>::Edges>
+EnumerateOptimals<Dim>::recommend_routes(bool ilp)
 {
 
   auto [vertices, edges] = vertex_ids_and_edges();
@@ -393,12 +352,12 @@ EnumerateOptimals::recommend_routes(bool ilp)
     routes.push_back(this->routes[vertices[id]]);
 
     auto c = this->configs[vertices[id]];
-    for (size_t i = 0; i < DIMENSION; ++i) {
+    for (size_t i = 0; i < Dim; ++i) {
       c.values[i] /= factor[i];
     }
-    auto sum = std::accumulate(&c.values[0], &c.values[DIMENSION], 0.0);
+    auto sum = std::accumulate(&c.values[0], &c.values[Dim], 0.0);
 
-    for (size_t i = 0; i < DIMENSION; ++i) {
+    for (size_t i = 0; i < Dim; ++i) {
       c.values[i] /= sum;
     }
 
@@ -425,14 +384,16 @@ EnumerateOptimals::recommend_routes(bool ilp)
   return { routes, configs, edges };
 }
 
-exclusion_set EnumerateOptimals::create_exclusion_set_from_important_metrics(NodePos s, NodePos t)
+template <int Dim>
+exclusion_set EnumerateOptimals<Dim>::create_exclusion_set_from_important_metrics(
+    NodePos s, NodePos t)
 {
   exclusion_set exclude(g->getNodeCount(), false);
-  for (size_t i = 0; i < DIMENSION; ++i) {
+  for (size_t i = 0; i < Dim; ++i) {
     if (!important[i])
       continue;
 
-    Config conf(std::vector(DIMENSION, 0.0));
+    Config conf(std::vector(Dim, 0.0));
     conf.values[i] = 1.0;
 
     auto route = d.findBestRoute(s, t, conf);
@@ -451,14 +412,14 @@ exclusion_set EnumerateOptimals::create_exclusion_set_from_important_metrics(Nod
   return exclude;
 }
 
-void EnumerateOptimals::run_not_important_metrics(NodePos s, NodePos t)
+template <int Dim> void EnumerateOptimals<Dim>::run_not_important_metrics(NodePos s, NodePos t)
 {
 
-  for (size_t i = 0; i < DIMENSION; ++i) {
+  for (size_t i = 0; i < Dim; ++i) {
     if (important[i])
       continue;
 
-    Config conf(std::vector(DIMENSION, 0.0));
+    Config conf(std::vector(Dim, 0.0));
     conf.values[i] = 1.0;
 
     auto route = d.findBestRoute(s, t, conf);
@@ -473,8 +434,9 @@ void EnumerateOptimals::run_not_important_metrics(NodePos s, NodePos t)
   }
 }
 
-std::pair<Important, Slack> EnumerateOptimals::important_metrics_to_arrays(
-    std::vector<ImportantMetric> metrics)
+template <int Dim>
+std::pair<typename EnumerateOptimals<Dim>::Important, typename EnumerateOptimals<Dim>::Slack>
+EnumerateOptimals<Dim>::important_metrics_to_arrays(std::vector<ImportantMetric> metrics)
 {
   Important important;
   important.fill(false);

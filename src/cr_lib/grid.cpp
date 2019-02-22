@@ -16,6 +16,8 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "grid.hpp"
+
+#include "graph.hpp"
 #include <cmath>
 
 double haversine_distance(const PositionalNode& a, const PositionalNode& b)
@@ -43,7 +45,7 @@ Grid::Grid(const std::vector<Node>& nodes, long sideLength)
 
   for (size_t i = 0; i < nodes.size(); ++i) {
     const auto& node = nodes[i];
-    this->nodes.emplace_back(node.lat(), node.lng(), NodePos{ i });
+    this->nodes.emplace_back(node.lat(), node.lng(), NodePos { i });
   }
 
   std::for_each(
@@ -82,18 +84,19 @@ std::optional<NodePos> Grid::findNextNode(Lat lat, Lng lng)
     size_t x = index - y * sideLength;
     return std::make_pair(x, y);
   };
-  NodePos dummy{ 0 };
+  NodePos dummy { 0 };
 
-  const double cell_width = haversine_distance(PositionalNode{ bBox.lat_max, bBox.lng_max, dummy },
-                                PositionalNode{ bBox.lat_min, bBox.lng_max, dummy })
+  const double cell_width = haversine_distance(PositionalNode { bBox.lat_max, bBox.lng_max, dummy },
+                                PositionalNode { bBox.lat_min, bBox.lng_max, dummy })
       / sideLength;
-  const double cell_height = haversine_distance(PositionalNode{ bBox.lat_max, bBox.lng_max, dummy },
-                                 PositionalNode{ bBox.lat_max, bBox.lng_min, dummy })
+  const double cell_height
+      = haversine_distance(PositionalNode { bBox.lat_max, bBox.lng_max, dummy },
+            PositionalNode { bBox.lat_max, bBox.lng_min, dummy })
       / sideLength;
 
   const auto cell_measure = std::min(cell_width, cell_height);
 
-  PositionalNode target{ lat, lng, NodePos{ 0 } };
+  PositionalNode target { lat, lng, NodePos { 0 } };
   const size_t center = coordsToIndex(lat, lng);
   const auto coord = indexToXy(center);
   const long& x = coord.first;
@@ -153,5 +156,21 @@ size_t Grid::coordsToIndex(Lat lat, Lng lng)
   if (y == sideLength) {
     y -= 1;
   }
-  return NodePos{ static_cast<size_t>(y * sideLength + x) };
+  return NodePos { static_cast<size_t>(y * sideLength + x) };
+}
+
+double haversine_distance(const Node& a, const Node& b)
+{
+  const double EARTH_RADIUS = 6371007.2;
+  const double RADIANS_CONVERSION = M_PI / 180;
+  using namespace std;
+
+  double theta1 = a.lat() * RADIANS_CONVERSION;
+  double theta2 = b.lat() * RADIANS_CONVERSION;
+  double deltaTheta = (b.lat() - a.lat()) * RADIANS_CONVERSION;
+  double deltaLambda = (b.lng() - a.lng()) * RADIANS_CONVERSION;
+  double e = pow(sin(deltaTheta / 2.0), 2)
+      + std::cos(theta1) * std::cos(theta2) * pow(sin(deltaLambda / 2.0), 2);
+  double c = 2.0 * asin(sqrt(e));
+  return EARTH_RADIUS * c;
 }

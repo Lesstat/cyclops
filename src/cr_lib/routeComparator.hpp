@@ -20,10 +20,14 @@
 
 #include "dijkstra.hpp"
 
-double calculateSharing(const Route& referenceRoute, const Route& otherRoute);
+template <int Dim>
+double calculateSharing(const Route<Dim>& referenceRoute, const Route<Dim>& otherRoute);
 
-class DiscreteFrechet {
+template <int Dim> class DiscreteFrechet {
   public:
+  using Route = Route<Dim>;
+  using Graph = Graph<Dim>;
+
   DiscreteFrechet(const Route& reference, const Route& other, const Graph& g);
   virtual ~DiscreteFrechet() = default;
 
@@ -37,4 +41,5 @@ class DiscreteFrechet {
   double c(int i, int j);
 };
 
+#include "routeComparator.inc"
 #endif /* ROUTECOMPARATOR_H */

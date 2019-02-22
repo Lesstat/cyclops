@@ -18,7 +18,13 @@
 #ifndef GRID_H
 #define GRID_H
 
-#include "graph.hpp"
+#include "namedType.hpp"
+
+using NodePos = NamedType<size_t, struct NodePosParameter>;
+using Lat = NamedType<double, struct LatParameter>;
+using Lng = NamedType<double, struct LngParameter>;
+
+class Node;
 
 struct PositionalNode {
   Lat lat;

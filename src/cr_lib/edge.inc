@@ -16,25 +16,28 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "dijkstra.hpp"
-#include "graph.hpp"
+
 #include <algorithm>
 #include <cassert>
+#include <iostream>
 
-std::vector<EdgeId> Edge::internalId_vec;
-std::vector<NodeId> Edge::source_vec;
-std::vector<NodeId> Edge::destination_vec;
-std::vector<Cost> Edge::cost_vec;
-std::vector<ReplacedEdge> Edge::edgeA_vec;
-std::vector<ReplacedEdge> Edge::edgeB_vec;
-std::vector<NodePos> Edge::sourcePos__vec;
-std::vector<NodePos> Edge::destPos__vec;
+template <int Dim> std::vector<EdgeId> Edge<Dim>::internalId_vec;
+template <int Dim> std::vector<NodeId> Edge<Dim>::source_vec;
+template <int Dim> std::vector<NodeId> Edge<Dim>::destination_vec;
+template <int Dim> std::vector<Cost<Dim>> Edge<Dim>::cost_vec;
+template <int Dim> std::vector<ReplacedEdge> Edge<Dim>::edgeA_vec;
+template <int Dim> std::vector<ReplacedEdge> Edge<Dim>::edgeB_vec;
+template <int Dim> std::vector<NodePos> Edge<Dim>::sourcePos__vec;
+template <int Dim> std::vector<NodePos> Edge<Dim>::destPos__vec;
 
-Edge::Edge(NodeId source, NodeId dest)
+template <int Dim>
+Edge<Dim>::Edge(NodeId source, NodeId dest)
     : Edge(source, dest, {}, {})
 {
 }
 
-Edge::Edge(NodeId source, NodeId dest, ReplacedEdge edgeA, ReplacedEdge edgeB)
+template <int Dim>
+Edge<Dim>::Edge(NodeId source, NodeId dest, ReplacedEdge edgeA, ReplacedEdge edgeB)
     : source(source)
     , destination(dest)
     , edgeA(std::move(edgeA))
@@ -49,13 +52,13 @@ Edge::Edge(NodeId source, NodeId dest, ReplacedEdge edgeA, ReplacedEdge edgeB)
   }
 }
 
-NodeId Edge::getSourceId() const { return source; }
-NodeId Edge::getDestId() const { return destination; }
+template <int Dim> NodeId Edge<Dim>::getSourceId() const { return source; }
+template <int Dim> NodeId Edge<Dim>::getDestId() const { return destination; }
 
-NodeId Edge::getSourceId(EdgeId id) { return source_vec[id]; }
-NodeId Edge::getDestId(EdgeId id) { return destination_vec[id]; }
+template <int Dim> NodeId Edge<Dim>::getSourceId(EdgeId id) { return source_vec[id]; }
+template <int Dim> NodeId Edge<Dim>::getDestId(EdgeId id) { return destination_vec[id]; }
 
-Edge Edge::createFromText(std::istream& text)
+template <int Dim> Edge<Dim> Edge<Dim>::createFromText(std::istream& text)
 {
 
   size_t source, dest;
@@ -83,23 +86,25 @@ Edge Edge::createFromText(std::istream& text)
   return e;
 }
 
-double Edge::costByConfiguration(const Config& conf) const { return cost * conf; }
+template <int Dim> double Edge<Dim>::costByConfiguration(const Config& conf) const
+{
+  return cost * conf;
+}
 
-EdgeId Edge::getId() const { return internalId; }
+template <int Dim> EdgeId Edge<Dim>::getId() const { return internalId; }
 
-const Cost& Edge::getCost() const { return cost; }
+template <int Dim> const Cost<Dim>& Edge<Dim>::getCost() const { return cost; }
 
-const Cost& Edge::getCost(EdgeId id) { return cost_vec[id]; }
+template <int Dim> const Cost<Dim>& Edge<Dim>::getCost(EdgeId id) { return cost_vec[id]; }
 
-void Edge::setCost(Cost c) { this->cost = c; }
+template <int Dim> void Edge<Dim>::setCost(Cost c) { this->cost = c; }
 
-const ReplacedEdge& Edge::getEdgeA() const { return edgeA; }
-const ReplacedEdge& Edge::getEdgeB() const { return edgeB; }
+template <int Dim> const ReplacedEdge& Edge<Dim>::getEdgeA() const { return edgeA; }
+template <int Dim> const ReplacedEdge& Edge<Dim>::getEdgeB() const { return edgeB; }
+template <int Dim> const ReplacedEdge& Edge<Dim>::getEdgeA(EdgeId id) { return edgeA_vec[id]; }
+template <int Dim> const ReplacedEdge& Edge<Dim>::getEdgeB(EdgeId id) { return edgeB_vec[id]; }
 
-const ReplacedEdge& Edge::getEdgeA(EdgeId id) { return edgeA_vec[id]; }
-const ReplacedEdge& Edge::getEdgeB(EdgeId id) { return edgeB_vec[id]; }
-
-HalfEdge Edge::makeHalfEdge(EdgeId id, NodePos, NodePos end)
+template <int Dim> HalfEdge<Dim> Edge<Dim>::makeHalfEdge(EdgeId id, NodePos, NodePos end)
 {
   HalfEdge e;
   e.id = id;
@@ -108,11 +113,13 @@ HalfEdge Edge::makeHalfEdge(EdgeId id, NodePos, NodePos end)
   return e;
 }
 
-void Edge::setId(EdgeId id) { this->internalId = id; }
+template <int Dim> void Edge<Dim>::setId(EdgeId id) { this->internalId = id; }
 
-double HalfEdge::costByConfiguration(const Config& conf) const { return cost * conf; }
-
-std::vector<EdgeId> Edge::administerEdges(std::vector<Edge>&& edges)
+template <int Dim> double HalfEdge<Dim>::costByConfiguration(const Config& conf) const
+{
+  return cost * conf;
+}
+template <int Dim> std::vector<EdgeId> Edge<Dim>::administerEdges(std::vector<Edge>&& edges)
 {
   std::vector<EdgeId> ids;
   ids.reserve(edges.size());
@@ -151,7 +158,7 @@ std::vector<EdgeId> Edge::administerEdges(std::vector<Edge>&& edges)
   edges = std::vector<Edge>();
   return ids;
 }
-const Edge Edge::getEdge(EdgeId id)
+template <int Dim> const Edge<Dim> Edge<Dim>::getEdge(EdgeId id)
 {
   Edge e(source_vec[id], destination_vec[id], edgeA_vec[id], edgeB_vec[id]);
   e.internalId = id;
@@ -161,17 +168,17 @@ const Edge Edge::getEdge(EdgeId id)
   return e;
 }
 
-double Cost::operator*(const Config& conf) const
+template <int Dim> double Cost<Dim>::operator*(const Config& conf) const
 {
   double combinedCost = 0;
 
-  for (size_t i = 0; i < dim; ++i) {
+  for (size_t i = 0; i < Dim; ++i) {
     combinedCost += values[i] * conf.values[i];
   }
 
   if (!(combinedCost >= 0)) {
     std::cout << "Cost < 0 detected" << '\n';
-    for (size_t i = 0; i < dim; ++i) {
+    for (size_t i = 0; i < Dim; ++i) {
       std::cout << "metric " << i << ": " << values[i] << " * " << conf.values[i] << '\n';
     }
     throw std::invalid_argument("cost < 0");
@@ -179,12 +186,15 @@ double Cost::operator*(const Config& conf) const
   return combinedCost;
 }
 
-NodePos Edge::sourcePos() const { return sourcePos_; }
-NodePos Edge::destPos() const { return destPos_; }
-void Edge::sourcePos(NodePos source) { sourcePos_ = source; }
-void Edge::destPos(NodePos dest) { destPos_ = dest; }
+template <int Dim> NodePos Edge<Dim>::sourcePos() const { return sourcePos_; }
+template <int Dim> NodePos Edge<Dim>::destPos() const { return destPos_; }
+template <int Dim> void Edge<Dim>::sourcePos(NodePos source) { sourcePos_ = source; }
+template <int Dim> void Edge<Dim>::destPos(NodePos dest) { destPos_ = dest; }
 
-NodePos Edge::sourcePos(EdgeId id) { return sourcePos__vec[id]; }
-NodePos Edge::destPos(EdgeId id) { return destPos__vec[id]; }
-void Edge::sourcePos(EdgeId id, NodePos source) { sourcePos__vec[id] = source; }
-void Edge::destPos(EdgeId id, NodePos dest) { destPos__vec[id] = dest; }
+template <int Dim> NodePos Edge<Dim>::sourcePos(EdgeId id) { return sourcePos__vec[id]; }
+template <int Dim> NodePos Edge<Dim>::destPos(EdgeId id) { return destPos__vec[id]; }
+template <int Dim> void Edge<Dim>::sourcePos(EdgeId id, NodePos source)
+{
+  sourcePos__vec[id] = source;
+}
+template <int Dim> void Edge<Dim>::destPos(EdgeId id, NodePos dest) { destPos__vec[id] = dest; }

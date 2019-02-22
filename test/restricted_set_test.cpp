@@ -37,6 +37,8 @@ TEST_CASE("Restricted Dijkstra does not choose long path")
 0 1 0.0 8 3  -1 -1
 1 2 0.0 8 3  -1 -1)!!"
   };
+  using Graph = Graph<3>;
+  using Config = Config<3>;
 
   std::istringstream iss(threeNodeGraph);
   Graph g = Graph::createFromStream(iss);
@@ -87,6 +89,8 @@ TEST_CASE("Exclude route which exceeds second metric slack")
 0 5 0.0 3 3 -1 -1
 5 4 0.0 3 3 -1 -1
 )!!" };
+  using Graph = Graph<3>;
+  using Route = Route<3>;
 
   std::istringstream stream { sixNodeGraph };
   auto g = Graph::createFromStream(stream);
@@ -104,9 +108,9 @@ TEST_CASE("Exclude route which exceeds second metric slack")
   }
 
   {
-    Important important = { false, true, false };
-    Slack slack = { 0, 2.5, 0 };
-    EnumerateOptimals r { &g, 20, 100, important, slack };
+    EnumerateOptimals<3>::Important important = { false, true, false };
+    EnumerateOptimals<3>::Slack slack = { 0, 2.5, 0 };
+    EnumerateOptimals<3> r { &g, 20, 100, important, slack };
     r.find(s, t);
     auto result = r.recommend_routes(true);
     auto routes = std::get<std::vector<Route>>(result);

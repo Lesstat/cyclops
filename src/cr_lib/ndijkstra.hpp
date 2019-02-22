@@ -21,14 +21,14 @@
 #include <queue>
 #include <unordered_map>
 
-struct RouteWithCount {
-  Cost costs;
+template <int Dim> struct RouteWithCount {
+  Cost<Dim> costs;
   size_t pathCount = 1;
   std::deque<EdgeId> edges;
   RouteWithCount& operator=(const RouteWithCount& rhs) = default;
 };
 
-class RouteIterator;
+template <int Dim> class RouteIterator;
 
 using QueueElem = std::tuple<NodePos, double>;
 struct BiggerPathCost {
@@ -41,8 +41,16 @@ struct BiggerPathCost {
 };
 using Queue = std::priority_queue<QueueElem, std::vector<QueueElem>, BiggerPathCost>;
 
-class NormalDijkstra {
+template <int Dim> class NormalDijkstra {
   public:
+  using Graph = Graph<Dim>;
+  using Config = Config<Dim>;
+  using Cost = Cost<Dim>;
+  using Edge = Edge<Dim>;
+  using HalfEdge = HalfEdge<Dim>;
+  using RouteWithCount = RouteWithCount<Dim>;
+  using RouteIterator = RouteIterator<Dim>;
+
   NormalDijkstra(Graph* g, size_t nodeCount, bool unpack = false);
   NormalDijkstra(const NormalDijkstra& other) = default;
   NormalDijkstra(NormalDijkstra&& other) = default;
@@ -79,8 +87,12 @@ class NormalDijkstra {
   bool unpack;
 };
 
-using RouteQueueElem = std::tuple<RouteWithCount, NodePos>;
-struct BiggerRouteCost {
+template <int Dim> using RouteQueueElem = std::tuple<RouteWithCount<Dim>, NodePos>;
+template <int Dim> struct BiggerRouteCost {
+  using Config = Config<Dim>;
+  using RouteQueueElem = RouteQueueElem<Dim>;
+  using RouteWithCount = RouteWithCount<Dim>;
+
   BiggerRouteCost(Config usedConfig)
       : usedConfig(usedConfig)
   {
@@ -95,8 +107,13 @@ struct BiggerRouteCost {
   Config usedConfig;
 };
 
-class RouteIterator {
+template <int Dim> class RouteIterator {
   public:
+  using NormalDijkstra = NormalDijkstra<Dim>;
+  using RouteWithCount = RouteWithCount<Dim>;
+  using RouteQueueElem = RouteQueueElem<Dim>;
+  using BiggerRouteCost = BiggerRouteCost<Dim>;
+
   RouteIterator(NormalDijkstra* dijkstra, NodePos from, NodePos to, size_t maxHeapSize = 500);
   ~RouteIterator() = default;
 
@@ -114,4 +131,6 @@ class RouteIterator {
       = std::priority_queue<RouteQueueElem, std::vector<RouteQueueElem>, BiggerRouteCost>;
   RouteQueue heap;
 };
+
+#include "ndijkstra.inc"
 #endif /* NDIJKSTRA_H */

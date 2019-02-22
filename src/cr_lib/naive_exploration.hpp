@@ -20,8 +20,12 @@
 #define NAIVE_EXPLORATION_H
 #include "dijkstra.hpp"
 
-inline std::vector<Route> naiveExploration(Dijkstra& d, NodePos from, NodePos to, double epsilon)
+inline std::vector<Route<3>> naiveExploration(
+    Dijkstra<3>& d, NodePos from, NodePos to, double epsilon)
 {
+  using Route = Route<3>;
+  using Config = Config<3>;
+
   std::vector<Route> result;
   const int N = std::round(1 / epsilon);
   int count = 0;
@@ -33,7 +37,8 @@ inline std::vector<Route> naiveExploration(Dijkstra& d, NodePos from, NodePos to
         continue;
       double alpha_3 = 1 - alpha_1 - alpha_2;
       count++;
-      Config c{ LengthConfig{ alpha_1 }, HeightConfig{ alpha_2 }, UnsuitabilityConfig{ alpha_3 } };
+      Config c { LengthConfig { alpha_1 }, HeightConfig { alpha_2 },
+        UnsuitabilityConfig { alpha_3 } };
       result.push_back(d.findBestRoute(from, to, c).value());
     }
   }

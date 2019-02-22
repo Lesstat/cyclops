@@ -20,6 +20,8 @@
 
 TEST_CASE("Offset array is correctly initialized")
 {
+  using Edge = Edge<3>;
+
   std::vector<Node> nodes;
   nodes.emplace_back(NodeId(0), Lat(3.4), Lng(4.6), 0);
   nodes.emplace_back(NodeId(1), Lat(3.4), Lng(4.6), 0);
@@ -71,6 +73,10 @@ TEST_CASE("Read small file into graph")
 1 2 16 2 70 -1 -1
 
 )!!" };
+  using Graph = Graph<3>;
+  using Edge = Edge<3>;
+  using Config = Config<3>;
+
   auto iss = std::istringstream(file);
   Graph g = Graph::createFromStream(iss);
 

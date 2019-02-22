@@ -17,8 +17,10 @@
 */
 #include "routeComparator.hpp"
 
-DiscreteFrechet::DiscreteFrechet(const Route& reference, const Route& other, const Graph& g)
+template <int Dim>
+DiscreteFrechet<Dim>::DiscreteFrechet(const Route& reference, const Route& other, const Graph& g)
 {
+  using Edge = Edge<Dim>;
   for (const auto& e : reference.edges) {
     this->reference.push_back(g.getNode(Edge::sourcePos(e)));
   }
@@ -37,25 +39,12 @@ DiscreteFrechet::DiscreteFrechet(const Route& reference, const Route& other, con
   ca = std::vector(reference.edges.size() - 1, std::vector<double>(other.edges.size() - 1, -1));
 }
 
-double DiscreteFrechet::calculate() { return c(ca.size() - 1, ca[0].size() - 1); }
-
-double haversine_distance(const Node& a, const Node& b)
+template <int Dim> double DiscreteFrechet<Dim>::calculate()
 {
-  const double EARTH_RADIUS = 6371007.2;
-  const double RADIANS_CONVERSION = M_PI / 180;
-  using namespace std;
-
-  double theta1 = a.lat() * RADIANS_CONVERSION;
-  double theta2 = b.lat() * RADIANS_CONVERSION;
-  double deltaTheta = (b.lat() - a.lat()) * RADIANS_CONVERSION;
-  double deltaLambda = (b.lng() - a.lng()) * RADIANS_CONVERSION;
-  double e = pow(sin(deltaTheta / 2.0), 2)
-      + std::cos(theta1) * std::cos(theta2) * pow(sin(deltaLambda / 2.0), 2);
-  double c = 2.0 * asin(sqrt(e));
-  return EARTH_RADIUS * c;
+  return c(ca.size() - 1, ca[0].size() - 1);
 }
 
-double DiscreteFrechet::c(int i, int j)
+template <int Dim> double DiscreteFrechet<Dim>::c(int i, int j)
 {
 
   if (ca[i][j] > -1) {
@@ -82,8 +71,11 @@ double DiscreteFrechet::c(int i, int j)
   return ca[i][j];
 }
 
-double calculateSharing(const Route& referenceRoute, const Route& otherRoute)
+template <int Dim>
+double calculateSharing(const Route<Dim>& referenceRoute, const Route<Dim>& otherRoute)
 {
+  using Edge = Edge<Dim>;
+
   std::set<EdgeId> edges;
   std::transform(begin(referenceRoute.edges), end(referenceRoute.edges),
       std::inserter(edges, begin(edges)), [](const auto& edge) { return edge; });

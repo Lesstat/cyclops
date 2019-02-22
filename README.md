@@ -36,18 +36,25 @@ $ ./build/cr -h
   -h [ --help ]          prints help message
 
 loading options:
-  -t [ --text ] arg      load graph from text file
-  -b [ --bin ] arg       load graph form binary file
-  -m [ --multi ] arg     load graph from multiple files
+  -t [ --text ] arg       load graph from text file
+  -b [ --bin ] arg        load graph form binary file
+  --zi                    input text file is gzipped
+  -d [ --dimension ] arg  Dimension of loaded Graph
+
 
 actions:
   --save arg             save graph to binary file
   --test                 runs normal dijkstra and CH dijktra for comparison
   -w [ --web ]           start webserver for interaction via browser
 ```
-It needs exactly one of the loading category to load a graph and at
-least one of the second category. The actions are executed in the
-order they are displayed above. 
+It needs exactly one of the first two in the loading category to load a graph and at
+least one of the second category. ``--zi`` can be combined with the
+``-t`` option to directly read zip compressed graph files in text
+format. ``-d`` sets the dimension of the loaded graph. Default
+is 3. Dimensions one to three are supported currently. Larger
+Dimension can be added easily see below.
+
+The actions are executed in the order they are displayed above.
 
 ``--save`` prompts the application
 write the graph to a binary file for faster loading (no text parsing necessary).
@@ -67,13 +74,15 @@ mandatory for the web interface. The Web interface is available at
 Although Cyclops was initially implemented to handle exactly three
 metrics, it was adapted to handle an arbitrary number of metrics. For
 best performance the number of metrics is needed at **compile
-time**. If you want to work with more or less metrics change the
-constant DIMENSION in the file graph.hpp to the number of metrics you
-have in your graph.
+time**. If you want to work with more metrics change the
+switch statement at the bottom of the main function in main.cpp 
 
-For four metrics the line would need to be:
+For four metrics the following lines would need to be added:
 ``` c++
-const size_t DIMENSION = 4;
+  case 4: {
+    return run<4>(vm, loadFileName, saveFileName);
+    break;
+  }
 ```
 
 

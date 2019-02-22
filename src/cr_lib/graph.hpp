@@ -40,18 +40,17 @@ using Height = NamedType<double, struct HeightParameter>;
 using Length = NamedType<double, struct LengthParameter>;
 using Unsuitability = NamedType<double, struct UnsuitabilityParameter>;
 
-class Dijkstra;
-class NormalDijkstra;
-struct Config;
+template <int Dim> class Dijkstra;
+template <int Dim> class NormalDijkstra;
+template <int Dim> struct Config;
 
-const size_t DIMENSION = 3;
+template <int Dim> struct Cost {
+  using Config = Config<Dim>;
 
-struct Cost {
-  static const size_t dim = DIMENSION;
-  std::array<double, dim> values;
+  std::array<double, Dim> values;
   Cost(const std::vector<double>& values)
   {
-    for (size_t i = 0; i < dim; ++i) {
+    for (size_t i = 0; i < Dim; ++i) {
       this->values[i] = values[i];
       if (std::abs(this->values[i]) < 0.0001) {
         this->values[i] = 0;
@@ -60,13 +59,13 @@ struct Cost {
   }
   Cost()
   {
-    for (size_t i = 0; i < Cost::dim; ++i) {
+    for (size_t i = 0; i < Dim; ++i) {
       values[i] = 0;
     }
   }
-  Cost(const double values[Cost::dim])
+  Cost(const double values[Dim])
   {
-    for (size_t i = 0; i < dim; ++i) {
+    for (size_t i = 0; i < Dim; ++i) {
       this->values[i] = values[i];
       if (std::abs(this->values[i]) < 0.0001) {
         this->values[i] = 0;
@@ -77,16 +76,16 @@ struct Cost {
 
   Cost operator+(const Cost& c) const
   {
-    double newValues[Cost::dim];
-    for (size_t i = 0; i < dim; ++i) {
+    double newValues[Dim];
+    for (size_t i = 0; i < Dim; ++i) {
       newValues[i] = values[i] + c.values[i];
     }
     return newValues;
   };
   Cost operator-(const Cost& c) const
   {
-    double newValues[Cost::dim];
-    for (size_t i = 0; i < dim; ++i) {
+    double newValues[Dim];
+    for (size_t i = 0; i < Dim; ++i) {
       newValues[i] = values[i] - c.values[i];
     }
     return newValues;
@@ -94,7 +93,7 @@ struct Cost {
 
   bool operator==(const Cost& c) const
   {
-    for (size_t i = 0; i < Cost::dim; ++i) {
+    for (size_t i = 0; i < Dim; ++i) {
       if (std::abs(values[i] - c.values[i]) >= 0.0001) {
         return false;
       }
@@ -112,7 +111,10 @@ struct Cost {
   }
 };
 
-struct HalfEdge {
+template <int Dim> struct HalfEdge {
+  using Cost = Cost<Dim>;
+  using Config = Config<Dim>;
+
   EdgeId id;
   NodePos end;
   Cost cost;
@@ -150,8 +152,12 @@ struct NodeOffset {
 
 using ReplacedEdge = std::optional<EdgeId>;
 
-class Edge {
+template <int Dim> class Edge {
   public:
+  using Cost = Cost<Dim>;
+  using Config = Config<Dim>;
+  using HalfEdge = HalfEdge<Dim>;
+
   Edge() = default;
   Edge(NodeId source, NodeId dest);
   Edge(NodeId source, NodeId dest, ReplacedEdge edgeA, ReplacedEdge edgeB);
@@ -194,10 +200,9 @@ class Edge {
   static std::vector<EdgeId> administerEdges(std::vector<Edge>&& edges);
   static const Edge getEdge(EdgeId id);
 
-  friend void testEdgeInternals(const Edge& e, NodeId source, NodeId destination, Length length,
-      Height height, Unsuitability unsuitability, const ReplacedEdge& edgeA,
+  friend void testEdgeInternals(const Edge<Dim>& e, NodeId source, NodeId destination,
+      Length length, Height height, Unsuitability unsuitability, const ReplacedEdge& edgeA,
       const ReplacedEdge& edgeB);
-  friend Edge createEdge(std::ifstream&, std::ifstream&);
 
   private:
   friend class boost::serialization::access;
@@ -272,9 +277,16 @@ class Node {
 };
 
 class Grid;
-class EdgeRange;
-class Graph {
+template <int Dim> class EdgeRange;
+template <int Dim> class Graph {
   public:
+  using Edge = Edge<Dim>;
+  using HalfEdge = HalfEdge<Dim>;
+  using Cost = Cost<Dim>;
+  using EdgeRange = EdgeRange<Dim>;
+  using Dijkstra = Dijkstra<Dim>;
+  using NormalDijkstra = NormalDijkstra<Dim>;
+
   Graph(std::vector<Node>&& nodes, std::vector<Edge>&& edges);
   Graph(std::vector<Node>&& nodes, std::vector<EdgeId>&& edges);
   Graph(const Graph& other) = delete;
@@ -318,6 +330,8 @@ class Graph {
   void init(std::vector<Node>&& nodes, std::vector<EdgeId>&& edges);
   void connectEdgesToNodes(const std::vector<Node>& nodes, const std::vector<EdgeId>& edges);
 
+  static size_t readCount(std::istream& file);
+
   std::vector<Node> nodes;
   std::vector<NodeOffset> offsets;
   std::vector<HalfEdge> inEdges;
@@ -351,9 +365,10 @@ class Graph {
   BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
-class EdgeRange {
+template <int Dim> class EdgeRange {
   public:
-  using iterator = std::vector<HalfEdge>::const_iterator;
+  using HalfEdge = HalfEdge<Dim>;
+  using iterator = typename std::vector<HalfEdge>::const_iterator;
 
   EdgeRange(iterator begin, iterator end)
       : begin_(begin)
@@ -375,9 +390,14 @@ class EdgeRange {
   iterator end_;
 };
 
-struct RouteWithCount;
-struct Route;
+template <int Dim> struct RouteWithCount;
+template <int Dim> struct Route;
 
-void printRoutes(std::ofstream& dotFile, const Graph& graph, const RouteWithCount& route1,
-    const Route& route2, const Config& config, const std::set<NodePos>& set = {});
+template <int Dim>
+void printRoutes(std::ofstream& dotFile, const Graph<Dim>& graph, const RouteWithCount<Dim>& route1,
+    const Route<Dim>& route2, const Config<Dim>& config, const std::set<NodePos>& set = {});
+
+#include "edge.inc"
+#include "graph.inc"
+
 #endif /* GRAPH_H */

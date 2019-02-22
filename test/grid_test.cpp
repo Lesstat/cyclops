@@ -18,32 +18,34 @@
 #include "catch.hpp"
 #include "grid.hpp"
 
+#include "graph.hpp"
+
 TEST_CASE("Find next Node, with only one node")
 {
-  std::vector<Node> nodes{};
-  nodes.emplace_back(NodeId{ 0 }, Lat{ 48.5 }, Lng{ 8.3 }, 0);
+  std::vector<Node> nodes {};
+  nodes.emplace_back(NodeId { 0 }, Lat { 48.5 }, Lng { 8.3 }, 0);
 
-  Grid grid{ nodes };
-  REQUIRE(grid.findNextNode(Lat{ 47.123 }, Lng{ 9.2 }) == NodePos{ 0 });
+  Grid grid { nodes };
+  REQUIRE(grid.findNextNode(Lat { 47.123 }, Lng { 9.2 }) == NodePos { 0 });
 }
 
 TEST_CASE("Find next Node, with two nodes")
 {
-  std::vector<Node> nodes{};
-  nodes.emplace_back(NodeId{ 0 }, Lat{ 48.5 }, Lng{ 8.3 }, 0);
-  nodes.emplace_back(NodeId{ 1 }, Lat{ 47.123 }, Lng{ 9.2 }, 0);
+  std::vector<Node> nodes {};
+  nodes.emplace_back(NodeId { 0 }, Lat { 48.5 }, Lng { 8.3 }, 0);
+  nodes.emplace_back(NodeId { 1 }, Lat { 47.123 }, Lng { 9.2 }, 0);
 
-  Grid grid{ nodes };
-  REQUIRE(grid.findNextNode(Lat{ 47.123 }, Lng{ 9.2 }) == NodePos{ 1 });
+  Grid grid { nodes };
+  REQUIRE(grid.findNextNode(Lat { 47.123 }, Lng { 9.2 }) == NodePos { 1 });
 }
 
 TEST_CASE("Find next Node, with great distance")
 {
-  std::vector<Node> nodes{};
-  nodes.emplace_back(NodeId{ 0 }, Lat{ 45 }, Lng{ 9 }, 0);
-  nodes.emplace_back(NodeId{ 1 }, Lat{ 52 }, Lng{ 14.5 }, 0);
-  nodes.emplace_back(NodeId{ 2 }, Lat{ 60 }, Lng{ 20 }, 0);
+  std::vector<Node> nodes {};
+  nodes.emplace_back(NodeId { 0 }, Lat { 45 }, Lng { 9 }, 0);
+  nodes.emplace_back(NodeId { 1 }, Lat { 52 }, Lng { 14.5 }, 0);
+  nodes.emplace_back(NodeId { 2 }, Lat { 60 }, Lng { 20 }, 0);
 
-  Grid grid{ nodes };
-  REQUIRE(grid.findNextNode(Lat{ 55 }, Lng{ 16 }).value() == NodePos{ 1 });
+  Grid grid { nodes };
+  REQUIRE(grid.findNextNode(Lat { 55 }, Lng { 16 }).value() == NodePos { 1 });
 }

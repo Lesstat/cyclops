@@ -20,9 +20,11 @@
 #include <queue>
 
 const double dmax = std::numeric_limits<double>::max();
-const Cost maxCost { std::vector<double>(Cost::dim, dmax) };
 
-Dijkstra::Dijkstra(Graph* g, size_t nodeCount)
+template <int Dim> constexpr Cost<Dim> maxCost() { return std::vector<double>(Dim, dmax); };
+
+template <int Dim>
+Dijkstra<Dim>::Dijkstra(Graph* g, size_t nodeCount)
     : minCandidate(dmax)
     , costS(nodeCount, dmax)
     , costT(nodeCount, dmax)
@@ -30,7 +32,7 @@ Dijkstra::Dijkstra(Graph* g, size_t nodeCount)
 {
 }
 
-void Dijkstra::clearState()
+template <int Dim> void Dijkstra<Dim>::clearState()
 {
   pqPops = 0;
   for (auto nodeId : touchedS) {
@@ -43,18 +45,18 @@ void Dijkstra::clearState()
   touchedT.clear();
 }
 
-void insertUnpackedEdge(const EdgeId& e, std::deque<EdgeId>& route, bool front)
+template <int Dim> void insertUnpackedEdge(const EdgeId& e, std::deque<EdgeId>& route, bool front)
 {
-  const auto& edgeA = Edge::getEdgeA(e);
-  const auto& edgeB = Edge::getEdgeB(e);
+  const auto& edgeA = Edge<Dim>::getEdgeA(e);
+  const auto& edgeB = Edge<Dim>::getEdgeB(e);
 
   if (edgeA) {
     if (front) {
-      insertUnpackedEdge(*edgeB, route, front);
-      insertUnpackedEdge(*edgeA, route, front);
+      insertUnpackedEdge<Dim>(*edgeB, route, front);
+      insertUnpackedEdge<Dim>(*edgeA, route, front);
     } else {
-      insertUnpackedEdge(*edgeA, route, front);
-      insertUnpackedEdge(*edgeB, route, front);
+      insertUnpackedEdge<Dim>(*edgeA, route, front);
+      insertUnpackedEdge<Dim>(*edgeB, route, front);
     }
   } else {
     if (front) {
@@ -65,16 +67,18 @@ void insertUnpackedEdge(const EdgeId& e, std::deque<EdgeId>& route, bool front)
   }
 }
 
-Route Dijkstra::buildRoute(NodePos node, NodeToEdgeMap& previousEdgeS, NodeToEdgeMap& previousEdgeT,
-    NodePos from, NodePos to)
+template <int Dim>
+Route<Dim> Dijkstra<Dim>::buildRoute(NodePos node, NodeToEdgeMap& previousEdgeS,
+    NodeToEdgeMap& previousEdgeT, NodePos from, NodePos to)
 {
+  using Edge = Edge<Dim>;
 
   Route route {};
   auto curNode = node;
   while (curNode != from) {
     const auto& edge_id = previousEdgeS[curNode];
     route.costs = route.costs + Edge::getCost(edge_id);
-    insertUnpackedEdge(edge_id, route.edges, true);
+    insertUnpackedEdge<Dim>(edge_id, route.edges, true);
     curNode = Edge::sourcePos(edge_id);
   }
 
@@ -82,21 +86,22 @@ Route Dijkstra::buildRoute(NodePos node, NodeToEdgeMap& previousEdgeS, NodeToEdg
   while (curNode != to) {
     const auto& edge_id = previousEdgeT[curNode];
     route.costs = route.costs + Edge::getCost(edge_id);
-    insertUnpackedEdge(edge_id, route.edges, false);
+    insertUnpackedEdge<Dim>(edge_id, route.edges, false);
     curNode = Edge::destPos(edge_id);
   }
 
   return route;
 }
 
-bool Dijkstra::QueueComparator::operator()(QueueElem left, QueueElem right)
+template <int Dim> bool Dijkstra<Dim>::QueueComparator::operator()(QueueElem left, QueueElem right)
 {
   auto leftCost = std::get<double>(left);
   auto rightCost = std::get<double>(right);
   return leftCost > rightCost;
 }
 
-std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config config)
+template <int Dim>
+std::optional<Route<Dim>> Dijkstra<Dim>::findBestRoute(NodePos from, NodePos to, Config config)
 {
   auto log = Logger::getInstance();
 
@@ -160,7 +165,8 @@ std::optional<Route> Dijkstra::findBestRoute(NodePos from, NodePos to, Config co
   }
 }
 
-void Dijkstra::relaxEdges(const NodePos& node, double cost, Direction dir, Queue& heap,
+template <int Dim>
+void Dijkstra<Dim>::relaxEdges(const NodePos& node, double cost, Direction dir, Queue& heap,
     NodeToEdgeMap& previousEdge, std::vector<double>& costs)
 {
   auto& touched = dir == Direction::S ? touchedS : touchedT;
@@ -210,7 +216,8 @@ void Dijkstra::relaxEdges(const NodePos& node, double cost, Direction dir, Queue
   }
 }
 
-bool Dijkstra::stallOnDemand(
+template <int Dim>
+bool Dijkstra<Dim>::stallOnDemand(
     const NodePos& node, double cost, Direction dir, std::vector<double>& costs)
 {
   auto myLevel = graph->getLevelOf(node);
@@ -228,9 +235,9 @@ bool Dijkstra::stallOnDemand(
   return false;
 }
 
-std::ostream& operator<<(std::ostream& stream, const Config& c)
+template <int Dim> std::ostream& operator<<(std::ostream& stream, const Config<Dim>& c)
 {
-  for (size_t i = 0; i < Cost::dim; ++i) {
+  for (size_t i = 0; i < Dim; ++i) {
     if (i > 0) {
       stream << "/";
     }
@@ -239,13 +246,13 @@ std::ostream& operator<<(std::ostream& stream, const Config& c)
   return stream;
 }
 
-Config generateRandomConfig()
+template <int Dim> Config<Dim> generateRandomConfig()
 {
   std::random_device rd {};
   std::vector<double> conf;
   double current_sum = 0;
 
-  for (size_t i = 0; i < DIMENSION - 1; ++i) {
+  for (size_t i = 0; i < Dim - 1; ++i) {
     std::uniform_real_distribution distribution(0.0, 1.0 - current_sum);
     auto& val = conf.emplace_back(distribution(rd));
     current_sum += val;
@@ -254,29 +261,29 @@ Config generateRandomConfig()
   return conf;
 }
 
-void Dijkstra::calcScalingFactor(NodePos from, NodePos to, ScalingFactor& f)
+template <int Dim> void Dijkstra<Dim>::calcScalingFactor(NodePos from, NodePos to, ScalingFactor& f)
 {
-  double bestValues[DIMENSION];
+  double bestValues[Dim];
 
-  for (size_t i = 0; i < DIMENSION; ++i) {
-    std::vector conf(DIMENSION, 0.0);
+  for (size_t i = 0; i < Dim; ++i) {
+    std::vector conf(Dim, 0.0);
     conf[i] = 1.0;
     auto& costs = findBestRoute(from, to, conf)->costs;
     bestValues[i] = costs.values[i];
   }
-  double maxCosts = *std::max_element(&bestValues[0], &bestValues[DIMENSION]);
+  double maxCosts = *std::max_element(&bestValues[0], &bestValues[Dim]);
 
-  for (size_t i = 0; i < DIMENSION; ++i) {
+  for (size_t i = 0; i < Dim; ++i) {
     f[i] = maxCosts / bestValues[i];
   }
-  if (std::any_of(&f[0], &f[DIMENSION - 1], [](auto& v) { return std::isnan(v); })) {
+  if (std::any_of(&f[0], &f[Dim - 1], [](auto& v) { return std::isnan(v); })) {
     for (auto& v : f) {
       v = 1.0;
     }
   }
 }
 
-void Dijkstra::excluded_nodes(double slack, exclusion_set& e)
+template <int Dim> void Dijkstra<Dim>::excluded_nodes(double slack, exclusion_set& e)
 {
   for (size_t i = 0; i < costS.size(); ++i) {
     if (e[i])
@@ -289,4 +296,4 @@ void Dijkstra::excluded_nodes(double slack, exclusion_set& e)
   }
 }
 
-void Dijkstra::exclude(exclusion_set e) { excluded_ = std::move(e); }
+template <int Dim> void Dijkstra<Dim>::exclude(exclusion_set e) { excluded_ = std::move(e); }

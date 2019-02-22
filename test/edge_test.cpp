@@ -18,7 +18,7 @@
 #include "catch.hpp"
 #include "graph.hpp"
 
-void testEdgeInternals(const Edge& e, NodeId source, NodeId destination, Length length,
+void testEdgeInternals(const Edge<3>& e, NodeId source, NodeId destination, Length length,
     Height height, Unsuitability unsuitability, const ReplacedEdge& edgeA,
     const ReplacedEdge& edgeB)
 {
@@ -36,16 +36,16 @@ TEST_CASE("Parse Edge from text format")
   SECTION("Original Edge")
   {
     std::stringstream ss("10990 689504 24.340902087980123 7 12.1758 -1 -1");
-    Edge e = Edge::createFromText(ss);
-    testEdgeInternals(e, NodeId{ 10990 }, NodeId{ 689504 }, Length{ 24.340902087980123 },
-        Height{ 7 }, Unsuitability{ 12.1758 }, {}, {});
+    Edge e = Edge<3>::createFromText(ss);
+    testEdgeInternals(e, NodeId { 10990 }, NodeId { 689504 }, Length { 24.340902087980123 },
+        Height { 7 }, Unsuitability { 12.1758 }, {}, {});
   }
 
   SECTION("Shortcut Edge")
   {
     std::stringstream ss("10990 689504 24.340902087980123 7 12.1758 259 687");
-    Edge e = Edge::createFromText(ss);
-    testEdgeInternals(e, NodeId{ 10990 }, NodeId{ 689504 }, Length{ 24.340902087980123 },
-        Height{ 7 }, Unsuitability{ 12.1758 }, EdgeId{ 259 }, EdgeId{ 687 });
+    Edge e = Edge<3>::createFromText(ss);
+    testEdgeInternals(e, NodeId { 10990 }, NodeId { 689504 }, Length { 24.340902087980123 },
+        Height { 7 }, Unsuitability { 12.1758 }, EdgeId { 259 }, EdgeId { 687 });
   }
 }

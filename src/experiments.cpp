@@ -39,9 +39,12 @@ void printErrorAndHelp(const std::string& error, const po::options_description& 
   std::cout << all << '\n';
 }
 
-void explore_random(std::ifstream& file, std::ofstream& output, Dijkstra& d, size_t splitCount,
+template <int Dim>
+void explore_random(std::ifstream& file, std::ofstream& output, Dijkstra<Dim>& d, size_t splitCount,
     double maxSimilarity, std::string type)
 {
+  using Route = Route<Dim>;
+
   auto counter = 0;
   while (!file.eof()) {
     size_t from;
@@ -61,7 +64,7 @@ void explore_random(std::ifstream& file, std::ofstream& output, Dijkstra& d, siz
       auto start = c::high_resolution_clock::now();
       for (size_t i = 0; i < splitCount * 3; ++i) {
         routes.push_back(
-            d.findBestRoute(NodePos { from }, NodePos { to }, generateRandomConfig()).value());
+            d.findBestRoute(NodePos { from }, NodePos { to }, generateRandomConfig<Dim>()).value());
       }
       auto end = c::high_resolution_clock::now();
       size_t exploreTime = c::duration_cast<ms>(end - start).count();
@@ -95,9 +98,11 @@ void explore_random(std::ifstream& file, std::ofstream& output, Dijkstra& d, siz
   }
 }
 
-void enumerate(std::ifstream& file, std::ofstream& output, Graph* g, size_t maxRoutes,
+template <int Dim>
+void enumerate(std::ifstream& file, std::ofstream& output, Graph<Dim>* g, size_t maxRoutes,
     double maxSimilarity, std::string type)
 {
+  using Route = Route<Dim>;
   auto d = g->createDijkstra();
   auto counter = 0;
   while (!file.eof()) {
@@ -113,7 +118,7 @@ void enumerate(std::ifstream& file, std::ofstream& output, Graph* g, size_t maxR
     if (++counter % 20 == 0) {
       output.flush();
     }
-    std::vector<double> conf(DIMENSION, 0);
+    std::vector<double> conf(Dim, 0);
     conf[0] = 1;
 
     if (!d.findBestRoute(NodePos { from }, NodePos { to }, conf)) {
@@ -146,12 +151,14 @@ void enumerate(std::ifstream& file, std::ofstream& output, Graph* g, size_t maxR
   }
 }
 
-void enumerate_all(std::ifstream& file, std::ofstream& output, Graph* g, std::string type)
+template <int Dim>
+void enumerate_all(std::ifstream& file, std::ofstream& output, Graph<Dim>* g, std::string type)
 {
+  using Route = Route<Dim>;
   size_t from;
   size_t to;
   int counter = 0;
-  std::vector<double> conf(DIMENSION, 0);
+  std::vector<double> conf(Dim, 0);
   conf[0] = 1;
   auto d = g->createDijkstra();
   while (file >> from >> to) {
@@ -182,8 +189,10 @@ void enumerate_all(std::ifstream& file, std::ofstream& output, Graph* g, std::st
   }
 }
 
-void search_candidates(Graph& g, size_t count)
+template <int Dim> void search_candidates(Graph<Dim>& g, size_t count)
 {
+  using Config = Config<Dim>;
+
   std::cout << "searching for candidates" << '\n';
   std::ofstream candidates;
   candidates.open("candidates", std::ios::app);
@@ -193,7 +202,7 @@ void search_candidates(Graph& g, size_t count)
   std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
 
   auto d = g.createDijkstra();
-  std::vector<double> conf(DIMENSION, 0.0);
+  std::vector<double> conf(Dim, 0.0);
   conf[0] = 1;
   Config c = conf;
 
@@ -219,9 +228,9 @@ void search_candidates(Graph& g, size_t count)
   }
 }
 
-void search_commuting_candidates(Graph& g)
+template <int Dim> void search_commuting_candidates(Graph<Dim>& g)
 {
-
+  using Config = Config<Dim>;
   std::ofstream commute {};
   commute.open("commute", std::ios::app);
   commute.seekp(0, std::ios::end);
@@ -229,7 +238,7 @@ void search_commuting_candidates(Graph& g)
   std::vector<NodePos> candidates;
 
   auto d = g.createDijkstra();
-  std::vector<double> values(DIMENSION, 0.0);
+  std::vector<double> values(Dim, 0.0);
   values[0] = 1;
   Config c = values;
 
@@ -268,8 +277,9 @@ void search_commuting_candidates(Graph& g)
             << "\n";
 }
 
-void explore_naive(std::ifstream& route_input, std::ofstream& output, Dijkstra& d, double epsilon,
-    double maxSimilarity, std::string type)
+template <int Dim>
+void explore_naive(std::ifstream& route_input, std::ofstream& output, Dijkstra<Dim>& d,
+    double epsilon, double maxSimilarity, std::string type)
 {
   int counter = 0;
   for (size_t from, to; route_input >> from >> to;) {
@@ -311,7 +321,8 @@ void explore_naive(std::ifstream& route_input, std::ofstream& output, Dijkstra& 
   }
 }
 
-void explore_s_t_pairs(std::ifstream& input, std::ofstream& output, Grid& g, Graph* graph,
+template <int Dim>
+void explore_s_t_pairs(std::ifstream& input, std::ofstream& output, Grid& g, Graph<Dim>* graph,
     const std::string& graphfile)
 {
   if (output.tellp() == 0) {
@@ -384,8 +395,7 @@ int main(int argc, char* argv[])
   po::options_description loading { "Graph Loading Options" };
   loading.add_options()("text,t", po::value<std::string>(&loadFileName),
       "load graph from text file")("bin,b", po::value<std::string>(&loadFileName),
-      "load graph form binary file")("multi,m", po::value<std::string>(&loadFileName),
-      "load graph from multiple files")("zi", "input text file is gzipped");
+      "load graph form binary file")("zi", "input text file is gzipped");
 
   std::string parameterInputFile {};
   po::options_description dataConfiguration { "Data Configuration options" };
@@ -413,14 +423,14 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  Graph g { std::vector<Node>(), std::vector<Edge>() };
+  const int Dim = 3;
+
+  Graph<Dim> g { std::vector<Node>(), std::vector<Edge<Dim>>() };
   if (vm.count("text") > 0) {
     bool zipped_input = vm.count("zi") > 0;
-    g = loadGraphFromTextFile(loadFileName, zipped_input);
+    g = loadGraphFromTextFile<Dim>(loadFileName, zipped_input);
   } else if (vm.count("bin") > 0) {
-    g = loadGraphFromBinaryFile(loadFileName);
-  } else if (vm.count("multi") > 0) {
-    g = readMultiFileGraph(loadFileName);
+    g = loadGraphFromBinaryFile<Dim>(loadFileName);
   } else {
     printErrorAndHelp("No input graph given", all);
     return 1;
@@ -483,14 +493,14 @@ int main(int argc, char* argv[])
   } else if (vm.count("dijkstra") > 0) {
     if (output.tellp() == 0) {
       output << "from,to,";
-      for (size_t i = 0; i < DIMENSION; ++i) {
+      for (size_t i = 0; i < Dim; ++i) {
         output << "alpha" << i << ",";
       }
       output << "length,heigh_gain,unsuitabiltiy,edgeCount,pqPolls,time\n";
     }
     auto grid = g.createGrid();
     double lat_f, lng_f, lat_t, lng_t;
-    Config conf = { { 1.0, 0.0, 0.0 } };
+    Config<Dim> conf = { { 1.0, 0.0, 0.0 } };
 
     std::vector<std::pair<NodePos, NodePos>> st_pairs;
     while (params >> lat_f >> lng_f >> lat_t >> lng_t) {

@@ -45,6 +45,9 @@ TEST_CASE("Find all optimals in small graph")
 5 4 0.0 3 3 -1 -1
 )!!" };
 
+  using Graph = Graph<3>;
+  using Route = Route<3>;
+
   std::istringstream stream { sixNodeGraph };
   auto g = Graph::createFromStream(stream);
 

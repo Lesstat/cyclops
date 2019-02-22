@@ -23,7 +23,7 @@
 TEST_CASE("Find other route with same costs")
 {
 
-  const std::string threeNodeGraph{ R"!!(# Build by: pbfextractor
+  const std::string threeNodeGraph { R"!!(# Build by: pbfextractor
 # Build on: SystemTime { tv_sec: 1512985452, tv_nsec: 881838750 }
 
 3
@@ -38,17 +38,21 @@ TEST_CASE("Find other route with same costs")
 
 )!!" };
 
+  using Graph = Graph<3>;
+  using RouteWithCount = RouteWithCount<3>;
+  using Config = Config<3>;
+
   std::istringstream iss(threeNodeGraph);
   Graph g = Graph::createFromStream(iss);
 
   NormalDijkstra d = g.createNormalDijkstra();
 
-  Config config{ LengthConfig{ 0.0 }, HeightConfig{ 1.0 }, UnsuitabilityConfig{ 0.0 } };
-  auto route = d.findBestRoute(NodePos{ 0 }, NodePos{ 2 }, config);
+  Config config { LengthConfig { 0.0 }, HeightConfig { 1.0 }, UnsuitabilityConfig { 0.0 } };
+  auto route = d.findBestRoute(NodePos { 0 }, NodePos { 2 }, config);
   REQUIRE(route->pathCount == 2);
   REQUIRE(route->edges.size() == 1);
 
-  auto routeIter = d.routeIter(NodePos{ 0 }, NodePos{ 2 });
+  auto routeIter = d.routeIter(NodePos { 0 }, NodePos { 2 });
   std::vector<RouteWithCount> allRoutes;
   allRoutes.push_back(*routeIter.next());
   allRoutes.push_back(*routeIter.next());

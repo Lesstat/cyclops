@@ -29,8 +29,8 @@ using HeightConfig = NamedType<double, struct HeightConfigParameter>;
 using UnsuitabilityConfig = NamedType<double, struct UnsuitabilityConfigParameter>;
 using exclusion_set = std::deque<bool>;
 
-struct Config {
-  double values[Cost::dim];
+template <int Dim> struct Config {
+  std::array<double, Dim> values;
 
   template <class configType> void asureNonNegativity(configType& c)
   {
@@ -48,11 +48,11 @@ struct Config {
   {
     values[0] = l;
     asureNonNegativity(values[0]);
-    if constexpr (DIMENSION >= 2) {
+    if constexpr (Dim >= 2) {
       values[1] = h;
       asureNonNegativity(values[1]);
     }
-    if constexpr (DIMENSION >= 3) {
+    if constexpr (Dim >= 3) {
       values[2] = u;
       asureNonNegativity(values[2]);
     }
@@ -60,7 +60,7 @@ struct Config {
 
   Config(const std::vector<double>& values)
   {
-    for (size_t i = 0; i < Cost::dim; ++i) {
+    for (size_t i = 0; i < Dim; ++i) {
       this->values[i] = values[i];
       asureNonNegativity(this->values[i]);
     }
@@ -68,7 +68,7 @@ struct Config {
 
   bool operator==(Config& other)
   {
-    for (size_t i = 0; i < Cost::dim; ++i) {
+    for (size_t i = 0; i < Dim; ++i) {
       if (values[i] != other.values[i]) {
         return false;
       }
@@ -79,25 +79,29 @@ struct Config {
   Config integerValues() const
   {
     std::vector<double> intValues;
-    for (size_t i = 0; i < Cost::dim; ++i) {
+    for (size_t i = 0; i < Dim; ++i) {
       intValues.push_back(std::round(values[i] * 100));
     }
     return intValues;
   }
 };
 
-Config generateRandomConfig();
+template <int Dim> Config<Dim> generateRandomConfig();
 
-std::ostream& operator<<(std::ostream& stream, const Config& c);
+template <int Dim> std::ostream& operator<<(std::ostream& stream, const Config<Dim>& c);
 
-struct Route {
-  Cost costs;
+template <int Dim> struct Route {
+  Cost<Dim> costs;
   std::deque<EdgeId> edges;
 };
 
-class Dijkstra {
+template <int Dim> class Dijkstra {
   public:
-  using ScalingFactor = double[DIMENSION];
+  using Graph = Graph<Dim>;
+  using Route = Route<Dim>;
+  using Config = Config<Dim>;
+
+  using ScalingFactor = std::array<double, Dim>;
 
   Dijkstra(Graph* g, size_t nodeCount);
   Dijkstra(const Dijkstra& other) = default;
@@ -142,5 +146,7 @@ class Dijkstra {
   Graph* graph;
   std::optional<exclusion_set> excluded_;
 };
+
+#include "dijkstra.inc"
 
 #endif /* DIJKSTRA_H */

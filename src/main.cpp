@@ -34,7 +34,7 @@
 #include <fstream>
 #include <random>
 
-void saveToBinaryFile(Graph& ch, std::string& filename)
+template <int Dim> void saveToBinaryFile(Graph<Dim>& ch, std::string& filename)
 {
   {
     std::ofstream ofs(filename, std::ios::binary);
@@ -43,11 +43,15 @@ void saveToBinaryFile(Graph& ch, std::string& filename)
   }
 }
 
-void runWebServer(Graph& g)
+template <int Dim> void runWebServer(Graph<Dim>& g)
 {
   using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
   using Response = std::shared_ptr<HttpServer::Response>;
   using Request = std::shared_ptr<HttpServer::Request>;
+
+  using Dijkstra = Dijkstra<Dim>;
+  using Config = Config<Dim>;
+  using EnumerateOptimals = EnumerateOptimals<Dim>;
 
   Grid grid = g.createGrid();
 
@@ -139,14 +143,14 @@ void runWebServer(Graph& g)
     try {
       auto dijkstra = g.createDijkstra();
 
-      Dijkstra::ScalingFactor f;
+      typename Dijkstra::ScalingFactor f;
       dijkstra.calcScalingFactor(NodePos { *s }, NodePos { *t }, f);
 
       Config c { LengthConfig { (static_cast<double>(*length) / 100.0) },
         HeightConfig { (static_cast<double>(*height) / 100.0) },
         UnsuitabilityConfig { (static_cast<double>(*unsuitability) / 100.0) } };
 
-      for (size_t i = 0; i < DIMENSION; ++i) {
+      for (size_t i = 0; i < Dim; ++i) {
         c.values[i] *= f[i];
       }
 
@@ -257,15 +261,16 @@ void runWebServer(Graph& g)
   server.start();
 }
 
-int testGraph(Graph& g)
+template <int Dim> int testGraph(Graph<Dim>& g)
 {
+  using Config = Config<Dim>;
+  using Edge = Edge<Dim>;
 
-  Dijkstra d = g.createDijkstra();
-  NormalDijkstra n = g.createNormalDijkstra(true);
+  auto d = g.createDijkstra();
+  auto n = g.createNormalDijkstra(true);
   std::random_device rd {};
   std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
-  Config c { LengthConfig { 1.0 / 3.0 }, HeightConfig { 1.0 / 3.0 },
-    UnsuitabilityConfig { 1.0 / 3.0 } };
+  Config c { std::vector<double>(Dim, 1.0 / Dim) };
 
   size_t route = 0;
   size_t noRoute = 0;
@@ -301,7 +306,7 @@ int testGraph(Graph& g)
                   << "cost differ in route from " << from << " (" << g.getNode(from).id() << ") to "
                   << to << " (" << g.getNode(to).id() << ")" << '\n';
         std::cout << "Edge count: " << nRoute->edges.size() << '\n';
-        for (size_t i = 0; i < DIMENSION; ++i) {
+        for (size_t i = 0; i < Dim; ++i) {
           std::cout << "cost " << i << " d: " << dRoute->costs.values[i] << ", cost " << i
                     << " n:" << nRoute->costs.values[i] << '\n';
         }
@@ -343,12 +348,12 @@ int testGraph(Graph& g)
                         << currentPos << " at index " << i << '\n';
 
               std::cout << '\n' << "Normal dijkstra needs: ";
-              for (size_t i = 0; i < DIMENSION; ++i) {
+              for (size_t i = 0; i < Dim; ++i) {
                 std::cout << nTest->costs.values[i] << ", ";
               }
 
               std::cout << '\n' << "CH dijkstra needs: ";
-              for (size_t i = 0; i < DIMENSION; ++i) {
+              for (size_t i = 0; i < Dim; ++i) {
                 std::cout << nTest->costs.values[i] << ", ";
               }
               std::cout << '\n';
@@ -389,6 +394,37 @@ int testGraph(Graph& g)
 }
 
 namespace po = boost::program_options;
+
+template <int Dim>
+int run(po::variables_map& vm, std::string& loadFileName, std::string& saveFileName)
+{
+
+  Graph<Dim> g { std::vector<Node>(), std::vector<Edge<Dim>>() };
+  if (vm.count("text") > 0) {
+    bool zipped_input = vm.count("zi") > 0;
+    g = loadGraphFromTextFile<Dim>(loadFileName, zipped_input);
+  } else if (vm.count("bin") > 0) {
+    g = loadGraphFromBinaryFile<Dim>(loadFileName);
+  } else {
+    std::cout << "No input file given" << '\n';
+    std::cout << "Maybe try --help" << '\n';
+    return 0;
+  }
+  if (!saveFileName.empty()) {
+    std::cout << "Saving" << '\n';
+    saveToBinaryFile(g, saveFileName);
+  }
+
+  if (vm.count("test") > 0) {
+    return testGraph(g);
+  }
+
+  if (vm.count("web") > 0) {
+    runWebServer(g);
+  }
+  return 0;
+}
+
 int main(int argc, char* argv[])
 {
   std::cout.imbue(std::locale(""));
@@ -396,11 +432,14 @@ int main(int argc, char* argv[])
   std::string loadFileName {};
   std::string saveFileName {};
 
+  unsigned short dim = 3;
+
   po::options_description loading { "loading options" };
   loading.add_options()("text,t", po::value<std::string>(&loadFileName),
       "load graph from text file")("bin,b", po::value<std::string>(&loadFileName),
       "load graph form binary file")("multi,m", po::value<std::string>(&loadFileName),
-      "load graph from multiple files")("zi", "input text file is gzipped");
+      "load graph from multiple files")("zi", "input text file is gzipped")(
+      "dimension,d", po::value<unsigned short>(&dim), "Dimension of loaded Graph");
 
   po::options_description action { "actions" };
   action.add_options()("save", po::value<std::string>(&saveFileName), "save graph to binary file");
@@ -419,31 +458,22 @@ int main(int argc, char* argv[])
     std::cout << all << '\n';
     return 0;
   }
-  Graph g { std::vector<Node>(), std::vector<Edge>() };
-  if (vm.count("text") > 0) {
-    bool zipped_input = vm.count("zi") > 0;
-    g = loadGraphFromTextFile(loadFileName, zipped_input);
-  } else if (vm.count("bin") > 0) {
-    g = loadGraphFromBinaryFile(loadFileName);
-  } else if (vm.count("multi") > 0) {
-    g = readMultiFileGraph(loadFileName);
-  } else {
-    std::cout << "No input file given" << '\n';
-    std::cout << all << '\n';
-    return 0;
+  switch (dim) {
+  case 1: {
+    return run<1>(vm, loadFileName, saveFileName);
+    break;
   }
-
-  if (!saveFileName.empty()) {
-    std::cout << "Saving" << '\n';
-    saveToBinaryFile(g, saveFileName);
+  case 2: {
+    return run<2>(vm, loadFileName, saveFileName);
+    break;
   }
-
-  if (vm.count("test") > 0) {
-    return testGraph(g);
+  case 3: {
+    return run<3>(vm, loadFileName, saveFileName);
+    break;
   }
-
-  if (vm.count("web") > 0) {
-    runWebServer(g);
+  default:
+    std::cout << "Code is not compiled for Dimension " << dim << "\n";
+    break;
   }
 
   return 0;
