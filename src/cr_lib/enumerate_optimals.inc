@@ -253,10 +253,7 @@ template <int Dim> void EnumerateOptimals<Dim>::find(NodePos s, NodePos t)
   similarities.clear();
   tri.clear();
 
-  auto exclude = create_exclusion_set_from_important_metrics(s, t);
-  d.exclude(exclude);
-
-  run_not_important_metrics(s, t);
+  run_base_configs(s, t);
 
   Config conf(std::vector(Dim, 1.0 / Dim));
   auto route = d.findBestRoute(s, t, conf);
@@ -384,41 +381,9 @@ EnumerateOptimals<Dim>::recommend_routes(bool ilp)
   return { routes, configs, edges };
 }
 
-template <int Dim>
-exclusion_set EnumerateOptimals<Dim>::create_exclusion_set_from_important_metrics(
-    NodePos s, NodePos t)
+template <int Dim> void EnumerateOptimals<Dim>::run_base_configs(NodePos s, NodePos t)
 {
-  exclusion_set exclude(g->getNodeCount(), false);
   for (size_t i = 0; i < Dim; ++i) {
-    if (!important[i])
-      continue;
-
-    Config conf(std::vector(Dim, 0.0));
-    conf.values[i] = 1.0;
-
-    auto route = d.findBestRoute(s, t, conf);
-    if (!route) {
-      throw std::runtime_error(
-          "No route found from " + std::to_string(s) + " to " + std::to_string(t));
-    }
-
-    d.excluded_nodes(slack[i], exclude);
-
-    factor[i] = route->costs.values[i];
-    routes.push_back(std::move(*route));
-    configs.push_back(std::move(conf));
-    addToTriangulation();
-  }
-  return exclude;
-}
-
-template <int Dim> void EnumerateOptimals<Dim>::run_not_important_metrics(NodePos s, NodePos t)
-{
-
-  for (size_t i = 0; i < Dim; ++i) {
-    if (important[i])
-      continue;
-
     Config conf(std::vector(Dim, 0.0));
     conf.values[i] = 1.0;
 

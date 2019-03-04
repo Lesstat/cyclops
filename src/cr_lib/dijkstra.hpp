@@ -27,7 +27,6 @@
 using LengthConfig = NamedType<double, struct LengthConfigParameter>;
 using HeightConfig = NamedType<double, struct HeightConfigParameter>;
 using UnsuitabilityConfig = NamedType<double, struct UnsuitabilityConfigParameter>;
-using exclusion_set = std::deque<bool>;
 
 template <int Dim> struct Config {
   std::array<double, Dim> values;
@@ -115,9 +114,6 @@ template <int Dim> class Dijkstra {
 
   size_t pqPops = 0;
 
-  void excluded_nodes(double slack, exclusion_set& e);
-  void exclude(exclusion_set e);
-
   private:
   enum class Direction { S, T };
   using QueueElem = std::tuple<NodePos, double, Direction>;
@@ -144,7 +140,6 @@ template <int Dim> class Dijkstra {
   std::vector<NodePos> touchedT;
   Config config = Config(LengthConfig(0), HeightConfig(0), UnsuitabilityConfig(0));
   Graph* graph;
-  std::optional<exclusion_set> excluded_;
 };
 
 #include "dijkstra.inc"

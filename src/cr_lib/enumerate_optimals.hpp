@@ -119,8 +119,7 @@ template <int Dim> class EnumerateOptimals {
   void includeConvexHullCells(CellContainer& cont);
   std::vector<size_t> extract_independent_set(const std::vector<size_t>& vertices, bool ilp);
   std::tuple<std::vector<size_t>, EnumerateOptimals::Edges> vertex_ids_and_edges();
-  exclusion_set create_exclusion_set_from_important_metrics(NodePos s, NodePos t);
-  void run_not_important_metrics(NodePos s, NodePos t);
+  void run_base_configs(NodePos s, NodePos t);
 
   public:
   size_t enumeration_time;

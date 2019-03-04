@@ -20,51 +20,6 @@
 #include "enumerate_optimals.hpp"
 #include "graph.hpp"
 
-TEST_CASE("Restricted Dijkstra does not choose long path")
-{
-
-  const std::string threeNodeGraph {
-    R"!!(# Build by: pbfextractor
-# Build on: SystemTime { tv_sec: 1512985452, tv_nsec: 881838750 }
-
-3
-3
-3
-0 163354 48.6674338 9.2445911 380 0
-1 163355 48.6694744 9.2432625 380 0
-2 163358 48.6661932 9.2515536 386 0
-0 2 0.0 2 12 -1 -1
-0 1 0.0 8 3  -1 -1
-1 2 0.0 8 3  -1 -1)!!"
-  };
-  using Graph = Graph<3>;
-  using Config = Config<3>;
-
-  std::istringstream iss(threeNodeGraph);
-  Graph g = Graph::createFromStream(iss);
-
-  auto d = g.createDijkstra();
-  const NodePos s { 0 };
-  const NodePos t { 2 };
-
-  Config a = std::vector<double> { 0, 1, 0 };
-  auto a_route = d.findBestRoute(s, t, a);
-  REQUIRE(a_route->edges.size() == 1);
-  exclusion_set excluded(3, false);
-  d.excluded_nodes(1.1, excluded);
-  exclusion_set expected_exclusions = { false, true, false };
-  for (size_t i = 0; i < excluded.size(); ++i)
-    REQUIRE(excluded[i] == expected_exclusions[i]);
-
-  Config b = std::vector<double> { 0, 0, 1 };
-  auto b_route = d.findBestRoute(s, t, b);
-  REQUIRE(b_route->edges.size() == 2);
-
-  d.exclude(excluded);
-  b_route = d.findBestRoute(s, t, b);
-  REQUIRE(b_route->edges.size() == 1);
-}
-
 TEST_CASE("Exclude route which exceeds second metric slack")
 {
 
@@ -105,15 +60,5 @@ TEST_CASE("Exclude route which exceeds second metric slack")
     auto routes = std::get<std::vector<Route>>(result);
 
     REQUIRE(routes.size() == 3);
-  }
-
-  {
-    EnumerateOptimals<3>::Important important = { false, true, false };
-    EnumerateOptimals<3>::Slack slack = { 0, 2.5, 0 };
-    EnumerateOptimals<3> r { &g, 20, 100, important, slack };
-    r.find(s, t);
-    auto result = r.recommend_routes(true);
-    auto routes = std::get<std::vector<Route>>(result);
-    REQUIRE(routes.size() == 2);
   }
 }

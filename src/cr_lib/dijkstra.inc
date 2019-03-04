@@ -183,9 +183,6 @@ void Dijkstra<Dim>::relaxEdges(const NodePos& node, double cost, Direction dir, 
       break;
     }
 
-    if (excluded_ && (*excluded_)[nextNode]) {
-      continue;
-    }
     if (!lastNode) {
       lastNode = nextNode;
     }
@@ -282,18 +279,3 @@ template <int Dim> void Dijkstra<Dim>::calcScalingFactor(NodePos from, NodePos t
     }
   }
 }
-
-template <int Dim> void Dijkstra<Dim>::excluded_nodes(double slack, exclusion_set& e)
-{
-  for (size_t i = 0; i < costS.size(); ++i) {
-    if (e[i])
-      continue;
-    double s = costS[i];
-    double t = costT[i];
-    if ((s == dmax && t == dmax) || (s < dmax && t < dmax && s + t > slack * minCandidate)) {
-      e[i] = true;
-    }
-  }
-}
-
-template <int Dim> void Dijkstra<Dim>::exclude(exclusion_set e) { excluded_ = std::move(e); }
