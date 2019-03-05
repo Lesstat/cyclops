@@ -28,7 +28,7 @@ Node::Node(NodeId id, Lat lat, Lng lng, double height)
 
 size_t Node::getLevel() const { return level; }
 
-void Node::assignLevel(size_t level) { this->level = level; }
+void Node::assignLevel(uint32_t level) { this->level = level; }
 
 NodeId Node::id() const { return id_; }
 
@@ -44,13 +44,14 @@ std::ostream& operator<<(std::ostream& os, const Node& n)
 
 Node Node::createFromText(std::istream& text)
 {
-  size_t id, osmId, level;
+  size_t osmId;
+  uint32_t id, level;
   double lat, lng;
   double height;
 
   text >> id >> osmId >> lat >> lng >> height >> level;
 
-  Node n{ NodeId{ id }, Lat(lat), Lng(lng), height };
+  Node n { NodeId { id }, Lat(lat), Lng(lng), height };
   n.level = level;
   return n;
 }

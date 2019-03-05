@@ -20,7 +20,7 @@
 
 #include "namedType.hpp"
 
-using NodePos = NamedType<size_t, struct NodePosParameter>;
+using NodePos = NamedType<uint32_t, struct NodePosParameter>;
 using Lat = NamedType<double, struct LatParameter>;
 using Lng = NamedType<double, struct LngParameter>;
 

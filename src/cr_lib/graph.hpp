@@ -30,10 +30,9 @@
 #include <unordered_set>
 #include <vector>
 
-using OsmId = NamedType<size_t, struct OsmIdParameter>;
-using NodeId = NamedType<size_t, struct NodeIdParameter>;
-using NodePos = NamedType<size_t, struct NodePosParameter>;
-using EdgeId = NamedType<size_t, struct EdgeParameter>;
+using NodeId = NamedType<uint32_t, struct NodeIdParameter>;
+using NodePos = NamedType<uint32_t, struct NodePosParameter>;
+using EdgeId = NamedType<uint32_t, struct EdgeParameter>;
 using Lat = NamedType<double, struct LatParameter>;
 using Lng = NamedType<double, struct LngParameter>;
 using Height = NamedType<double, struct HeightParameter>;
@@ -132,10 +131,10 @@ template <int Dim> struct HalfEdge {
 };
 
 struct NodeOffset {
-  size_t in { 0 };
-  size_t out { 0 };
+  uint32_t in { 0 };
+  uint32_t out { 0 };
   NodeOffset() = default;
-  NodeOffset(size_t in, size_t out)
+  NodeOffset(uint32_t in, uint32_t out)
       : in(in)
       , out(out)
   {
@@ -246,7 +245,7 @@ class Node {
   Node& operator=(const Node& other) = default;
   Node& operator=(Node&& other) noexcept = default;
 
-  void assignLevel(size_t level);
+  void assignLevel(uint32_t level);
   size_t getLevel() const;
   NodeId id() const;
   friend std::ostream& operator<<(std::ostream& os, const Node& n);
@@ -264,8 +263,8 @@ class Node {
   NodeId id_;
   Lat lat_;
   Lng lng_;
-  size_t level = 0;
-  double height_;
+  uint32_t level = 0;
+  float height_;
   template <class Archive> void serialize(Archive& ar, const unsigned int /*version*/)
   {
     ar& id_;
@@ -300,7 +299,7 @@ template <int Dim> class Graph {
   std::vector<NodeOffset> const& getOffsets() const;
   Dijkstra createDijkstra();
   NormalDijkstra createNormalDijkstra(bool unpack = false);
-  Grid createGrid(long sideLength = 100) const;
+  Grid createGrid(uint32_t sideLength = 100) const;
 
   EdgeRange getOutgoingEdgesOf(NodePos pos) const;
   EdgeRange getIngoingEdgesOf(NodePos pos) const;
@@ -313,16 +312,16 @@ template <int Dim> class Graph {
   const Node& getNode(NodePos pos) const;
   std::optional<NodePos> nodePosById(NodeId id) const;
 
-  size_t getNodeCount() const;
-  size_t getEdgeCount() const;
+  uint32_t getNodeCount() const;
+  uint32_t getEdgeCount() const;
 
-  size_t getInTimesOutDegree(NodePos node) const;
+  uint32_t getInTimesOutDegree(NodePos node) const;
 
   std::unordered_map<NodeId, const Node*> getNodePosByIds(
       const std::unordered_set<NodeId>& ids) const;
 
   NodePos getNodePos(const Node* n) const;
-  size_t get_max_level();
+  uint32_t get_max_level();
 
   private:
   friend class boost::serialization::access;
@@ -336,7 +335,7 @@ template <int Dim> class Graph {
   std::vector<NodeOffset> offsets;
   std::vector<HalfEdge> inEdges;
   std::vector<HalfEdge> outEdges;
-  std::vector<size_t> level;
+  std::vector<uint32_t> level;
   size_t edgeCount;
 
   template <class Archive> void save(Archive& ar, const unsigned int /*version*/) const

@@ -125,7 +125,7 @@ template <int Dim> void runWebServer(Graph<Dim>& g)
   server.resource["^/route"]["GET"] = [&g](Response response, Request request) {
     auto log = Logger::initLogger();
 
-    std::optional<size_t> s {}, t {}, length {}, height {}, unsuitability {};
+    std::optional<uint32_t> s {}, t {}, length {}, height {}, unsuitability {};
     extractQueryFields(request->parse_query_string(), s, t, length, height, unsuitability);
     if (s > g.getNodeCount() || t > g.getNodeCount()) {
       response->write(
@@ -177,7 +177,7 @@ template <int Dim> void runWebServer(Graph<Dim>& g)
   server.resource["^/enumerate"]["GET"] = [&g](Response response, Request request) {
     auto log = Logger::initLogger();
 
-    std::optional<size_t> s {}, t {}, dummy {}, maxOverlap {}, maxRoutes {};
+    std::optional<uint32_t> s {}, t {}, dummy {}, maxOverlap {}, maxRoutes {};
     std::vector<ImportantMetric> important_metrics;
 
     auto queryParams = request->parse_query_string();

@@ -57,20 +57,20 @@ std::string routeToJson(const Route<Dim>& route, const Graph<Dim>& g, bool write
 }
 
 void extractQueryFields(const SimpleWeb::CaseInsensitiveMultimap& queryFields,
-    std::optional<size_t>& s, std::optional<size_t>& t, std::optional<size_t>& length,
-    std::optional<size_t>& height, std::optional<size_t>& unsuitability)
+    std::optional<uint32_t>& s, std::optional<uint32_t>& t, std::optional<uint32_t>& length,
+    std::optional<uint32_t>& height, std::optional<uint32_t>& unsuitability)
 {
   for (const auto& field : queryFields) {
     if (field.first == "s") {
-      s = static_cast<size_t>(stoull(field.second));
+      s = static_cast<uint32_t>(stoul(field.second));
     } else if (field.first == "t") {
-      t = static_cast<size_t>(stoull(field.second));
+      t = static_cast<uint32_t>(stoul(field.second));
     } else if (field.first == "length") {
-      length = static_cast<size_t>(stoull(field.second));
+      length = static_cast<uint32_t>(stoul(field.second));
     } else if (field.first == "height") {
-      height = static_cast<size_t>(stoull(field.second));
+      height = static_cast<uint32_t>(stoul(field.second));
     } else if (field.first == "unsuitability") {
-      unsuitability = static_cast<size_t>(stoull(field.second));
+      unsuitability = static_cast<uint32_t>(stoull(field.second));
     }
   }
 }

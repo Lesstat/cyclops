@@ -150,7 +150,7 @@ template <int Dim> NormalDijkstra<Dim> Graph<Dim>::createNormalDijkstra(bool unp
   return NormalDijkstra { this, nodes.size(), unpack };
 }
 
-template <int Dim> Grid Graph<Dim>::createGrid(long sideLength) const
+template <int Dim> Grid Graph<Dim>::createGrid(uint32_t sideLength) const
 {
   Grid b { nodes, sideLength };
 
@@ -232,9 +232,9 @@ template <int Dim> std::optional<NodePos> Graph<Dim>::nodePosById(NodeId id) con
   return {};
 }
 
-template <int Dim> size_t Graph<Dim>::getNodeCount() const { return nodes.size(); }
+template <int Dim> uint32_t Graph<Dim>::getNodeCount() const { return nodes.size(); }
 
-template <int Dim> size_t Graph<Dim>::getEdgeCount() const { return edgeCount; }
+template <int Dim> uint32_t Graph<Dim>::getEdgeCount() const { return edgeCount; }
 
 template <int Dim> Graph<Dim> Graph<Dim>::createFromBinaryFile(boost::archive::binary_iarchive& bin)
 {
@@ -243,7 +243,7 @@ template <int Dim> Graph<Dim> Graph<Dim>::createFromBinaryFile(boost::archive::b
   return g;
 }
 
-template <int Dim> size_t Graph<Dim>::getInTimesOutDegree(NodePos node) const
+template <int Dim> uint32_t Graph<Dim>::getInTimesOutDegree(NodePos node) const
 {
   auto& offset = offsets[node];
   return offset.in * offset.out;
@@ -268,7 +268,7 @@ template <int Dim> NodePos Graph<Dim>::getNodePos(const Node* n) const
   return NodePos { static_cast<size_t>(n - nodes.data()) };
 }
 
-template <int Dim> size_t Graph<Dim>::get_max_level()
+template <int Dim> uint32_t Graph<Dim>::get_max_level()
 {
   return *std::max_element(level.begin(), level.end());
 }
