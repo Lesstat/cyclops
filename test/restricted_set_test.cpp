@@ -23,31 +23,37 @@
 TEST_CASE("Exclude route which exceeds second metric slack")
 {
 
-  const std::string sixNodeGraph { R"!!(# Build by: pbfextractor
+  const std::string text_graph { R"!!(# Build by: pbfextractor
 # Build on: SystemTime { tv_sec: 1512985452, tv_nsec: 881838750 }
 
-3
-6
+2
 8
+12
 0 163354 48.6674338 9.2445911 380 0
 1 163355 48.6694744 9.2432625 380 0
 2 163358 48.6661932 9.2515536 386 0
 3 163359 48.6261932 9.2515936 386 0
 4 163355 48.6694744 9.2432625 380 0
 5 163359 48.6261932 9.2515936 386 0
-0 1 0.0 1 9 -1 -1
-1 4 0.0 1 9 -1 -1
-0 2 0.0 9 1 -1 -1
-2 4 0.0 9 1 -1 -1
-0 3 0.0 2 2 -1 -1
-3 4 0.0 2 2 -1 -1
-0 5 0.0 3 3 -1 -1
-5 4 0.0 3 3 -1 -1
+6 163359 48.6261932 9.2515936 386 0
+7 163359 48.6261932 9.2515936 386 0
+0 1 1 9 -1 -1
+1 4 1 9 -1 -1
+0 2 9 1 -1 -1
+2 4 9 1 -1 -1
+0 3 2 2 -1 -1
+3 4 2 2 -1 -1
+0 5 3 3 -1 -1
+5 4 3 3 -1 -1
+0 6 3 1.5 -1 -1
+6 4 3 1.5 -1 -1
+0 7 4 1.25 -1 -1
+7 4 4 1.25 -1 -1
 )!!" };
-  using Graph = Graph<3>;
-  using Route = Route<3>;
+  using Graph = Graph<2>;
+  using Route = Route<2>;
 
-  std::istringstream stream { sixNodeGraph };
+  std::istringstream stream { text_graph };
   auto g = Graph::createFromStream(stream);
 
   NodePos s { 0 };
@@ -58,7 +64,18 @@ TEST_CASE("Exclude route which exceeds second metric slack")
     o.find(s, t);
     auto result = o.recommend_routes(true);
     auto routes = std::get<std::vector<Route>>(result);
+    REQUIRE(routes.size() == 5);
+  }
 
-    REQUIRE(routes.size() == 3);
+  {
+    Slack<2> slack = { { 2.5, std::numeric_limits<double>::max() } };
+
+    ThresholdPolicy<2> tp(slack);
+
+    EnumerateOptimals<2, ThresholdPolicy<2>> r { &g, 20, 100, tp };
+    r.find(s, t);
+    auto result = r.recommend_routes(true);
+    auto routes = std::get<std::vector<Route>>(result);
+    REQUIRE(routes.size() == 2);
   }
 }

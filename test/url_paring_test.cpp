@@ -79,12 +79,9 @@ TEST_CASE("Metric list parser can parse two metrics at once")
 TEST_CASE("Convert Empty Important Metrics Vector to only false arrays for Enumerate Optimals")
 {
   std::vector<ImportantMetric> m;
-  auto arrays = EnumerateOptimals<3>::important_metrics_to_arrays(m);
+  auto slacks = important_metrics_to_array<3>(m);
 
-  for (auto& metric : arrays.first)
-    REQUIRE_FALSE(metric);
-
-  for (auto& slack : arrays.second)
+  for (auto& slack : slacks)
     REQUIRE(slack == std::numeric_limits<double>::max());
 }
 
@@ -93,14 +90,12 @@ TEST_CASE("Convert place Important Metric and slack at right position")
   std::vector<ImportantMetric> m;
   m.push_back(ImportantMetric { 1, 1.3 });
 
-  auto arrays = EnumerateOptimals<3>::important_metrics_to_arrays(m);
+  auto slacks = important_metrics_to_array<3>(m);
 
   for (size_t i = 0; i < 3; ++i)
     if (i == 1) {
-      REQUIRE(arrays.first[i]);
-      REQUIRE(arrays.second[i] == 1.3);
+      REQUIRE(slacks[i] == 1.3);
     } else {
-      REQUIRE_FALSE(arrays.first[i]);
-      REQUIRE(arrays.second[i] == std::numeric_limits<double>::max());
+      REQUIRE(slacks[i] == std::numeric_limits<double>::max());
     }
 }

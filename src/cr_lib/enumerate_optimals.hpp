@@ -18,80 +18,34 @@
 #ifndef ENUMERATE_OPTIMALS_H
 #define ENUMERATE_OPTIMALS_H
 
+#include "cgaltypes.hpp"
 #include "dijkstra.hpp"
 #include "ilp_independent_set.hpp"
+#include "restriction_policy.hpp"
 #include "routeComparator.hpp"
 
-#include <CGAL/Epick_d.h>
-#include <CGAL/Triangulation.h>
-#include <CGAL/Triangulation_ds_full_cell.h>
-#include <CGAL/point_generators_d.h>
-#include <CGAL/random_selection.h>
 #include <Eigen/Dense>
 
 #include <chrono>
 #include <queue>
 
-class FullCellId {
-  private:
-  static int currentId;
-  static std::vector<int> alive_;
-  static std::vector<bool> checked_;
-  static std::vector<double> prio_;
-
-  int id_;
-
-  public:
-  FullCellId();
-
-  FullCellId(const FullCellId& other);
-
-  FullCellId& operator=(const FullCellId& rhs);
-
-  FullCellId& operator=(const FullCellId&& rhs);
-
-  FullCellId(FullCellId&& other);
-
-  ~FullCellId();
-
-  bool alive() const;
-  bool checked() const;
-  void checked(bool check);
-  size_t id() const;
-  double prio() const;
-  void prio(double p) const;
-
-  bool operator==(const FullCellId& other) const;
-};
-
-struct VertexData {
-  size_t id;
-};
-
 auto compare_prio = [](auto left, auto right) { return left.data().prio() > right.data().prio(); };
 
 namespace c = std::chrono;
 
-struct ImportantMetric {
-  size_t metric;
-  double slack;
-};
-
-template <int Dim> class EnumerateOptimals {
+template <int Dim, class ExclusionPolicy = AllFacetsPolicy<Dim>> class EnumerateOptimals {
   public:
-  using CgalDim = CGAL::Dimension_tag<Dim>;
-  using Traits = CGAL::Epick_d<CgalDim>;
-  using Vertex = CGAL::Triangulation_vertex<Traits, VertexData>;
-  using FullCell = CGAL::Triangulation_full_cell<Traits, FullCellId>;
-  using TDS = CGAL::Triangulation_data_structure<CgalDim, Vertex, FullCell>;
-  using Triangulation = CGAL::Triangulation<Traits, TDS>;
-  using Facet = typename Triangulation::Facet;
-  using VertexIter = typename TDS::Vertex_iterator;
+  using CgalDim = typename CgalTypes<Dim>::CgalDim;
+  using Traits = typename CgalTypes<Dim>::Traits;
+  using Vertex = typename CgalTypes<Dim>::Vertex;
+  using FullCell = typename CgalTypes<Dim>::FullCell;
+  using TDS = typename CgalTypes<Dim>::TDS;
+  using Triangulation = typename CgalTypes<Dim>::Triangulation;
+  using Facet = typename CgalTypes<Dim>::Facet;
+  using VertexIter = typename CgalTypes<Dim>::VertexIter;
+
   using CellContainer = std::priority_queue<typename TDS::Full_cell,
       std::vector<typename TDS::Full_cell>, decltype(compare_prio)>;
-
-  using Important = std::array<bool, Dim>;
-  using Slack = std::array<double, Dim>;
 
   using Graph = Graph<Dim>;
   using Route = Route<Dim>;
@@ -110,8 +64,7 @@ template <int Dim> class EnumerateOptimals {
   size_t maxRoutes;
   Dijkstra d;
   typename Dijkstra::ScalingFactor factor;
-  Important important;
-  Slack slack;
+  ExclusionPolicy policy;
 
   double compare(size_t i, size_t j);
   Config findConfig(const typename TDS::Full_cell& f);
@@ -125,9 +78,8 @@ template <int Dim> class EnumerateOptimals {
   size_t enumeration_time;
   size_t recommendation_time;
 
-  EnumerateOptimals(Graph* g, double maxOverlap, size_t maxRoutes);
   EnumerateOptimals(
-      Graph* g, double maxOverlap, size_t maxRoutes, Important important, Slack slack);
+      Graph* g, double maxOverlap, size_t maxRoutes, ExclusionPolicy excl = ExclusionPolicy());
 
   void find(NodePos s, NodePos t);
 
@@ -136,9 +88,6 @@ template <int Dim> class EnumerateOptimals {
 
   std::tuple<std::vector<Route>, std::vector<Config>, EnumerateOptimals::Edges> recommend_routes(
       bool ilp);
-
-  static std::pair<Important, Slack> important_metrics_to_arrays(
-      std::vector<ImportantMetric> metrics);
 };
 
 #include "enumerate_optimals.inc"

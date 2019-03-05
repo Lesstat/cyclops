@@ -19,7 +19,7 @@
 #include "enumerate_optimals.hpp"
 #include "url_parsing.hpp"
 
-template <int Dim> double EnumerateOptimals<Dim>::compare(size_t i, size_t j)
+template <int Dim, class EPol> double EnumerateOptimals<Dim, EPol>::compare(size_t i, size_t j)
 {
   if (i > j) {
     std::swap(i, j);
@@ -33,7 +33,8 @@ template <int Dim> double EnumerateOptimals<Dim>::compare(size_t i, size_t j)
   return similarity;
 }
 
-template <int Dim> Config<Dim> EnumerateOptimals<Dim>::findConfig(const typename TDS::Full_cell& f)
+template <int Dim, class EPol>
+Config<Dim> EnumerateOptimals<Dim, EPol>::findConfig(const typename TDS::Full_cell& f)
 {
   using namespace Eigen;
 
@@ -81,9 +82,12 @@ template <int Dim> Config<Dim> EnumerateOptimals<Dim>::findConfig(const typename
   return Config(conf_values);
 }
 
-template <int Dim> void EnumerateOptimals<Dim>::addToTriangulation()
+template <int Dim, class EPol> void EnumerateOptimals<Dim, EPol>::addToTriangulation()
 {
   auto vertId = routes.size() - 1;
+
+  policy.register_route(routes[vertId]);
+
   auto& routeCosts = routes[vertId].costs;
   typename Triangulation::Point p(Dim, &routeCosts.values[0], &routeCosts.values[Dim]);
   auto vertex = tri.insert(p);
@@ -91,19 +95,24 @@ template <int Dim> void EnumerateOptimals<Dim>::addToTriangulation()
   vertexdata.id = vertId;
 }
 
-template <int Dim> void EnumerateOptimals<Dim>::includeConvexHullCells(CellContainer& cont)
+template <int Dim, class EPol>
+void EnumerateOptimals<Dim, EPol>::includeConvexHullCells(CellContainer& cont)
 {
   std::vector<typename TDS::Full_cell_handle> handles;
   tri.incident_full_cells(tri.infinite_vertex(), std::back_inserter(handles));
   for (size_t i = 0; i < handles.size(); ++i) {
-    typename TDS::Full_cell& c = *handles[i];
-    if (c.data().checked()) {
+    typename TDS::Full_cell& cell = *handles[i];
+    if (cell.data().checked()) {
+      continue;
+    }
+    if (policy.exclude_facet(cell)) {
+      cell.data().checked(true);
       continue;
     }
 
-    if (c.data().prio() < 0.0 && maxOverlap < 1.0) {
+    if (cell.data().prio() < 0.0 && maxOverlap < 1.0) {
       std::vector<typename TDS::Vertex_handle> vertices;
-      for (auto v = c.vertices_begin(); v != c.vertices_end(); ++v) {
+      for (auto v = cell.vertices_begin(); v != cell.vertices_end(); ++v) {
         auto& vertex = *v;
         if (vertex == typename TDS::Vertex_const_handle() || tri.is_infinite(vertex)) {
           continue;
@@ -120,14 +129,14 @@ template <int Dim> void EnumerateOptimals<Dim>::includeConvexHullCells(CellConta
           }
         }
       }
-      c.data().prio(result);
+      cell.data().prio(result);
     }
-    cont.emplace(c);
+    cont.emplace(cell);
   }
 }
 
-template <int Dim>
-std::vector<size_t> EnumerateOptimals<Dim>::extract_independent_set(
+template <int Dim, class EPol>
+std::vector<size_t> EnumerateOptimals<Dim, EPol>::extract_independent_set(
     const std::vector<size_t>& vertices, bool ilp)
 {
 
@@ -160,9 +169,9 @@ std::vector<size_t> EnumerateOptimals<Dim>::extract_independent_set(
   return independent_set;
 }
 
-template <int Dim>
-std::tuple<std::vector<size_t>, typename EnumerateOptimals<Dim>::Edges>
-EnumerateOptimals<Dim>::vertex_ids_and_edges()
+template <int Dim, class EPol>
+std::tuple<std::vector<size_t>, typename EnumerateOptimals<Dim, EPol>::Edges>
+EnumerateOptimals<Dim, EPol>::vertex_ids_and_edges()
 {
   typedef typename Triangulation::Face Face;
   typedef std::vector<Face> Faces;
@@ -199,6 +208,9 @@ EnumerateOptimals<Dim>::vertex_ids_and_edges()
       if (tri.is_infinite(v)) {
         v = f.vertex(1);
       }
+      if (policy.exclude_route(routes[v->data().id])) {
+        continue;
+      }
       vertices.push_back(v->data().id);
       get_edges(v);
     }
@@ -206,6 +218,9 @@ EnumerateOptimals<Dim>::vertex_ids_and_edges()
     for (typename TDS::Vertex_iterator vertex = tri.vertices_begin(); vertex != tri.vertices_end();
          ++vertex) {
       if (vertex == typename TDS::Vertex_handle() || tri.is_infinite(*vertex)) {
+        continue;
+      }
+      if (policy.exclude_route(routes[vertex->data().id])) {
         continue;
       }
       vertices.push_back(vertex->data().id);
@@ -219,33 +234,18 @@ EnumerateOptimals<Dim>::vertex_ids_and_edges()
   return { vertices, edges };
 }
 
-template <int Dim>
-EnumerateOptimals<Dim>::EnumerateOptimals(Graph* g, double maxOverlap, size_t maxRoutes)
+template <int Dim, class EPol>
+EnumerateOptimals<Dim, EPol>::EnumerateOptimals(
+    Graph* g, double maxOverlap, size_t maxRoutes, EPol excl)
     : g(g)
     , maxOverlap(maxOverlap)
     , maxRoutes(maxRoutes)
     , d(g->createDijkstra())
+    , policy(excl)
 {
-  for (size_t i = 0; i < Dim; ++i) {
-    this->important[i] = false;
-  }
 }
 
-template <int Dim>
-EnumerateOptimals<Dim>::EnumerateOptimals(
-    Graph* g, double maxOverlap, size_t maxRoutes, Important important, Slack slack)
-    : g(g)
-    , maxOverlap(maxOverlap)
-    , maxRoutes(maxRoutes)
-    , d(g->createDijkstra())
-{
-  for (size_t i = 0; i < Dim; ++i) {
-    this->important[i] = important[i];
-    this->slack[i] = slack[i];
-  }
-}
-
-template <int Dim> void EnumerateOptimals<Dim>::find(NodePos s, NodePos t)
+template <int Dim, class EPol> void EnumerateOptimals<Dim, EPol>::find(NodePos s, NodePos t)
 {
   auto start = c::high_resolution_clock::now();
   routes.clear();
@@ -322,19 +322,19 @@ template <int Dim> void EnumerateOptimals<Dim>::find(NodePos s, NodePos t)
   enumeration_time = c::duration_cast<c::milliseconds>(end - start).count();
 }
 
-template <int Dim> size_t EnumerateOptimals<Dim>::found_route_count() const
+template <int Dim, class EPol> size_t EnumerateOptimals<Dim, EPol>::found_route_count() const
 {
   return routes.size();
 }
-template <int Dim> size_t EnumerateOptimals<Dim>::vertex_count() const
+template <int Dim, class EPol> size_t EnumerateOptimals<Dim, EPol>::vertex_count() const
 {
   return tri.number_of_vertices();
 }
 
-template <int Dim>
+template <int Dim, class EPol>
 std::tuple<std::vector<Route<Dim>>, std::vector<Config<Dim>>,
-    typename EnumerateOptimals<Dim>::Edges>
-EnumerateOptimals<Dim>::recommend_routes(bool ilp)
+    typename EnumerateOptimals<Dim, EPol>::Edges>
+EnumerateOptimals<Dim, EPol>::recommend_routes(bool ilp)
 {
 
   auto [vertices, edges] = vertex_ids_and_edges();
@@ -381,7 +381,8 @@ EnumerateOptimals<Dim>::recommend_routes(bool ilp)
   return { routes, configs, edges };
 }
 
-template <int Dim> void EnumerateOptimals<Dim>::run_base_configs(NodePos s, NodePos t)
+template <int Dim, class EPol>
+void EnumerateOptimals<Dim, EPol>::run_base_configs(NodePos s, NodePos t)
 {
   for (size_t i = 0; i < Dim; ++i) {
     Config conf(std::vector(Dim, 0.0));
@@ -397,21 +398,4 @@ template <int Dim> void EnumerateOptimals<Dim>::run_base_configs(NodePos s, Node
     configs.push_back(std::move(conf));
     addToTriangulation();
   }
-}
-
-template <int Dim>
-std::pair<typename EnumerateOptimals<Dim>::Important, typename EnumerateOptimals<Dim>::Slack>
-EnumerateOptimals<Dim>::important_metrics_to_arrays(std::vector<ImportantMetric> metrics)
-{
-  Important important;
-  important.fill(false);
-  Slack slack;
-  slack.fill(std::numeric_limits<double>::max());
-
-  for (const auto& metric : metrics) {
-    important[metric.metric] = true;
-    slack[metric.metric] = metric.slack;
-  }
-
-  return std::make_pair(important, slack);
 }

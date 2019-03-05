@@ -51,7 +51,6 @@ template <int Dim> void runWebServer(Graph<Dim>& g)
 
   using Dijkstra = Dijkstra<Dim>;
   using Config = Config<Dim>;
-  using EnumerateOptimals = EnumerateOptimals<Dim>;
 
   Grid grid = g.createGrid();
 
@@ -207,18 +206,23 @@ template <int Dim> void runWebServer(Graph<Dim>& g)
       return;
     }
     *log << "from " << *s << " to " << *t << "\\n";
-    EnumerateOptimals enumerate = [&g, &maxOverlap, &maxRoutes, &important_metrics]() {
+    auto [routes, configs, edges] = [&]() {
       if (important_metrics.empty()) {
-        return EnumerateOptimals(&g, *maxOverlap / 100.0, *maxRoutes);
+        EnumerateOptimals enumerate(&g, *maxOverlap / 100.0, *maxRoutes);
+        enumerate.find(NodePos { *s }, NodePos { *t });
+        return enumerate.recommend_routes(false);
       } else {
-        auto [metrics, slacks] = EnumerateOptimals::important_metrics_to_arrays(important_metrics);
-        return EnumerateOptimals(&g, *maxOverlap / 100.0, *maxRoutes, metrics, slacks);
+
+        auto slacks = important_metrics_to_array<Dim>(important_metrics);
+        ThresholdPolicy tp(slacks);
+        EnumerateOptimals<Dim, ThresholdPolicy<Dim>> enumerate(
+            &g, *maxOverlap / 100.0, *maxRoutes, tp);
+        enumerate.find(NodePos { *s }, NodePos { *t });
+        return enumerate.recommend_routes(false);
       }
     }();
 
     try {
-      enumerate.find(NodePos { *s }, NodePos { *t });
-      auto [routes, configs, edges] = enumerate.recommend_routes(false);
 
       std::stringstream result;
 
@@ -251,8 +255,6 @@ template <int Dim> void runWebServer(Graph<Dim>& g)
       header.emplace("Content-Type", "application/json");
       response->write(SimpleWeb::StatusCode::success_ok, result, header);
     } catch (std::exception& e) {
-      std::cout << "Enumeration failed after computing " << enumerate.vertex_count() << " routes"
-                << '\n';
       response->write(SimpleWeb::StatusCode::server_error_internal_server_error, e.what());
     }
   };
