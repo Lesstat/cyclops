@@ -25,6 +25,8 @@ find_library(gmp REQUIRED)
 
 find_package(Boost 1.58 REQUIRED COMPONENTS serialization program_options filesystem iostreams)
 
+add_subdirectory(vendor/jsoncpp)
+
 # Actual Implementation of project in static library
 file(GLOB lib_src src/cr_lib/*.cpp )
 add_library(cr_lib STATIC ${lib_src})
@@ -35,6 +37,7 @@ target_link_libraries(cr_lib PRIVATE ${Boost_LIBRARIES})
 target_link_libraries(cr_lib PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(cr_lib PRIVATE ${CGAL_LIBRARY})
 target_link_libraries(cr_lib PRIVATE ${GMP_LIBRARIES})
+target_link_libraries(cr_lib PUBLIC jsoncpp)
 
 add_subdirectory(vendor/Simple-Web-Server)
 

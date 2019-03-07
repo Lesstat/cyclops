@@ -23,9 +23,11 @@
 #include "loginfo.hpp"
 #include "ndijkstra.hpp"
 #include "routeComparator.hpp"
-#include "server_http.hpp"
 #include "url_parsing.hpp"
 #include "webUtilities.hpp"
+
+#include "server_http.hpp"
+#include "json/json.h"
 
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/filesystem.hpp>
@@ -166,7 +168,10 @@ template <int Dim> void runWebServer(Graph<Dim>& g)
         auto json = routeToJson(*route, g, true);
         SimpleWeb::CaseInsensitiveMultimap header;
         header.emplace("Content-Type", "application/json");
-        response->write(SimpleWeb::StatusCode::success_ok, json, header);
+
+        Json::StreamWriterBuilder builder;
+        response->write(
+            SimpleWeb::StatusCode::success_ok, Json::writeString(builder, json), header);
       }
       response->write(SimpleWeb::StatusCode::client_error_not_found, "Did not find route");
     } catch (std::exception& e) {
@@ -224,36 +229,44 @@ template <int Dim> void runWebServer(Graph<Dim>& g)
 
     try {
 
-      std::stringstream result;
+      Json::Value result;
+      Json::Value points(Json::arrayValue);
 
-      result << "{ \"points\": [";
       for (size_t i = 0; i < routes.size(); ++i) {
-        if (i > 0) {
-          result << ",";
+
+        Json::Value route;
+        Json::Value conf(Json::arrayValue);
+
+        for (const auto& v : configs[i].values) {
+          conf.append(v);
         }
-        result << "{ \"conf\": \"" << configs[i] << "\",";
-        result << "\"route\":" << routeToJson(routes[i], g) << ",";
-        result << "\"selected\": "
-               << "true";
-        result << "}";
+        route["conf"] = conf;
+
+        route["route"] = routeToJson(routes[i], g);
+        route["selected"] = true;
+
+        points.append(route);
       }
-      result << "],";
-      result << "\"edges\": [";
+
+      Json::Value js_edges(Json::arrayValue);
       for (size_t i = 0; i < edges.size(); ++i) {
-        if (i > 0) {
-          result << ",";
-        }
-        result << "[" << edges[i].first << "," << edges[i].second << "]";
+        Json::Value edge(Json::arrayValue);
+        edge.append(edges[i].first);
+        edge.append(edges[i].second);
+        js_edges.append(edge);
       }
 
-      result << "],";
-      result << "\"debug\":\"" << log->getInfo() << "\" ";
-
-      result << "}";
+      result["points"] = points;
+      result["edges"] = js_edges;
+      result["debug"] = log->getInfo();
 
       SimpleWeb::CaseInsensitiveMultimap header;
       header.emplace("Content-Type", "application/json");
-      response->write(SimpleWeb::StatusCode::success_ok, result, header);
+
+      Json::StreamWriterBuilder builder;
+
+      response->write(
+          SimpleWeb::StatusCode::success_ok, Json::writeString(builder, result), header);
     } catch (std::exception& e) {
       response->write(SimpleWeb::StatusCode::server_error_internal_server_error, e.what());
     }

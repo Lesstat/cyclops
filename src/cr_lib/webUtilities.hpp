@@ -20,22 +20,31 @@
 
 #include "routeComparator.hpp"
 
+#include "server_http.hpp"
+#include "json/json.h"
+
 template <int Dim>
-std::string routeToJson(const Route<Dim>& route, const Graph<Dim>& g, bool writeLogs = false)
+Json::Value routeToJson(const Route<Dim>& route, const Graph<Dim>& g, bool writeLogs = false)
 {
   using Edge = Edge<Dim>;
 
-  std::stringstream resultJson;
-  resultJson.precision(7);
-  resultJson << "{ \"length\": " << route.costs.values[0]
-             << ", \"height\": " << route.costs.values[1]
-             << ", \"unsuitability\": " << route.costs.values[2];
+  Json::Value result;
+  Json::Value costs(Json::arrayValue);
+
+  for (const auto& v : route.costs.values) {
+    costs.append(v);
+  }
+  result["costs"] = costs;
+
   if (writeLogs) {
     auto log = Logger::getInstance();
-    resultJson << ", \"debug\":\"" << log->getInfo() << "\" ";
+    result["debug"] = log->getInfo();
   }
-  resultJson << R"(, "route": { "type": "Feature", "geometry": { "type": "LineString", )"
-             << "\"coordinates\":[";
+  Json::Value js_route;
+  js_route["type"] = "Feature";
+
+  Json::Value geometry;
+  geometry["type"] = "LineString";
 
   std::unordered_set<NodeId> nodes;
   nodes.reserve(route.edges.size());
@@ -44,16 +53,32 @@ std::string routeToJson(const Route<Dim>& route, const Graph<Dim>& g, bool write
     nodes.insert(Edge::getDestId(edge));
   }
 
+  Json::Value coordinates(Json::arrayValue);
+
   for (const auto& edge : route.edges) {
     const auto& node = g.getNode(Edge::sourcePos(edge));
-    resultJson << '[' << node.lng() << ", " << node.lat() << ", " << node.height() << "],";
+    Json::Value js_node(Json::arrayValue);
+    js_node.append(node.lng().get());
+    js_node.append(node.lat().get());
+    js_node.append(node.height());
+    coordinates.append(js_node);
   }
   if (!route.edges.empty()) {
     const auto& lastEdge = route.edges[route.edges.size() - 1];
     const auto& endNode = g.getNode(Edge::destPos(lastEdge));
-    resultJson << '[' << endNode.lng() << ", " << endNode.lat() << "]] } } }";
+
+    Json::Value js_node(Json::arrayValue);
+    js_node.append(endNode.lng().get());
+    js_node.append(endNode.lat().get());
+    js_node.append(endNode.height());
+    coordinates.append(js_node);
   }
-  return resultJson.str();
+
+  geometry["coordinates"] = coordinates;
+  js_route["geometry"] = geometry;
+
+  result["route"] = js_route;
+  return result;
 }
 
 void extractQueryFields(const SimpleWeb::CaseInsensitiveMultimap& queryFields,

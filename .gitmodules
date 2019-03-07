@@ -1,3 +1,6 @@
 [submodule "vendor/Simple-Web-Server"]
 	path = vendor/Simple-Web-Server
 	url = https://github.com/eidheim/Simple-Web-Server
+[submodule "vendor/jsoncpp"]
+	path = vendor/jsoncpp
+	url = https://github.com/open-source-parsers/jsoncpp

@@ -91,11 +91,11 @@ function calcDist(length, height, unsuitability) {
         opacity: 0.65
       };
       document.getElementById("route_length").innerHTML =
-        Math.round(xmlhttp.response.length / 100) / 10;
+        Math.round(xmlhttp.response.costs[0] / 100) / 10;
       document.getElementById("route_height").innerHTML =
-        xmlhttp.response.height;
+        xmlhttp.response.costs[1];
       document.getElementById("route_unsuitability").innerHTML =
-        xmlhttp.response.unsuitability;
+        xmlhttp.response.costs[2];
       clearOverlays();
       geoJson.addLayer(
         L.geoJSON(xmlhttp.response.route, {
