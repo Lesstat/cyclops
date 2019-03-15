@@ -345,15 +345,9 @@ function addToDebugLog(requestType, message) {
 function drawTriangles(ctx, points, triangles, gradient) {
   for (let t in triangles) {
     ctx.fillStyle = "black";
-    let config1 = points[triangles[t].point1].conf
-      .split("/")
-      .map(val => parseFloat(val));
-    let config2 = points[triangles[t].point2].conf
-      .split("/")
-      .map(val => parseFloat(val));
-    let config3 = points[triangles[t].point3].conf
-      .split("/")
-      .map(val => parseFloat(val));
+    let config1 = points[triangles[t].point1].conf;
+    let config2 = points[triangles[t].point2].conf;
+    let config3 = points[triangles[t].point3].conf;
     let point1 = configToCoords(config1);
     let point2 = configToCoords(config2);
     let point3 = configToCoords(config3);
@@ -471,7 +465,7 @@ function enumerateRoutes() {
         if (!points[p].selected) {
           continue;
         }
-        let values = points[p].conf.split("/");
+        let values = points[p].conf;
         let col = gradientToColor(values);
         let coord = configToCoords(values);
         coords.push(coord);

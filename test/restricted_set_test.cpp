@@ -70,9 +70,10 @@ TEST_CASE("Exclude route which exceeds second metric slack")
   {
     Slack<2> slack = { { 2.5, std::numeric_limits<double>::max() } };
 
+    SimilarityPrioPolicy<2> pp(1.0);
     ThresholdPolicy<2> tp(slack);
 
-    EnumerateOptimals<2, ThresholdPolicy<2>> r { &g, 20, 100, tp };
+    EnumerateOptimals<2, ThresholdPolicy<2>, SimilarityPrioPolicy<2>> r { &g, 20, 100, pp, tp };
     r.find(s, t);
     auto result = r.recommend_routes(true);
     auto routes = std::get<std::vector<Route>>(result);

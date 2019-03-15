@@ -15,12 +15,15 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+
 #ifndef ENUMERATE_OPTIMALS_H
 #define ENUMERATE_OPTIMALS_H
 
 #include "cgaltypes.hpp"
+#include "cost_triangulation.hpp"
 #include "dijkstra.hpp"
 #include "ilp_independent_set.hpp"
+#include "prio_policy.hpp"
 #include "restriction_policy.hpp"
 #include "routeComparator.hpp"
 
@@ -33,8 +36,11 @@ auto compare_prio = [](auto left, auto right) { return left.data().prio() > righ
 
 namespace c = std::chrono;
 
-template <int Dim, class ExclusionPolicy = AllFacetsPolicy<Dim>> class EnumerateOptimals {
+template <int Dim, class ExclusionPolicy = AllFacetsPolicy<Dim>,
+    class PrioPolicy = FacetPrioPolicy<Dim>>
+class EnumerateOptimals {
   public:
+  using CostTriangulation = CostTriangulation<Dim>;
   using CgalDim = typename CgalTypes<Dim>::CgalDim;
   using Traits = typename CgalTypes<Dim>::Traits;
   using Vertex = typename CgalTypes<Dim>::Vertex;
@@ -56,7 +62,7 @@ template <int Dim, class ExclusionPolicy = AllFacetsPolicy<Dim>> class Enumerate
 
   private:
   Graph* g;
-  Triangulation tri { Dim };
+  CostTriangulation tri;
   std::vector<Route> routes;
   std::vector<Config> configs;
   std::map<std::pair<size_t, size_t>, double> similarities;
@@ -65,21 +71,20 @@ template <int Dim, class ExclusionPolicy = AllFacetsPolicy<Dim>> class Enumerate
   Dijkstra d;
   typename Dijkstra::ScalingFactor factor;
   ExclusionPolicy policy;
+  PrioPolicy prio_pol;
 
   double compare(size_t i, size_t j);
   Config findConfig(const typename TDS::Full_cell& f);
   void addToTriangulation();
-  void includeConvexHullCells(CellContainer& cont);
   std::vector<size_t> extract_independent_set(const std::vector<size_t>& vertices, bool ilp);
-  std::tuple<std::vector<size_t>, EnumerateOptimals::Edges> vertex_ids_and_edges();
   void run_base_configs(NodePos s, NodePos t);
 
   public:
   size_t enumeration_time;
   size_t recommendation_time;
 
-  EnumerateOptimals(
-      Graph* g, double maxOverlap, size_t maxRoutes, ExclusionPolicy excl = ExclusionPolicy());
+  EnumerateOptimals(Graph* g, double maxOverlap, size_t maxRoutes, PrioPolicy = PrioPolicy(),
+      ExclusionPolicy excl = ExclusionPolicy());
 
   void find(NodePos s, NodePos t);
 

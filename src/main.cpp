@@ -211,17 +211,23 @@ template <int Dim> void runWebServer(Graph<Dim>& g)
       return;
     }
     *log << "from " << *s << " to " << *t << "\\n";
+
+    auto overlap = *maxOverlap / 100.0;
     auto [routes, configs, edges] = [&]() {
       if (important_metrics.empty()) {
-        EnumerateOptimals enumerate(&g, *maxOverlap / 100.0, *maxRoutes);
+
+        SimilarityPrioPolicy<Dim> pp(overlap);
+        EnumerateOptimals enumerate(&g, overlap, *maxRoutes, pp);
         enumerate.find(NodePos { *s }, NodePos { *t });
         return enumerate.recommend_routes(false);
       } else {
 
         auto slacks = important_metrics_to_array<Dim>(important_metrics);
+
+        SimilarityPrioPolicy<Dim> pp(overlap);
         ThresholdPolicy tp(slacks);
-        EnumerateOptimals<Dim, ThresholdPolicy<Dim>> enumerate(
-            &g, *maxOverlap / 100.0, *maxRoutes, tp);
+        EnumerateOptimals<Dim, ThresholdPolicy<Dim>, SimilarityPrioPolicy<Dim>> enumerate(
+            &g, overlap, *maxRoutes, pp, tp);
         enumerate.find(NodePos { *s }, NodePos { *t });
         return enumerate.recommend_routes(false);
       }

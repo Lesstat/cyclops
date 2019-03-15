@@ -27,7 +27,7 @@ template <int Dim> struct FacetExclusionPolicy {
   void register_route(const Route<Dim>&) {};
 };
 
-template <int Dim> struct AllFacetsPolicy : FacetExclusionPolicy<Dim> {
+template <int Dim> struct AllFacetsPolicy : public FacetExclusionPolicy<Dim> {
   using FullCell = typename CgalTypes<Dim>::TDS::Full_cell;
 
   bool exclude_facet(const FullCell&) { return false; };
@@ -54,7 +54,7 @@ template <int Dim> Slack<Dim> important_metrics_to_array(std::vector<ImportantMe
   return slack;
 }
 
-template <int Dim> struct ThresholdPolicy : FacetExclusionPolicy<Dim> {
+template <int Dim> struct ThresholdPolicy : public FacetExclusionPolicy<Dim> {
   using FullCell = typename CgalTypes<Dim>::TDS::Full_cell;
   Cost<Dim> min_cost;
   Slack<Dim> slack;
