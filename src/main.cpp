@@ -216,18 +216,19 @@ template <int Dim> void runWebServer(Graph<Dim>& g)
     auto [routes, configs, edges] = [&]() {
       if (important_metrics.empty()) {
 
-        SimilarityPrioPolicy<Dim> pp(overlap);
-        EnumerateOptimals enumerate(&g, overlap, *maxRoutes, pp);
+        EnumerateOptimals<Dim, SimilarityPrio> enumerate(&g, *maxRoutes);
+        enumerate.set_overlap(overlap);
+
         enumerate.find(NodePos { *s }, NodePos { *t });
         return enumerate.recommend_routes(false);
       } else {
 
         auto slacks = important_metrics_to_array<Dim>(important_metrics);
 
-        SimilarityPrioPolicy<Dim> pp(overlap);
-        ThresholdPolicy tp(slacks);
-        EnumerateOptimals<Dim, ThresholdPolicy<Dim>, SimilarityPrioPolicy<Dim>> enumerate(
-            &g, overlap, *maxRoutes, pp, tp);
+        EnumerateOptimals<Dim, SimilarityPrioExcludeIrrelevant> enumerate(&g, *maxRoutes);
+        enumerate.set_overlap(overlap);
+        enumerate.set_slack(slacks);
+
         enumerate.find(NodePos { *s }, NodePos { *t });
         return enumerate.recommend_routes(false);
       }
@@ -480,14 +481,14 @@ int main(int argc, char* argv[])
     return 0;
   }
   switch (dim) {
-  case 1: {
-    return run<1>(vm, loadFileName, saveFileName);
-    break;
-  }
-  case 2: {
-    return run<2>(vm, loadFileName, saveFileName);
-    break;
-  }
+  // case 1: {
+  //   return run<1>(vm, loadFileName, saveFileName);
+  //   break;
+  // }
+  // case 2: {
+  //   return run<2>(vm, loadFileName, saveFileName);
+  //   break;
+  // }
   case 3: {
     return run<3>(vm, loadFileName, saveFileName);
     break;

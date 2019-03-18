@@ -127,7 +127,8 @@ void enumerate(std::ifstream& file, std::ofstream& output, Graph<Dim>* g, size_t
       continue;
     }
     try {
-      EnumerateOptimals o(g, maxSimilarity, maxRoutes);
+      EnumerateOptimals<Dim, SimilarityPrio> o(g, maxRoutes);
+      o.set_overlap(maxSimilarity);
 
       std::vector<Route> routes;
       o.find(NodePos { from }, NodePos { to });
@@ -172,7 +173,7 @@ void enumerate_all(std::ifstream& file, std::ofstream& output, Graph<Dim>* g, st
         std::cout << "finished " << counter << " s-t pairs" << '\n';
         output.flush();
       }
-      EnumerateOptimals o(g, 1.1, std::numeric_limits<size_t>::max());
+      EnumerateOptimals<Dim, SimilarityPrio> o(g, std::numeric_limits<size_t>::max());
 
       std::vector<Route> routes;
       o.find(NodePos { from }, NodePos { to });
@@ -337,7 +338,8 @@ void explore_s_t_pairs(std::ifstream& input, std::ofstream& output, Grid& g, Gra
   const size_t refinements = 40;
   const double max_similarity = 0.5;
   double s_lat, s_lng, t_lat, t_lng;
-  EnumerateOptimals e(graph, max_similarity, refinements);
+  EnumerateOptimals<Dim, SimilarityPrio> e(graph, refinements);
+  e.set_overlap(max_similarity);
   while (input >> s_lat >> s_lng >> t_lat >> t_lng) {
     auto s = g.findNextNode(Lat(s_lat), Lng(s_lng));
     auto t = g.findNextNode(Lat(t_lat), Lng(t_lng));

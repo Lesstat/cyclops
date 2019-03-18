@@ -20,17 +20,17 @@
 #include "dijkstra.hpp"
 
 template <int Dim> struct FacetExclusionPolicy {
-  using FullCell = typename CgalTypes<Dim>::TDS::Full_cell;
+  using Vertex_handle = typename CgalTypes<Dim>::TDS::Vertex_handle;
 
-  bool exclude_facet(const FullCell& cell);
+  bool exclude_facet(const std::vector<Vertex_handle>& cell);
   bool exclude_route(const Route<Dim>& route);
   void register_route(const Route<Dim>&) {};
 };
 
 template <int Dim> struct AllFacetsPolicy : public FacetExclusionPolicy<Dim> {
-  using FullCell = typename CgalTypes<Dim>::TDS::Full_cell;
+  using Vertex_handle = typename CgalTypes<Dim>::TDS::Vertex_handle;
 
-  bool exclude_facet(const FullCell&) { return false; };
+  bool exclude_facet(const std::vector<Vertex_handle>&) { return false; };
   bool exclude_route(const Route<Dim>&) { return false; };
 };
 
@@ -55,32 +55,24 @@ template <int Dim> Slack<Dim> important_metrics_to_array(std::vector<ImportantMe
 }
 
 template <int Dim> struct ThresholdPolicy : public FacetExclusionPolicy<Dim> {
-  using FullCell = typename CgalTypes<Dim>::TDS::Full_cell;
+  using Vertex_handle = typename CgalTypes<Dim>::TDS::Vertex_handle;
   Cost<Dim> min_cost;
   Slack<Dim> slack;
 
-  ThresholdPolicy(Slack<Dim>& slack)
+  ThresholdPolicy()
       : min_cost(std::vector<double>(Dim, std::numeric_limits<double>::max()))
-      , slack(slack)
   {
   }
 
-  bool exclude_facet(const FullCell& cell)
+  void set_slack(Slack<Dim> slack) { this->slack = slack; };
+
+  bool exclude_facet(const std::vector<Vertex_handle>& vertices)
   {
-    using Vertex_handle = typename CgalTypes<Dim>::TDS::Vertex_const_handle;
 
     Cost<Dim> best_cost = std::vector(Dim, std::numeric_limits<double>::max());
 
-    for (auto v = cell.vertices_begin(); v != cell.vertices_end(); ++v) {
-      auto& vertex = *v;
-      if (vertex == Vertex_handle()) {
-        continue;
-      }
-      auto& p = vertex->point();
-
-      if (is_infinite(p))
-        continue;
-
+    for (const auto& vertex : vertices) {
+      auto p = vertex->point();
       int index = -1;
       for (auto cord = p.cartesian_begin(); cord != p.cartesian_end(); ++cord) {
         ++index;
@@ -96,6 +88,7 @@ template <int Dim> struct ThresholdPolicy : public FacetExclusionPolicy<Dim> {
     }
     return false;
   };
+
   void register_route(const Route<Dim>& route)
   {
     const auto& route_cost = route.costs;
@@ -113,11 +106,5 @@ template <int Dim> struct ThresholdPolicy : public FacetExclusionPolicy<Dim> {
         return true;
     }
     return false;
-  }
-
-  bool is_infinite(const typename CgalTypes<Dim>::TDS::Vertex::Point& p)
-  {
-    return std::all_of(
-        p.cartesian_begin(), p.cartesian_end(), [](const auto& coord) { return coord == 0; });
   }
 };

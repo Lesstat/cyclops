@@ -54,7 +54,8 @@ TEST_CASE("Find all optimals in small graph")
   NodePos s { 0 };
   NodePos t { 4 };
 
-  EnumerateOptimals o { &g, 20, 100 };
+  EnumerateOptimals<3, SimilarityPrio> o { &g, 20 };
+
   o.find(s, t);
   auto result = o.recommend_routes(true);
   auto routes = std::get<std::vector<Route>>(result);

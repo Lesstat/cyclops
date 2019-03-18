@@ -22,50 +22,30 @@
 #include "cgaltypes.hpp"
 
 template <int Dim> struct FacetPrioPolicy {
-  using Full_cell = typename CgalTypes<Dim>::TDS::Full_cell;
-  using Route = Route<Dim>;
-  using Config = Config<Dim>;
   using Vertex_handle = typename CgalTypes<Dim>::TDS::Vertex_handle;
-
   double calc_prio(const std::vector<Vertex_handle>&) { return 1.0; };
-  void set_pointers(std::vector<Route>* routes, std::vector<Config>* configs,
-      std::function<double(size_t, size_t)> compare)
-  {
-    this->routes = routes;
-    this->configs = configs;
-    this->compare = compare;
-  }
-
-  protected:
-  std::vector<Route>* routes = nullptr;
-  std::vector<Config>* configs = nullptr;
-  std::function<double(size_t, size_t)> compare;
 };
 
-template <int Dim> struct SimilarityPrioPolicy : public FacetPrioPolicy<Dim> {
+template <int Dim, class Derived> struct SimilarityPrioPolicy : public FacetPrioPolicy<Dim> {
   using Base = FacetPrioPolicy<Dim>;
-  using Full_cell = typename Base::Full_cell;
+  using Route = Route<Dim>;
   using Vertex_handle = typename Base::Vertex_handle;
-
-  SimilarityPrioPolicy(double max_overlap)
-      : max_overlap(max_overlap) {};
 
   double calc_prio(const std::vector<Vertex_handle>& vertices)
   {
+    Derived* derived = static_cast<Derived*>(this);
+
     auto result = 0;
-    for (size_t i = 0; i < Base::routes->size(); ++i) {
+    for (size_t i = 0; i < derived->found_route_count(); ++i) {
       for (auto& vertex : vertices) {
         auto vertId = vertex->data().id;
-        if (vertId != i && Base::compare(i, vertId) > max_overlap) {
+        if (vertId != i && derived->similar(i, vertId)) {
           ++result;
         }
       }
     }
 
     return result;
-  };
-
-  private:
-  double max_overlap;
+  }
 };
 #endif /* PRIO_POLICY_H */

@@ -19,7 +19,7 @@
 #include "cgaltypes.hpp"
 #include "graph.hpp"
 
-template <int Dim> class CostTriangulation {
+template <int Dim, class Derived> class CostTriangulation {
   using Cost = Cost<Dim>;
 
   using CgalDim = typename CgalTypes<Dim>::CgalDim;
@@ -46,9 +46,9 @@ template <int Dim> class CostTriangulation {
     vertexdata.id = id;
   }
 
-  template <class Container, class ExclPolicy, class PrioPolicy>
-  void get_convex_hull_cells(Container& cont, ExclPolicy& excl_policy, PrioPolicy& prio_policy)
+  template <class Container> void get_convex_hull_cells(Container& cont)
   {
+    Derived* base = static_cast<Derived*>(this);
 
     std::vector<typename TDS::Full_cell_handle> handles;
     tri.incident_full_cells(tri.infinite_vertex(), std::back_inserter(handles));
@@ -57,13 +57,13 @@ template <int Dim> class CostTriangulation {
       if (cell.data().checked()) {
         continue;
       }
-      if (excl_policy.exclude_facet(cell)) {
+      if (base->exclude_facet(cell_vertices(cell))) {
         cell.data().checked(true);
         continue;
       }
 
       if (cell.data().prio() < 0.0) {
-        double prio = prio_policy.calc_prio(cell_vertices(cell));
+        double prio = base->calc_prio(cell_vertices(cell));
         cell.data().prio(prio);
       }
       cont.emplace(cell);
@@ -83,9 +83,8 @@ template <int Dim> class CostTriangulation {
 
     return vertices;
   }
-  template <class ExclPolicy>
-  std::tuple<std::vector<size_t>, std::vector<std::pair<size_t, size_t>>> vertex_ids_and_edges(
-      const std::vector<Route>& routes, ExclPolicy& policy)
+
+  std::tuple<std::vector<size_t>, std::vector<std::pair<size_t, size_t>>> vertex_ids_and_edges()
   {
     typedef typename Triangulation::Face Face;
     typedef std::vector<Face> Faces;
@@ -113,6 +112,8 @@ template <int Dim> class CostTriangulation {
       }
     };
 
+    Derived* base = static_cast<Derived*>(this);
+
     if (tri.number_of_vertices() >= Dim) {
       Faces ch_edges;
       std::back_insert_iterator<Faces> out(ch_edges);
@@ -124,7 +125,7 @@ template <int Dim> class CostTriangulation {
         if (tri.is_infinite(v)) {
           v = f.vertex(1);
         }
-        if (policy.exclude_route(routes[v->data().id])) {
+        if (base->exclude_route(base->route(v->data().id))) {
           continue;
         }
         vertices.push_back(v->data().id);
@@ -136,7 +137,7 @@ template <int Dim> class CostTriangulation {
         if (vertex == typename TDS::Vertex_handle() || tri.is_infinite(*vertex)) {
           continue;
         }
-        if (policy.exclude_route(routes[vertex->data().id])) {
+        if (base->exclude_route(base->route(vertex->data().id))) {
           continue;
         }
         vertices.push_back(vertex->data().id);
