@@ -19,6 +19,7 @@
 struct SimilarityPolicy {
   double compare(size_t, size_t) { return 0; };
   bool similar(size_t, size_t) { return false; };
+  void sim_clear();
 };
 
 template <int Dim, class Derived> struct SharingSimilarityPolicy : public SimilarityPolicy {
@@ -39,6 +40,8 @@ template <int Dim, class Derived> struct SharingSimilarityPolicy : public Simila
   bool similar(size_t i, size_t j) { return compare(i, j) > max_overlap; }
 
   void set_overlap(double overlap) { max_overlap = overlap; }
+
+  void sim_clear() { similarities.clear(); }
 
   private:
   std::map<std::pair<size_t, size_t>, double> similarities;

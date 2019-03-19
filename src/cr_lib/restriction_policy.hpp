@@ -25,6 +25,7 @@ template <int Dim> struct FacetExclusionPolicy {
   bool exclude_facet(const std::vector<Vertex_handle>& cell);
   bool exclude_route(const Route<Dim>& route);
   void register_route(const Route<Dim>&) {};
+  void excl_clear();
 };
 
 template <int Dim> struct AllFacetsPolicy : public FacetExclusionPolicy<Dim> {
@@ -32,6 +33,7 @@ template <int Dim> struct AllFacetsPolicy : public FacetExclusionPolicy<Dim> {
 
   bool exclude_facet(const std::vector<Vertex_handle>&) { return false; };
   bool exclude_route(const Route<Dim>&) { return false; };
+  void excl_clear() {};
 };
 
 struct ImportantMetric {
@@ -56,8 +58,6 @@ template <int Dim> Slack<Dim> important_metrics_to_array(std::vector<ImportantMe
 
 template <int Dim> struct ThresholdPolicy : public FacetExclusionPolicy<Dim> {
   using Vertex_handle = typename CgalTypes<Dim>::TDS::Vertex_handle;
-  Cost<Dim> min_cost;
-  Slack<Dim> slack;
 
   ThresholdPolicy()
       : min_cost(std::vector<double>(Dim, std::numeric_limits<double>::max()))
@@ -107,4 +107,10 @@ template <int Dim> struct ThresholdPolicy : public FacetExclusionPolicy<Dim> {
     }
     return false;
   }
+
+  void excl_clear() { min_cost = std::vector<double>(Dim, std::numeric_limits<double>::max()); }
+
+  private:
+  Cost<Dim> min_cost;
+  Slack<Dim> slack;
 };

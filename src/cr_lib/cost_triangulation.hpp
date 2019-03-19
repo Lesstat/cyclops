@@ -36,7 +36,7 @@ template <int Dim, class Derived> class CostTriangulation {
   Triangulation tri { Dim };
 
   public:
-  void clear() { tri.clear(); }
+  void tri_clear() { tri.clear(); }
 
   void add_route(const Cost& c, size_t id)
   {

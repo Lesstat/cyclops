@@ -24,6 +24,7 @@
 template <int Dim> struct FacetPrioPolicy {
   using Vertex_handle = typename CgalTypes<Dim>::TDS::Vertex_handle;
   double calc_prio(const std::vector<Vertex_handle>&) { return 1.0; };
+  void prio_clear();
 };
 
 template <int Dim, class Derived> struct SimilarityPrioPolicy : public FacetPrioPolicy<Dim> {
@@ -47,5 +48,6 @@ template <int Dim, class Derived> struct SimilarityPrioPolicy : public FacetPrio
 
     return result;
   }
+  void prio_clear() {};
 };
 #endif /* PRIO_POLICY_H */

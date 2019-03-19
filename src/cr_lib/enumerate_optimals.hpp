@@ -126,6 +126,16 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
     return Config(conf_values);
   }
 
+  void clear()
+  {
+    routes.clear();
+    configs.clear();
+    this->tri_clear();
+    this->prio_clear();
+    this->sim_clear();
+    this->excl_clear();
+  }
+
   void addToTriangulation()
   {
     auto vertId = routes.size() - 1;
@@ -191,9 +201,7 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
   void find(NodePos s, NodePos t)
   {
     auto start = c::high_resolution_clock::now();
-    routes.clear();
-    configs.clear();
-    this->clear();
+    clear();
 
     run_base_configs(s, t);
 
