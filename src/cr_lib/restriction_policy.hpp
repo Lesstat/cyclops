@@ -42,6 +42,16 @@ struct ImportantMetric {
 };
 
 template <int Dim> struct Slack : std::array<double, Dim> {
+  Slack()
+  {
+    for (auto& s : *this) {
+      s = std::numeric_limits<double>::max();
+    }
+  }
+  Slack(std::array<double, Dim> arr)
+      : std::array<double, Dim>(arr)
+  {
+  }
 };
 
 template <int Dim> Slack<Dim> important_metrics_to_array(std::vector<ImportantMetric> metrics)
