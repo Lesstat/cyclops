@@ -74,15 +74,10 @@ template <int Dim> double DiscreteFrechet<Dim>::c(int i, int j)
 template <int Dim>
 double calculateSharing(const Route<Dim>& referenceRoute, const Route<Dim>& otherRoute)
 {
-  std::unordered_set<EdgeId> edges;
-  std::transform(begin(referenceRoute.edges), end(referenceRoute.edges),
-      std::inserter(edges, begin(edges)), [](const auto& edge) { return edge; });
-  uint32_t sharedLength = 0;
-  for (const auto& edge : otherRoute.edges) {
-    if (edges.find(edge) != edges.end()) {
-      ++sharedLength;
-    }
-  }
+  std::unordered_set<EdgeId> edges(referenceRoute.edges.begin(), referenceRoute.edges.end());
+
+  uint32_t sharedLength = std::count_if(otherRoute.edges.begin(), otherRoute.edges.end(),
+      [&edges](const auto& id) { return edges.find(id) != edges.end(); });
 
   size_t maxLength = std::max(referenceRoute.edges.size(), otherRoute.edges.size());
   return (double)sharedLength / maxLength;
