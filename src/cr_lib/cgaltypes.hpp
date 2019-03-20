@@ -27,30 +27,19 @@
 
 class FullCellId {
   private:
-  static int currentId;
-  static std::vector<int> alive_;
-  static std::vector<bool> checked_;
-  static std::vector<double> prio_;
-
-  int id_;
+  std::shared_ptr<std::pair<bool, double>> data;
 
   public:
   FullCellId();
-
   FullCellId(const FullCellId& other);
-
   FullCellId& operator=(const FullCellId& rhs);
-
-  FullCellId& operator=(const FullCellId&& rhs);
-
+  FullCellId& operator=(FullCellId&& rhs);
   FullCellId(FullCellId&& other);
-
   ~FullCellId();
 
   bool alive() const;
   bool checked() const;
   void checked(bool check);
-  size_t id() const;
   double prio() const;
   void prio(double p) const;
 

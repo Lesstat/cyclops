@@ -18,56 +18,18 @@
 
 #include "enumerate_optimals.hpp"
 
-int FullCellId::currentId = 0;
-std::vector<int> FullCellId::alive_ = std::vector<int>();
-std::vector<bool> FullCellId::checked_ = std::vector<bool>();
-std::vector<double> FullCellId::prio_ = std::vector<double>();
+FullCellId::FullCellId() { data = std::make_shared<std::pair<bool, double>>(false, -1.0); }
 
-FullCellId::FullCellId()
-    : id_(currentId++)
-{
-  alive_.push_back(1);
-  checked_.push_back(false);
-  prio_.push_back(-1.0);
-}
+FullCellId::FullCellId(const FullCellId& other) = default;
+FullCellId& FullCellId::operator=(const FullCellId& rhs) = default;
+FullCellId& FullCellId::operator=(FullCellId&& rhs) = default;
+FullCellId::FullCellId(FullCellId&& other) = default;
+FullCellId::~FullCellId() = default;
 
-FullCellId::FullCellId(const FullCellId& other)
-    : id_(other.id_)
-{
-  alive_[id_]++;
-}
+bool FullCellId::alive() const { return data.use_count() > 1; }
+bool FullCellId::checked() const { return std::get<bool>(*data); }
+void FullCellId::checked(bool check) { std::get<bool>(*data) = check; }
+double FullCellId::prio() const { return std::get<double>(*data); }
+void FullCellId::prio(double p) const { std::get<double>(*data) = p; }
 
-FullCellId& FullCellId::operator=(const FullCellId& rhs)
-{
-  // Check for self-assignment!
-  if (this == &rhs)
-    return *this;
-
-  alive_[id_]--;
-  id_ = rhs.id_;
-  alive_[id_]++;
-  return *this;
-}
-
-FullCellId& FullCellId::operator=(const FullCellId&& rhs)
-{
-  *this = rhs;
-  return *this;
-}
-
-FullCellId::FullCellId(FullCellId&& other)
-{
-  id_ = other.id_;
-  alive_[id_]++;
-}
-
-FullCellId::~FullCellId() { alive_[id_]--; }
-
-bool FullCellId::alive() const { return alive_[id_] > 1; }
-bool FullCellId::checked() const { return checked_[id_]; }
-void FullCellId::checked(bool check) { checked_[id_] = check; }
-size_t FullCellId::id() const { return id_; }
-double FullCellId::prio() const { return prio_[id_]; }
-void FullCellId::prio(double p) const { prio_[id_] = p; }
-
-bool FullCellId::operator==(const FullCellId& other) const { return id_ == other.id_; }
+bool FullCellId::operator==(const FullCellId& other) const { return data == other.data; }
