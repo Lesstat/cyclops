@@ -249,8 +249,8 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
           for (auto& vertex : this->cell_vertices(f)) {
             if (this->compare(vertex->data().id, lastRoute) == 1.0) {
               include = false;
+              break;
             }
-            break;
           }
 
           if (include) {
