@@ -11,7 +11,7 @@ var towerLayer = L.layerGroup([]).addTo(map);
 
 let canvasRgb = document.getElementById("triangleSelectorRGB");
 
-L.tileLayer("http://{s}.tiles.wmflabs.org/bw-mapnik/{z}/{x}/{y}.png", {
+L.tileLayer("http://{s}.tiles.wmflabs.org/osm/{z}/{x}/{y}.png", {
   maxZoom: 18,
   attribution:
     'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
@@ -288,17 +288,17 @@ function moveDot(event) {
         bestRoute.route
       );
       let conf = bestRoute.config;
-      lengthSpan.innerHTML = conf[0] * 100;
-      heightSpan.innerHTML = conf[1] * 100;
-      unsuitabilitySpan.innerHTML = conf[2] * 100;
+      lengthSpan.innerHTML = Math.round(conf[0] * 10000) / 100;
+      heightSpan.innerHTML = Math.round(conf[1] * 10000) / 100;
+      unsuitabilitySpan.innerHTML = Math.round(conf[2] * 10000) / 100;
 
       let cost = bestRoute.cost;
-
       document.getElementById("route_length").innerHTML =
-        Math.round(cost.length / 100) / 10;
-      document.getElementById("route_height").innerHTML = cost.height;
+        Math.round(cost[0] * 100) / 100;
+      document.getElementById("route_height").innerHTML =
+        Math.round(cost[1] * 100) / 100;
       document.getElementById("route_unsuitability").innerHTML =
-        cost.unsuitability;
+        Math.round(cost[2] * 100) / 100;
     }
   }
 }
@@ -484,11 +484,7 @@ function enumerateRoutes() {
           point: coord,
           route: geoRoute,
           config: values,
-          cost: {
-            length: points[p].route.length,
-            height: points[p].route.height,
-            unsuitability: points[p].route.unsuitability
-          }
+          cost: points[p].route.costs
         });
       }
     }
