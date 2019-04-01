@@ -149,20 +149,31 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
     auto start = c::high_resolution_clock::now();
 
     std::vector<size_t> independent_set;
-    Edges edges;
+    if constexpr (std::is_base_of<FacetPrioPolicy<Dim>,
+                      Skills<Dim, EnumerateOptimals<Dim, Skills>>>::value) {
+      const auto vertex_count = vertices.size();
+      independent_set.reserve(vertex_count);
+      for (size_t i = 0; i < vertex_count; ++i) {
+        independent_set.push_back(i);
+      }
 
-    for (size_t i = 0; i < vertices.size(); ++i) {
-      for (size_t j = i + 1; j < vertices.size(); ++j) {
-        if (this->similar(vertices[i], vertices[j])) {
-          edges.emplace_back(i, j);
+    } else {
+
+      Edges edges;
+
+      for (size_t i = 0; i < vertices.size(); ++i) {
+        for (size_t j = i + 1; j < vertices.size(); ++j) {
+          if (this->similar(vertices[i], vertices[j])) {
+            edges.emplace_back(i, j);
+          }
         }
       }
-    }
-    if (ilp) {
-      independent_set = find_independent_set(vertices.size(), edges);
-    } else {
-      duplicate_edges(edges);
-      independent_set = greedy_independent_set(vertices.size(), edges);
+      if (ilp) {
+        independent_set = find_independent_set(vertices.size(), edges);
+      } else {
+        duplicate_edges(edges);
+        independent_set = greedy_independent_set(vertices.size(), edges);
+      }
     }
     auto end = c::high_resolution_clock::now();
     recommendation_time = c::duration_cast<c::milliseconds>(end - start).count();
@@ -176,7 +187,9 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
       conf.values[i] = 1.0;
 
       auto route = d.findBestRoute(s, t, conf);
-      if (!route) {
+      if (!route || std::any_of(routes.begin(), routes.end(), [&route](const auto& r) {
+            return r.edges == route->edges;
+          })) {
         continue;
       }
 
@@ -208,7 +221,9 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
     Config conf(std::vector(Dim, 1.0 / Dim));
     auto route = d.findBestRoute(s, t, conf);
 
-    if (route) {
+    if (route && std::none_of(routes.begin(), routes.end(), [&route](const auto& r) {
+          return r.edges == route->edges;
+        })) {
       routes.push_back(std::move(*route));
       configs.push_back(std::move(conf));
       addToTriangulation();
@@ -219,47 +234,31 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
       value = maxValue / value;
     }
 
-    CellContainer q(compare_prio);
-    bool workToDo = true;
-    while (workToDo) {
+    std::vector<typename TDS::Full_cell> q;
+    while (routes.size() < maxRoutes) {
+      q.clear();
       this->get_convex_hull_cells(q);
-      workToDo = false;
-      while (!q.empty() && routes.size() < maxRoutes) {
-        auto f = q.top();
-        q.pop();
-        FullCellId& cellData = const_cast<FullCellId&>(f.data());
+      if (q.empty()) {
+        break;
+      }
+      auto f = std::min_element(q.begin(), q.end(),
+          [](const auto& a, const auto& b) -> bool { return a.data().prio() < b.data().prio(); });
 
-        if (!cellData.alive() || cellData.checked()) {
-          continue;
-        }
-        cellData.checked(true);
+      FullCellId& cellData = const_cast<FullCellId&>(f->data());
+      cellData.checked(true);
 
-        try {
-          Config conf = findConfig(f);
-          auto route = d.findBestRoute(s, t, conf);
-          if (!route)
-            continue;
-
+      try {
+        Config conf = findConfig(*f);
+        auto route = d.findBestRoute(s, t, conf);
+        if (route && std::none_of(routes.begin(), routes.end(), [route](const auto& r) {
+              return r.edges == route->edges;
+            })) {
           routes.push_back(std::move(*route));
           configs.push_back(std::move(conf));
-
-          auto lastRoute = routes.size() - 1;
-          bool include = true;
-
-          for (auto& vertex : this->cell_vertices(f)) {
-            if (this->compare(vertex->data().id, lastRoute) == 1.0) {
-              include = false;
-              break;
-            }
-          }
-
-          if (include) {
-            addToTriangulation();
-            workToDo = true;
-          }
-
-        } catch (std::runtime_error& e) {
+          addToTriangulation();
         }
+
+      } catch (std::runtime_error& e) {
       }
     }
 
@@ -283,7 +282,9 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
     configs.reserve(independent_set.size());
 
     for (auto id : independent_set) {
-      routes.push_back(this->routes[vertices[id]]);
+      auto v = vertices.at(id);
+      auto& r = this->routes.at(v);
+      routes.push_back(r);
 
       auto c = this->configs[vertices[id]];
       for (size_t i = 0; i < Dim; ++i) {

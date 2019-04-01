@@ -27,7 +27,12 @@
 
 class FullCellId {
   private:
-  std::shared_ptr<std::pair<bool, double>> data;
+  struct Data {
+    double prio = -1.0;
+    bool checked = false;
+  };
+
+  std::shared_ptr<Data> data;
 
   public:
   FullCellId();

@@ -24,10 +24,10 @@
 template <int Dim> struct FacetPrioPolicy {
   using Vertex_handle = typename CgalTypes<Dim>::TDS::Vertex_handle;
   double calc_prio(const std::vector<Vertex_handle>&) { return 1.0; };
-  void prio_clear();
+  void prio_clear() {};
 };
 
-template <int Dim, class Derived> struct SimilarityPrioPolicy : public FacetPrioPolicy<Dim> {
+template <int Dim, class Derived> struct SimilarityPrioPolicy {
   using Base = FacetPrioPolicy<Dim>;
   using Route = Route<Dim>;
   using Vertex_handle = typename Base::Vertex_handle;

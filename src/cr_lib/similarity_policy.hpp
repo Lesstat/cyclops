@@ -16,13 +16,13 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-struct SimilarityPolicy {
+template <int Dim> struct SimilarityPolicy {
   double compare(size_t, size_t) { return 0; };
   bool similar(size_t, size_t) { return false; };
-  void sim_clear();
+  void sim_clear() {};
 };
 
-template <int Dim, class Derived> struct SharingSimilarityPolicy : public SimilarityPolicy {
+template <int Dim, class Derived> struct SharingSimilarityPolicy : public SimilarityPolicy<Dim> {
   double compare(size_t i, size_t j)
   {
     Derived* derived = static_cast<Derived*>(this);

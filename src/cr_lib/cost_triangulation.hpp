@@ -57,16 +57,18 @@ template <int Dim, class Derived> class CostTriangulation {
       if (cell.data().checked()) {
         continue;
       }
-      if (base->exclude_facet(cell_vertices(cell))) {
+
+      auto current_cell_vertices = cell_vertices(cell);
+      if (base->exclude_facet(current_cell_vertices)) {
         cell.data().checked(true);
         continue;
       }
 
       if (cell.data().prio() < 0.0) {
-        double prio = base->calc_prio(cell_vertices(cell));
+        double prio = base->calc_prio(current_cell_vertices);
         cell.data().prio(prio);
       }
-      cont.emplace(cell);
+      cont.emplace_back(cell);
     }
   }
 
