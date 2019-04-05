@@ -187,13 +187,16 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
       conf.values[i] = 1.0;
 
       auto route = d.findBestRoute(s, t, conf);
-      if (!route || std::any_of(routes.begin(), routes.end(), [&route](const auto& r) {
-            return r.edges == route->edges;
-          })) {
+      if (!route)
+        continue;
+
+      factor[i] = route->costs.values[i];
+
+      if (std::any_of(routes.begin(), routes.end(),
+              [&route](const auto& r) { return r.edges == route->edges; })) {
         continue;
       }
 
-      factor[i] = route->costs.values[i];
       routes.push_back(std::move(*route));
       configs.push_back(std::move(conf));
       addToTriangulation();

@@ -16,8 +16,10 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include "all_paths.hpp"
 #include "catch.hpp"
 #include "enumerate_optimals.hpp"
+
 #include <sstream>
 
 TEST_CASE("Find all optimals in small graph")
@@ -27,14 +29,15 @@ TEST_CASE("Find all optimals in small graph")
 # Build on: SystemTime { tv_sec: 1512985452, tv_nsec: 881838750 }
 
 3
-6
-8
+7
+10
 0 163354 48.6674338 9.2445911 380 0
 1 163355 48.6694744 9.2432625 380 0
 2 163358 48.6661932 9.2515536 386 0
 3 163359 48.6261932 9.2515936 386 0
 4 163355 48.6694744 9.2432625 380 0
 5 163359 48.6261932 9.2515936 386 0
+6 163359 48.6261932 9.2515936 386 0
 0 1 0.0 1 9 -1 -1
 1 4 0.0 1 9 -1 -1
 0 2 0.0 9 1 -1 -1
@@ -43,6 +46,8 @@ TEST_CASE("Find all optimals in small graph")
 3 4 0.0 2 2 -1 -1
 0 5 0.0 3 3 -1 -1
 5 4 0.0 3 3 -1 -1
+1 2 0.0 2 1 -1 -1
+2 1 0.0 2 1 -1 -1
 )!!" };
 
   using Graph = Graph<3>;
@@ -61,4 +66,21 @@ TEST_CASE("Find all optimals in small graph")
   auto routes = std::get<std::vector<Route>>(result);
 
   REQUIRE(routes.size() == 3);
+
+  // -----------------------------------------------------------
+  // FIND ALL PATHS TESTS
+  // -----------------------------------------------------------
+  auto all_routes = find_all_paths(g, s, t);
+  REQUIRE(all_routes.size() == 6);
+
+  auto pareto = pareto_only(all_routes);
+  REQUIRE(pareto.size() == 3);
+  auto pareto2 = find_all_paths<3, true>(g, s, t);
+
+  REQUIRE(pareto.size() == pareto2.size());
+
+  for (size_t i = 0; i < pareto.size(); ++i) {
+    REQUIRE(std::any_of(pareto2.begin(), pareto2.end(),
+        [&](const auto& route) { return route.edges == pareto[i].edges; }));
+  }
 }

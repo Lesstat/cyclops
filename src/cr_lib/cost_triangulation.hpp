@@ -15,6 +15,8 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+#ifndef COST_TRIANGULATION_H
+#define COST_TRIANGULATION_H
 
 #include "cgaltypes.hpp"
 #include "graph.hpp"
@@ -153,3 +155,4 @@ template <int Dim, class Derived> class CostTriangulation {
     return { vertices, edges };
   }
 };
+#endif /* COST_TRIANGULATION_H */
