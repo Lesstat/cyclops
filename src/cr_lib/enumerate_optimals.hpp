@@ -38,6 +38,26 @@ auto compare_prio = [](auto left, auto right) { return left.data().prio() > righ
 namespace c = std::chrono;
 
 template <int Dim, class Derived>
+class DefaultsOnly : public AllFacetsPolicy<Dim>,
+                     public SimilarityPolicy<Dim>,
+                     public FacetPrioPolicy<Dim>,
+                     public CostTriangulation<Dim, Derived> {
+  private:
+  friend Derived;
+  DefaultsOnly() = default;
+};
+
+template <int Dim, class Derived>
+class OnlyExclusion : public ThresholdPolicy<Dim>,
+                      public SharingSimilarityPolicy<Dim, Derived>,
+                      public FacetPrioPolicy<Dim>,
+                      public CostTriangulation<Dim, Derived> {
+  private:
+  friend Derived;
+  OnlyExclusion() = default;
+};
+
+template <int Dim, class Derived>
 class SimilarityPrio : public AllFacetsPolicy<Dim>,
                        public SharingSimilarityPolicy<Dim, Derived>,
                        public SimilarityPrioPolicy<Dim, Derived>,
