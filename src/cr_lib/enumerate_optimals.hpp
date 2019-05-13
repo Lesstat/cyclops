@@ -256,6 +256,28 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
     for (double& value : factor) {
       value = maxValue / value;
     }
+    while (routes.size() <= Dim) {
+      std::vector<Cost> costs;
+      std::transform(routes.begin(), routes.end(), std::back_inserter(costs),
+          [](const auto& r) { return r.costs; });
+      try {
+        Config conf = findConfig(costs);
+        auto route = d.findBestRoute(s, t, conf);
+        if (route && std::none_of(routes.begin(), routes.end(), [route](const auto& r) {
+              return r.edges == route->edges;
+            })) {
+          routes.push_back(std::move(*route));
+          configs.push_back(std::move(conf));
+          addToTriangulation();
+        } else {
+          std::cout << "i'm breaking up with " << routes.size() << " routes." << '\n';
+          break;
+        }
+      } catch (std::runtime_error& e) {
+        std::cout << "error: " << e.what() << "\n";
+        break;
+      }
+    }
 
     std::vector<typename TDS::Full_cell> q;
     while (routes.size() < maxRoutes) {
@@ -340,7 +362,7 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
         continue;
       }
     }
-    if (routes.empty()) {
+    if (routes.empty() && !this->routes.empty()) {
       routes.push_back(this->routes.front());
       configs.push_back(this->configs.front());
     }
