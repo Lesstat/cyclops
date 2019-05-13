@@ -197,6 +197,7 @@ template <int Dim> void runWebServer(Graph<Dim>& g)
           important_metrics = parse_important_metric_list(param.second);
         } catch (std::exception& e) {
           response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
+          return;
         }
       }
     }
