@@ -33,6 +33,45 @@
 #include <chrono>
 #include <queue>
 
+template <int Dim> Config<Dim> find_equal_cost_config(const std::vector<Cost<Dim>>& costs)
+{
+  using namespace Eigen;
+
+  auto vert_count = costs.size();
+  Matrix<double, Dynamic, Dim> A(vert_count, Dim);
+  VectorXd b = VectorXd::Ones(vert_count);
+  int row = -1;
+  for (const auto& cost : costs) {
+    ++row;
+    int col = -1;
+    for (const auto& c : cost.values) {
+      ++col;
+      A(row, col) = c;
+    }
+  }
+  VectorXd solution = A.fullPivHouseholderQr().solve(b);
+  std::vector<double> conf_values;
+
+  double sum = 0;
+  for (long i = 0; i < solution.size(); ++i) {
+    solution[i] = std::max(0.0, solution[i]);
+    sum += solution[i];
+    conf_values.push_back(solution[i]);
+  }
+
+  if (sum == 0) {
+    throw std::runtime_error("All components zero");
+  }
+
+  for (auto& val : conf_values) {
+    val /= sum;
+    if (val < -0.001)
+      throw std::runtime_error("solution component too negative after normalization");
+  }
+
+  return Config<Dim>(conf_values);
+}
+
 auto compare_prio = [](auto left, auto right) { return left.data().prio() > right.data().prio(); };
 
 namespace c = std::chrono;
@@ -93,6 +132,7 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
   using Route = Route<Dim>;
   using Config = Config<Dim>;
   using Dijkstra = Dijkstra<Dim>;
+  using Cost = Cost<Dim>;
 
   typedef std::vector<std::pair<size_t, size_t>> Edges;
 
@@ -104,47 +144,7 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
   Dijkstra d;
   typename Dijkstra::ScalingFactor factor;
 
-  Config findConfig(const typename TDS::Full_cell& f)
-  {
-    using namespace Eigen;
-
-    auto vertices = this->cell_vertices(f);
-    auto vert_count = vertices.size();
-    Matrix<double, Dynamic, Dim> A(vert_count, Dim);
-    VectorXd b = VectorXd::Ones(vert_count);
-    int row = -1;
-    for (const auto& vert : vertices) {
-      ++row;
-      int col = -1;
-      auto& p = vert->point();
-      for (auto cord = p.cartesian_begin(); cord != p.cartesian_end(); ++cord) {
-        ++col;
-        A(row, col) = *cord;
-      }
-    }
-    VectorXd solution = A.fullPivHouseholderQr().solve(b);
-    std::vector<double> conf_values;
-
-    double sum = 0;
-    for (long i = 0; i < solution.size(); ++i) {
-      if (solution[i] < -0.001)
-        throw std::runtime_error("solution component too negative pre normalization");
-      sum += solution[i];
-      conf_values.push_back(solution[i]);
-    }
-
-    if (sum == 0) {
-      throw std::runtime_error("All components zero");
-    }
-
-    for (auto& val : conf_values) {
-      val /= sum;
-      if (val < -0.001)
-        throw std::runtime_error("solution component too negative after normalization");
-    }
-
-    return Config(conf_values);
-  }
+  Config findConfig(const std::vector<Cost>& costs) { return find_equal_cost_config(costs); }
 
   void clear()
   {
@@ -271,7 +271,12 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
       cellData.checked(true);
 
       try {
-        Config conf = findConfig(*f);
+        std::vector<Cost> costs;
+        for (const auto& v : this->cell_vertices(*f)) {
+          costs.push_back(routes[v->data().id].costs);
+        }
+
+        Config conf = findConfig(costs);
         auto route = d.findBestRoute(s, t, conf);
         if (route && std::none_of(routes.begin(), routes.end(), [route](const auto& r) {
               return r.edges == route->edges;
@@ -282,6 +287,7 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
         }
 
       } catch (std::runtime_error& e) {
+        std::cout << "error: " << e.what() << "\n";
       }
     }
 
