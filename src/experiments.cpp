@@ -23,6 +23,7 @@
 #include "ilp_independent_set.hpp"
 #include "naive_exploration.hpp"
 #include "routeComparator.hpp"
+#include "url_parsing.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
@@ -323,6 +324,79 @@ void explore_naive(std::ifstream& route_input, std::ofstream& output, Dijkstra<D
 }
 
 template <int Dim>
+void restricted_exploration(std::ifstream& input, std::ofstream& output, Grid& g, Graph<Dim>* graph,
+    const std::string& graphfile, std::string restriction_parameters)
+{
+  if (output.tellp() == 0) {
+    output << "s_lat,s_lng,t_lat,t_lng,inputgraph,starttime,length_factor,all_time,#all_routes,"
+              "#all_doubles,restr_time,#restr_routes,#restr_doubles\n";
+  }
+
+  boost::filesystem::path p(graphfile);
+  auto graph_file_name = p.filename();
+  auto now = c::system_clock::to_time_t(c::system_clock::now());
+  auto starttime = std::localtime(&now);
+
+  const size_t refinements = std::numeric_limits<size_t>::max();
+  double s_lat, s_lng, t_lat, t_lng;
+
+  while (input >> s_lat >> s_lng >> t_lat >> t_lng) {
+    auto s = g.findNextNode(Lat(s_lat), Lng(s_lng));
+    auto t = g.findNextNode(Lat(t_lat), Lng(t_lng));
+    if (!(s && t)) {
+      std::cerr << "could not find points for " << s_lat << ", " << s_lng << ", " << t_lat << ", "
+                << t_lng << '\n';
+      continue;
+    }
+
+    auto start = c::high_resolution_clock::now();
+    EnumerateOptimals<Dim, DefaultsOnly> all(graph, refinements);
+    all.find(*s, *t);
+    auto result = all.recommend_routes(false);
+    auto end = c::high_resolution_clock::now();
+
+    auto all_time = c::duration_cast<ms>(end - start).count();
+    auto routes = std::get<std::vector<Route<Dim>>>(result);
+    auto all_route_count = routes.size();
+
+    start = c::high_resolution_clock::now();
+    EnumerateOptimals<Dim, OnlyExclusion> restricted(graph, refinements);
+    Slack<Dim> slack
+        = important_metrics_to_array<Dim>(parse_important_metric_list(restriction_parameters));
+    restricted.set_slack(slack);
+    restricted.find(*s, *t);
+    auto result2 = restricted.recommend_routes(false);
+    end = c::high_resolution_clock::now();
+
+    auto restricted_time = c::duration_cast<ms>(end - start).count();
+    auto routes2 = std::get<std::vector<Route<Dim>>>(result2);
+    auto restricted_route_count = routes2.size();
+    size_t all_similar = 0;
+
+    for (size_t i = 0; i < routes.size(); ++i) {
+      for (size_t j = i + 1; j < routes.size(); ++j) {
+        if (routes[i].edges == routes[j].edges)
+          all_similar++;
+      }
+    }
+
+    size_t restr_similar = 0;
+    for (size_t i = 0; i < routes2.size(); ++i) {
+      for (size_t j = i + 1; j < routes2.size(); ++j) {
+        if (routes2[i].edges == routes2[j].edges)
+          restr_similar++;
+      }
+    }
+
+    output << s_lat << ',' << s_lng << ',' << t_lat << ',' << t_lng << ',' << graph_file_name << ','
+           << std::put_time(starttime, "%Y-%m-%d %T") << ',' << restriction_parameters << ','
+           << all_time << ',' << all_route_count << ',' << all_similar << ',' << restricted_time
+           << ',' << restricted_route_count << ',' << restr_similar << '\n';
+    output.flush();
+  }
+}
+
+template <int Dim>
 void explore_s_t_pairs(std::ifstream& input, std::ofstream& output, Grid& g, Graph<Dim>* graph,
     const std::string& graphfile)
 {
@@ -395,26 +469,38 @@ int main(int argc, char* argv[])
   size_t candidate_count = 0;
 
   po::options_description loading { "Graph Loading Options" };
-  loading.add_options()("text,t", po::value<std::string>(&loadFileName),
-      "load graph from text file")("bin,b", po::value<std::string>(&loadFileName),
-      "load graph form binary file")("zi", "input text file is gzipped");
+  // clang-format off
+  loading.add_options()
+    ("text,t", po::value<std::string>(&loadFileName), "load graph from text file")
+    ("bin,b", po::value<std::string>(&loadFileName), "load graph form binary file")
+    ("zi", "input text file is gzipped");
+  // clang-format on
 
   std::string parameterInputFile {};
   po::options_description dataConfiguration { "Data Configuration options" };
-  dataConfiguration.add_options()(
-      "input,i", po::value<std::string>(&parameterInputFile), "File with parameters to execute on")(
-      "output,o", po::value<std::string>(&saveFileName), "File to store results in");
+  // clang-format off
+  dataConfiguration.add_options()
+    ("input,i", po::value<std::string>(&parameterInputFile), "File with parameters to execute on")
+    ("output,o", po::value<std::string>(&saveFileName), "File to store results in");
+  // clang-format on
 
-  po::options_description experiment { "Experiment to conduct" };
-  dataConfiguration.add_options()("dijkstra,d", "Run dijkstra for random s-t queries ")(
-      "candidates,c", po::value<size_t>(&candidate_count), "find candidates s-t pairs ")("commute",
-      "find candidates for commuting tours")("random,r", "explore random configurations")(
-      "naive,n", "naive exploration")("enumerate,e", "enumerate paths")(
-      "all", "enumerate all paths")("st", "Run enumerate on s-t pairs");
-
+  std::string restriction_parameter;
+  po::options_description expr { "Experiment to conduct" };
+  // clang-format off
+  expr.add_options()
+    ("dijkstra,d", "Run dijkstra for random s-t queries ")
+    ("candidates,c", po::value<size_t>(&candidate_count), "find candidates s-t pairs ")
+    ("commute", "find candidates for commuting tours")
+    ("random,r", "explore random configurations")
+    ("naive,n", "naive exploration")
+    ("enumerate,e", "enumerate paths")
+    ("all", "enumerate all paths")
+    ("st", "Run enumerate on s-t pairs")
+    ("restricted,r", po::value<std::string>(&restriction_parameter) , "Compare restricted enumeration to full enumeration") ;
+  // clang-format on
   po::options_description all;
   all.add_options()("help,h", "prints help message");
-  all.add(loading).add(dataConfiguration).add(experiment);
+  all.add(loading).add(dataConfiguration).add(expr);
 
   po::variables_map vm {};
   po::store(po::parse_command_line(argc, argv, all), vm);
@@ -573,6 +659,9 @@ int main(int argc, char* argv[])
   } else if (vm.count("st") > 0) {
     Grid grid = g.createGrid();
     explore_s_t_pairs(params, output, grid, &g, loadFileName);
+  } else if (vm.count("restricted") > 0) {
+    Grid grid = g.createGrid();
+    restricted_exploration(params, output, grid, &g, loadFileName, restriction_parameter);
   }
   return 0;
 }
