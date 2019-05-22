@@ -328,8 +328,8 @@ void restricted_exploration(std::ifstream& input, std::ofstream& output, Grid& g
     const std::string& graphfile, std::string restriction_parameters)
 {
   if (output.tellp() == 0) {
-    output << "s_lat,s_lng,t_lat,t_lng,inputgraph,starttime,length_factor,all_time,#all_routes,"
-              "#all_doubles,restr_time,#restr_routes,#restr_doubles\n";
+    output << "s_lat,s_lng,t_lat,t_lng,inputgraph,starttime,restriction_parameters,all_time,#all_"
+              "routes,#all_doubles,restr_time,#restr_routes,#restr_doubles\n";
   }
 
   boost::filesystem::path p(graphfile);
@@ -389,9 +389,9 @@ void restricted_exploration(std::ifstream& input, std::ofstream& output, Grid& g
     }
 
     output << s_lat << ',' << s_lng << ',' << t_lat << ',' << t_lng << ',' << graph_file_name << ','
-           << std::put_time(starttime, "%Y-%m-%d %T") << ',' << restriction_parameters << ','
-           << all_time << ',' << all_route_count << ',' << all_similar << ',' << restricted_time
-           << ',' << restricted_route_count << ',' << restr_similar << '\n';
+           << std::put_time(starttime, "%Y-%m-%d %T") << ',' << '"' << restriction_parameters << '"'
+           << ',' << all_time << ',' << all_route_count << ',' << all_similar << ','
+           << restricted_time << ',' << restricted_route_count << ',' << restr_similar << '\n';
     output.flush();
   }
 }
