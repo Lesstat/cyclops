@@ -301,7 +301,7 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
           configs.push_back(std::move(conf));
           addToTriangulation();
         } else {
-          std::cout << "i'm breaking up with " << routes.size() << " routes." << '\n';
+          std::cerr << "i'm giving up with " << routes.size() << " routes." << '\n';
           break;
         }
       } catch (std::runtime_error& e) {
@@ -340,7 +340,7 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
         }
 
       } catch (std::runtime_error& e) {
-        std::cout << "error: " << e.what() << "\n";
+        std::cerr << "error: " << e.what() << "\n";
       }
     }
 
