@@ -81,7 +81,6 @@ std::vector<Route<Dim>> find_all_paths(Graph<Dim>& g, NodePos s, NodePos t)
     }
     if constexpr (pareto_only) {
       if (is_dominated_by(cur_cost, result) && stack.size() % 150 == 0) {
-        std::cout << result.size() << " routes " << stack.size() << " edges in stack " << '\r';
         continue;
       }
     }
@@ -97,8 +96,7 @@ std::vector<Route<Dim>> find_all_paths(Graph<Dim>& g, NodePos s, NodePos t)
       r.costs = cur_cost;
       r.edges = edges;
       if constexpr (pareto_only) {
-        if (pareto_push(result, r))
-          std::cout << result.size() << " routes " << stack.size() << " edges in stack " << '\r';
+        pareto_push(result, r);
       } else {
         result.push_back(r);
       }
