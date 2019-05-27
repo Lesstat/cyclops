@@ -28,10 +28,14 @@
 #include "routeComparator.hpp"
 #include "similarity_policy.hpp"
 
+#include "ThreadPool.h"
 #include <Eigen/Dense>
 
 #include <chrono>
 #include <queue>
+
+const size_t THREAD_COUNT
+    = std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1;
 
 template <int Dim> Config<Dim> find_equal_cost_config(const std::vector<Cost<Dim>>& costs)
 {
@@ -141,8 +145,11 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
   std::vector<Route> routes;
   std::vector<Config> configs;
   size_t maxRoutes;
-  Dijkstra d;
+  std::vector<Dijkstra> d;
+  ThreadPool tp;
   typename Dijkstra::ScalingFactor factor;
+  using RoutingResult = std::tuple<Config, std::optional<Route>>;
+  using RoutingResultFuture = std::future<RoutingResult>;
 
   Config findConfig(const std::vector<Cost>& costs) { return find_equal_cost_config(costs); }
 
@@ -202,25 +209,58 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
 
   void run_base_configs(NodePos s, NodePos t)
   {
+    if (Dim >= THREAD_COUNT)
+      throw std::runtime_error("Having more dimensions than threads is not yet implemented");
+
+    std::vector<RoutingResultFuture> future_routes;
+
     for (size_t i = 0; i < Dim; ++i) {
       Config conf(std::vector(Dim, 0.0));
       conf.values[i] = 1.0;
-
-      auto route = d.findBestRoute(s, t, conf);
-      if (!route)
-        continue;
-
-      factor[i] = route->costs.values[i];
-
-      if (std::any_of(routes.begin(), routes.end(),
-              [&route](const auto& r) { return r.edges == route->edges; })) {
-        continue;
-      }
-
-      routes.push_back(std::move(*route));
-      configs.push_back(std::move(conf));
-      addToTriangulation();
+      future_routes.emplace_back(run_on_thread_pool(s, t, conf, i));
     }
+
+    Config conf(std::vector(Dim, 1.0 / Dim));
+    future_routes.emplace_back(run_on_thread_pool(s, t, conf, Dim));
+
+    for (size_t i = 0; i < Dim; ++i) {
+      auto index = process_routing_result_future(future_routes[i]);
+      if (index) {
+        factor[i] = routes[*index].costs.values[i];
+      }
+    }
+
+    process_routing_result_future(future_routes.back());
+  }
+
+  RoutingResultFuture run_on_thread_pool(NodePos s, NodePos t, Config c, size_t thread_num)
+  {
+    return tp.enqueue([this, s, t, c, thread_num] {
+      auto route = d[thread_num].findBestRoute(s, t, c);
+      return std::make_tuple(c, route);
+    });
+  }
+
+  std::optional<size_t> process_routing_result_future(RoutingResultFuture& f)
+  {
+
+    auto result = f.get();
+
+    auto& route = std::get<std::optional<Route>>(result);
+    auto& conf = std::get<Config>(result);
+
+    if (!route)
+      return {};
+
+    if (std::any_of(routes.begin(), routes.end(),
+            [&route](const auto& r) { return r.edges == route->edges; })) {
+      return {};
+    }
+
+    routes.push_back(std::move(*route));
+    configs.push_back(std::move(conf));
+    addToTriangulation();
+    return routes.size() - 1;
   }
 
   public:
@@ -230,7 +270,8 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
   EnumerateOptimals(Graph* g, size_t maxRoutes)
       : g(g)
       , maxRoutes(maxRoutes)
-      , d(g->createDijkstra())
+      , d(THREAD_COUNT, g->createDijkstra())
+      , tp(THREAD_COUNT)
   {
   }
 
@@ -241,16 +282,6 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
 
     run_base_configs(s, t);
 
-    Config conf(std::vector(Dim, 1.0 / Dim));
-    auto route = d.findBestRoute(s, t, conf);
-
-    if (route && std::none_of(routes.begin(), routes.end(), [&route](const auto& r) {
-          return r.edges == route->edges;
-        })) {
-      routes.push_back(std::move(*route));
-      configs.push_back(std::move(conf));
-      addToTriangulation();
-    }
     double maxValue = *std::max_element(&factor[0], &factor[Dim]);
 
     for (double& value : factor) {
@@ -262,7 +293,7 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
           [](const auto& r) { return r.costs; });
       try {
         Config conf = findConfig(costs);
-        auto route = d.findBestRoute(s, t, conf);
+        auto route = d[0].findBestRoute(s, t, conf);
         if (route && std::none_of(routes.begin(), routes.end(), [route](const auto& r) {
               return r.edges == route->edges;
             })) {
@@ -299,7 +330,7 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
         }
 
         Config conf = findConfig(costs);
-        auto route = d.findBestRoute(s, t, conf);
+        auto route = d[0].findBestRoute(s, t, conf);
         if (route && std::none_of(routes.begin(), routes.end(), [route](const auto& r) {
               return r.edges == route->edges;
             })) {
