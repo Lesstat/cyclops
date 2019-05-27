@@ -223,17 +223,21 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
     Config conf(std::vector(Dim, 1.0 / Dim));
     future_routes.emplace_back(run_on_thread_pool(s, t, conf, Dim));
 
+    process_routing_result_future(future_routes.back());
+    future_routes.pop_back();
+
+    assert(future_routes.size() == Dim);
+
     for (size_t i = 0; i < Dim; ++i) {
       auto index = process_routing_result_future(future_routes[i]);
       if (index) {
         factor[i] = routes[*index].costs.values[i];
       }
     }
-
-    process_routing_result_future(future_routes.back());
   }
 
-  RoutingResultFuture run_on_thread_pool(NodePos s, NodePos t, Config c, size_t thread_num)
+  RoutingResultFuture run_on_thread_pool(
+      const NodePos& s, const NodePos& t, const Config& c, size_t thread_num)
   {
     return tp.enqueue([this, s, t, c, thread_num] {
       auto route = d[thread_num].findBestRoute(s, t, c);
@@ -249,11 +253,9 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
     auto& route = std::get<std::optional<Route>>(result);
     auto& conf = std::get<Config>(result);
 
-    if (!route)
-      return {};
-
-    if (std::any_of(routes.begin(), routes.end(),
-            [&route](const auto& r) { return r.edges == route->edges; })) {
+    if (!route || std::any_of(routes.begin(), routes.end(), [&route](const auto& r) {
+          return r.edges == route->edges;
+        })) {
       return {};
     }
 
@@ -317,30 +319,35 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
       if (q.empty()) {
         break;
       }
-      auto f = std::min_element(q.begin(), q.end(),
-          [](const auto& a, const auto& b) -> bool { return a.data().prio() < b.data().prio(); });
 
-      FullCellId& cellData = const_cast<FullCellId&>(f->data());
-      cellData.checked(true);
+      std::sort(q.begin(), q.end(),
+          [](const auto& a, const auto& b) { return a.data().prio() > b.data().prio(); });
 
-      try {
-        std::vector<Cost> costs;
-        for (const auto& v : this->cell_vertices(*f)) {
-          costs.push_back(routes[v->data().id].costs);
+      std::vector<RoutingResultFuture> futures;
+      for (size_t i = 0; i < THREAD_COUNT && !q.empty(); ++i) {
+
+        auto f = q.back();
+        q.pop_back();
+
+        FullCellId& cellData = const_cast<FullCellId&>(f.data());
+        cellData.checked(true);
+        try {
+          std::vector<Cost> costs;
+          for (const auto& v : this->cell_vertices(f)) {
+            costs.push_back(routes[v->data().id].costs);
+          }
+
+          Config conf = findConfig(costs);
+          futures.emplace_back(run_on_thread_pool(s, t, conf, i));
+
+        } catch (std::runtime_error& e) {
+          std::cerr << "error: " << e.what() << "\n";
         }
+      }
 
-        Config conf = findConfig(costs);
-        auto route = d[0].findBestRoute(s, t, conf);
-        if (route && std::none_of(routes.begin(), routes.end(), [route](const auto& r) {
-              return r.edges == route->edges;
-            })) {
-          routes.push_back(std::move(*route));
-          configs.push_back(std::move(conf));
-          addToTriangulation();
-        }
-
-      } catch (std::runtime_error& e) {
-        std::cerr << "error: " << e.what() << "\n";
+      while (!futures.empty()) {
+        process_routing_result_future(futures.back());
+        futures.pop_back();
       }
     }
 
