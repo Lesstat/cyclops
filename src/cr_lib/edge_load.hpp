@@ -37,6 +37,7 @@ template <int Dim> class EdgeLoads {
 
   double operator[](EdgeId e);
   double max_load();
+  double avg_load();
 
   protected:
   private:
@@ -69,6 +70,24 @@ template <int Dim> double EdgeLoads<Dim>::max_load()
   auto max = *std::max_element(loads.begin(), loads.end(),
       [](const auto& a, const auto& b) { return std::get<size_t>(a) < std::get<size_t>(b); });
   return static_cast<double>(std::get<size_t>(max)) / route_count;
+}
+
+template <int Dim> double EdgeLoads<Dim>::avg_load()
+{
+  double sum = 0.0;
+  size_t count = 0;
+  for (const auto& [edge_id, load] : loads) {
+    if (load == 0) {
+      continue;
+    }
+    ++count;
+    sum += this->operator[](edge_id);
+  }
+
+  if (count == 0) {
+    return 0.0;
+  }
+  return static_cast<double>(sum) / count;
 }
 
 #endif /* EDGE_LOAD_H */

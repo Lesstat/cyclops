@@ -30,6 +30,7 @@ TEST_CASE("Test edge load Computation")
     REQUIRE(l[EdgeId(2)] == 0.0);
 
     REQUIRE(l.max_load() == 0.0);
+    REQUIRE(l.avg_load() == 0.0);
   }
 
   SECTION("One Route means load of 1 on contained edges")
@@ -67,6 +68,7 @@ TEST_CASE("Test edge load Computation")
     REQUIRE(l[EdgeId(2)] == 1.0);
     REQUIRE(l[EdgeId(312)] == 0.5);
     REQUIRE(l[EdgeId(4)] == 0.0);
+    REQUIRE(l.avg_load() == 2.0 / 3.0);
   }
 
   SECTION("Maxload < 1")
@@ -91,5 +93,6 @@ TEST_CASE("Test edge load Computation")
     REQUIRE(l[EdgeId(4)] == 0.0);
 
     REQUIRE(l.max_load() == 0.5);
+    REQUIRE(l.avg_load() == 0.5);
   }
 }
