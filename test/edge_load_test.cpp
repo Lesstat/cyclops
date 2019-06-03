@@ -28,6 +28,8 @@ TEST_CASE("Test edge load Computation")
     EdgeLoads l(v);
     REQUIRE(l[EdgeId(1)] == 0.0);
     REQUIRE(l[EdgeId(2)] == 0.0);
+
+    REQUIRE(l.max_load() == 0.0);
   }
 
   SECTION("One Route means load of 1 on contained edges")
@@ -42,11 +44,12 @@ TEST_CASE("Test edge load Computation")
     EdgeLoads l(v);
     REQUIRE(l[EdgeId(1)] == 1.0);
     REQUIRE(l[EdgeId(2)] == 0.0);
+
+    REQUIRE(l.max_load() == 1.0);
   }
 
   SECTION("Multiple Routes")
   {
-
     Route<2> r1;
     r1.edges.push_back(EdgeId(1));
     r1.edges.push_back(EdgeId(2));
@@ -64,5 +67,29 @@ TEST_CASE("Test edge load Computation")
     REQUIRE(l[EdgeId(2)] == 1.0);
     REQUIRE(l[EdgeId(312)] == 0.5);
     REQUIRE(l[EdgeId(4)] == 0.0);
+  }
+
+  SECTION("Maxload < 1")
+  {
+    Route<2> r1;
+    r1.edges.push_back(EdgeId(1));
+    r1.edges.push_back(EdgeId(2));
+
+    Route<2> r2;
+    r2.edges.push_back(EdgeId(3));
+    r2.edges.push_back(EdgeId(312));
+
+    std::vector<Route<2>> v;
+    v.push_back(r1);
+    v.push_back(r2);
+
+    EdgeLoads l(v);
+    REQUIRE(l[EdgeId(1)] == 0.5);
+    REQUIRE(l[EdgeId(2)] == 0.5);
+    REQUIRE(l[EdgeId(3)] == 0.5);
+    REQUIRE(l[EdgeId(312)] == 0.5);
+    REQUIRE(l[EdgeId(4)] == 0.0);
+
+    REQUIRE(l.max_load() == 0.5);
   }
 }

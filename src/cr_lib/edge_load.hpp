@@ -36,6 +36,7 @@ template <int Dim> class EdgeLoads {
   EdgeLoads(const std::vector<Route>&);
 
   double operator[](EdgeId e);
+  double max_load();
 
   protected:
   private:
@@ -62,5 +63,12 @@ template <int Dim> double EdgeLoads<Dim>::operator[](EdgeId e)
 {
   return static_cast<double>(loads[e]) / route_count;
 };
+
+template <int Dim> double EdgeLoads<Dim>::max_load()
+{
+  auto max = *std::max_element(loads.begin(), loads.end(),
+      [](const auto& a, const auto& b) { return std::get<size_t>(a) < std::get<size_t>(b); });
+  return static_cast<double>(std::get<size_t>(max)) / route_count;
+}
 
 #endif /* EDGE_LOAD_H */
