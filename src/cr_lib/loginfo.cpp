@@ -17,6 +17,8 @@
 */
 #include "loginfo.hpp"
 
+#include <algorithm>
+
 Logger::Logger() {}
 
 thread_local Logger Logger::instance;

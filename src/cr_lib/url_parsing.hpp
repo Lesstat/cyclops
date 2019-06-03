@@ -17,7 +17,15 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#ifndef URL_PARSING_H
+#define URL_PARSING_H
+
+#include <string>
+#include <vector>
+
+
 struct ImportantMetric;
 
 ImportantMetric parse_important_metric(const std::string& value);
 std::vector<ImportantMetric> parse_important_metric_list(const std::string& metrics);
+#endif /* URL_PARSING_H */

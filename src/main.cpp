@@ -259,8 +259,8 @@ template <int Dim> void runWebServer(Graph<Dim>& g)
       Json::Value js_edges(Json::arrayValue);
       for (size_t i = 0; i < edges.size(); ++i) {
         Json::Value edge(Json::arrayValue);
-        edge.append(edges[i].first);
-        edge.append(edges[i].second);
+        edge.append(static_cast<Json::UInt64>(edges[i].first));
+        edge.append(static_cast<Json::UInt64>(edges[i].second));
         js_edges.append(edge);
       }
 

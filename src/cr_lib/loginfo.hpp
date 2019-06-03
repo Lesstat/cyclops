@@ -18,6 +18,8 @@
 #ifndef LOGINFO_H
 #define LOGINFO_H
 
+#include <string>
+
 class Logger {
 
   Logger();

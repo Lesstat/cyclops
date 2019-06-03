@@ -21,6 +21,10 @@
 
 #include "glpk.h"
 
+#include <vector>
+#include <stdexcept>
+#include <algorithm>
+
 class ilpSet {
 
   glp_prob* problem;
