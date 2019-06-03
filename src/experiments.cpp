@@ -17,6 +17,7 @@
 */
 
 #include "dijkstra.hpp"
+#include "edge_load.hpp"
 #include "enumerate_optimals.hpp"
 #include "graph_loading.hpp"
 #include "grid.hpp"
@@ -329,7 +330,8 @@ void restricted_exploration(std::ifstream& input, std::ofstream& output, Grid& g
 {
   if (output.tellp() == 0) {
     output << "s_lat,s_lng,t_lat,t_lng,inputgraph,starttime,restriction_parameters,all_time,#all_"
-              "routes,#all_doubles,restr_time,#restr_routes,#restr_doubles\n";
+              "routes,all_avg_load,all_max_load,restr_time,#restr_routes,restr_avg_load,restr_max_"
+              "load\n";
   }
 
   boost::filesystem::path p(graphfile);
@@ -371,27 +373,16 @@ void restricted_exploration(std::ifstream& input, std::ofstream& output, Grid& g
     auto restricted_time = c::duration_cast<ms>(end - start).count();
     auto routes2 = std::get<std::vector<Route<Dim>>>(result2);
     auto restricted_route_count = routes2.size();
-    size_t all_similar = 0;
 
-    for (size_t i = 0; i < routes.size(); ++i) {
-      for (size_t j = i + 1; j < routes.size(); ++j) {
-        if (routes[i].edges == routes[j].edges)
-          all_similar++;
-      }
-    }
+    EdgeLoads all_loads(routes);
 
-    size_t restr_similar = 0;
-    for (size_t i = 0; i < routes2.size(); ++i) {
-      for (size_t j = i + 1; j < routes2.size(); ++j) {
-        if (routes2[i].edges == routes2[j].edges)
-          restr_similar++;
-      }
-    }
+    EdgeLoads restr_loads(routes2);
 
     output << s_lat << ',' << s_lng << ',' << t_lat << ',' << t_lng << ',' << graph_file_name << ','
            << std::put_time(starttime, "%Y-%m-%d %T") << ',' << '"' << restriction_parameters << '"'
-           << ',' << all_time << ',' << all_route_count << ',' << all_similar << ','
-           << restricted_time << ',' << restricted_route_count << ',' << restr_similar << '\n';
+           << ',' << all_time << ',' << all_route_count << ',' << all_loads.avg_load() << ','
+           << all_loads.max_load() << ',' << restricted_time << ',' << restricted_route_count << ','
+           << restr_loads.avg_load() << ',' << restr_loads.max_load() << '\n';
     output.flush();
   }
 }
