@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(cycle-routing)
-add_compile_options(-Wall -Wextra -Wpedantic -std=c++17 -Wno-register)
+add_compile_options(-Wall -Wextra -Wpedantic --std=c++17 -Wno-register -fpermissive)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Set a default build type if none was specified
@@ -19,13 +19,17 @@ include(cotire)
 
 find_package (Threads)
 find_package(glpk REQUIRED) 
-find_package(CGAL REQUIRED)
-find_package(Eigen3 REQUIRED)
+find_package(CGAL 4.11 REQUIRED)
+find_package(Eigen3 3.3 REQUIRED)
 find_library(gmp REQUIRED)
 
 find_package(Boost 1.58 REQUIRED COMPONENTS serialization program_options filesystem iostreams)
 
-add_subdirectory(vendor/jsoncpp)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(JSONCPP jsoncpp)
+
+message(STATUS "json lib '${JSONCPP_LIBRARIES}'")
+link_libraries(${JSONCPP_LIBRARIES})
 
 add_library(threadpool INTERFACE)
 target_include_directories(threadpool INTERFACE vendor/ThreadPool)
@@ -39,10 +43,9 @@ target_include_directories(cr_lib PUBLIC ${EIGEN3_INCLUDE_DIR})
 target_link_libraries(cr_lib PRIVATE ${GLPK_LIBRARIES})
 target_link_libraries(cr_lib PRIVATE ${Boost_LIBRARIES})
 target_link_libraries(cr_lib PRIVATE ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(cr_lib PRIVATE ${CGAL_LIBRARY})
+target_link_libraries(cr_lib PRIVATE CGAL::CGAL)
 target_link_libraries(cr_lib PRIVATE ${GMP_LIBRARIES})
 target_link_libraries(cr_lib PUBLIC threadpool)
-target_link_libraries(cr_lib PUBLIC jsoncpp)
 
 add_subdirectory(vendor/Simple-Web-Server)
 
@@ -50,6 +53,7 @@ add_subdirectory(vendor/Simple-Web-Server)
 add_executable(cr src/main.cpp)
 target_link_libraries(cr cr_lib)
 target_link_libraries(cr simple-web-server)
+target_include_directories(cr PRIVATE ${JSONCPP_INCLUDE_DIRS})
 
 # Definition of Testing library catch
 add_library(catch INTERFACE)
@@ -69,4 +73,4 @@ target_link_libraries(cr_test cr_lib catch)
 add_test(NAME cr_test COMMAND cr_test)
 enable_testing()
 
-cotire(cr_lib cr)
+#cotire(cr_lib cr)
