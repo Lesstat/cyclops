@@ -351,8 +351,8 @@ void restricted_exploration(std::ifstream& input, std::ofstream& output, Grid& g
       continue;
     }
 
-    auto start = c::high_resolution_clock::now();
     EnumerateOptimals<Dim, DefaultsOnly> all(graph, refinements);
+    auto start = c::high_resolution_clock::now();
     all.find(*s, *t);
     auto result = all.recommend_routes(false);
     auto end = c::high_resolution_clock::now();
@@ -361,11 +361,11 @@ void restricted_exploration(std::ifstream& input, std::ofstream& output, Grid& g
     auto routes = std::get<std::vector<Route<Dim>>>(result);
     auto all_route_count = routes.size();
 
-    start = c::high_resolution_clock::now();
     EnumerateOptimals<Dim, OnlyExclusion> restricted(graph, refinements);
     Slack<Dim> slack
         = important_metrics_to_array<Dim>(parse_important_metric_list(restriction_parameters));
     restricted.set_slack(slack);
+    start = c::high_resolution_clock::now();
     restricted.find(*s, *t);
     auto result2 = restricted.recommend_routes(false);
     end = c::high_resolution_clock::now();
