@@ -93,7 +93,7 @@ class DefaultsOnly : public AllFacetsPolicy<Dim>,
 
 template <int Dim, class Derived>
 class OnlyExclusion : public ThresholdPolicy<Dim>,
-                      public SharingSimilarityPolicy<Dim, Derived>,
+                      public SimilarityPolicy<Dim>,
                       public FacetPrioPolicy<Dim>,
                       public CostTriangulation<Dim, Derived> {
   private:
