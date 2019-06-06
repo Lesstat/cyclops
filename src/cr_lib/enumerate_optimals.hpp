@@ -33,7 +33,6 @@
 #include <Eigen/Dense>
 
 #include <chrono>
-#include <memory>
 #include <queue>
 
 const size_t THREAD_COUNT
@@ -150,8 +149,8 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
 
   size_t pending_requests = 0;
   std::vector<DijkstraThread<Dim>> d;
-  std::shared_ptr<MultiQueue<RoutingRequest<Dim>>> req_queue;
-  std::shared_ptr<MultiQueue<RoutingResult<Dim>>> res_queue;
+  MultiQueue<RoutingRequest<Dim>> req_queue;
+  MultiQueue<RoutingResult<Dim>> res_queue;
   typename Dijkstra::ScalingFactor factor;
 
   Config findConfig(const std::vector<Cost>& costs) { return find_equal_cost_config(costs); }
@@ -168,7 +167,7 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
 
   void schedule_routing(RoutingRequest<Dim> r)
   {
-    req_queue->send(r);
+    req_queue.send(r);
     ++pending_requests;
   }
 
@@ -229,7 +228,7 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
     schedule_routing(RoutingRequest<Dim>(s, t, conf));
 
     for (size_t i = 0; i < Dim + 1; ++i) {
-      process_routing_result(res_queue->receive());
+      process_routing_result(res_queue.receive());
     }
   }
 
@@ -270,8 +269,6 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
       , maxRoutes(maxRoutes)
   {
 
-    req_queue = std::make_shared<MultiQueue<RoutingRequest<Dim>>>();
-    res_queue = std::make_shared<MultiQueue<RoutingResult<Dim>>>();
     d.reserve(THREAD_COUNT);
     for (size_t i = 0; i < THREAD_COUNT; ++i) {
       d.emplace_back(req_queue, g->createDijkstra(), res_queue);
@@ -285,8 +282,8 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
   ~EnumerateOptimals()
   {
     using namespace std::chrono_literals;
-    req_queue->close();
-    res_queue->close();
+    req_queue.close();
+    res_queue.close();
   }
 
   void find(NodePos s, NodePos t)
@@ -308,7 +305,7 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
       try {
         schedule_routing(RoutingRequest<Dim>(s, t, findConfig(costs)));
 
-        auto index = process_routing_result(res_queue->receive());
+        auto index = process_routing_result(res_queue.receive());
         if (!index) {
           std::cerr << "i'm giving up with " << routes.size() << " routes." << '\n';
           break;
@@ -348,10 +345,10 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
       }
 
       if (pending_requests > 0) {
-        process_routing_result(res_queue->receive()); // receive at least one afer each round
+        process_routing_result(res_queue.receive()); // receive at least one afer each round
       }
       RoutingResult<Dim> res;
-      while (res_queue->try_receive(res)) {
+      while (res_queue.try_receive(res)) {
         process_routing_result(std::move(res));
       }
     }

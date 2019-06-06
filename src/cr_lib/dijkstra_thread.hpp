@@ -21,7 +21,6 @@
 #include "dijkstra.hpp"
 #include "multiqueue.hpp"
 
-#include <memory>
 #include <optional>
 #include <thread>
 
@@ -62,8 +61,8 @@ template <int D> class DijkstraThread {
   DijkstraThread& operator=(const DijkstraThread& other) = default;
   DijkstraThread& operator=(DijkstraThread&& other) noexcept = default;
 
-  DijkstraThread(std::shared_ptr<MultiQueue<RoutingRequest<D>>> input, Dijkstra<D> d,
-      std::shared_ptr<MultiQueue<RoutingResult<D>>> output)
+  DijkstraThread(
+      MultiQueue<RoutingRequest<D>>& input, Dijkstra<D> d, MultiQueue<RoutingResult<D>>& output)
       : input(input)
       , output(output)
       , d(std::move(d))
@@ -74,13 +73,13 @@ template <int D> class DijkstraThread {
   {
 
     t = std::thread([this]() {
-      while (!input->closed()) {
+      while (!input.closed()) {
         try {
-          auto req = input->receive();
+          auto req = input.receive();
           RoutingResult<D> res;
           res.route = d.findBestRoute(req.from, req.to, req.c);
           res.c = req.c;
-          output->send(res);
+          output.send(res);
         } catch (std::exception&) {
         }
       }
@@ -89,8 +88,8 @@ template <int D> class DijkstraThread {
 
   protected:
   private:
-  std::shared_ptr<MultiQueue<RoutingRequest<D>>> input;
-  std::shared_ptr<MultiQueue<RoutingResult<D>>> output;
+  MultiQueue<RoutingRequest<D>>& input;
+  MultiQueue<RoutingResult<D>>& output;
   Dijkstra<D> d;
   std::thread t;
 };
