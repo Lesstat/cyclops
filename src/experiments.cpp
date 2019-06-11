@@ -100,6 +100,53 @@ void explore_random(std::ifstream& file, std::ofstream& output, Dijkstra<Dim>& d
   }
 }
 
+template <int Dim> void load_histogramm(Graph<Dim>& g, Grid& grid)
+{
+
+  while (std::cin) {
+    double lat_s, lat_t, lng_s, lng_t;
+    std::string slack;
+    std::cout << "enter first lat" << '\n';
+    std::cin >> lat_s;
+
+    std::cout << "enter first lng" << '\n';
+    std::cin >> lng_s;
+
+    std::optional<NodePos> s = grid.findNextNode(Lat { lat_s }, Lng { lng_s });
+    if (!s) {
+      std::cout << "Did not find first point" << '\n';
+      continue;
+    }
+    std::cout << "enter second lat" << '\n';
+    std::cin >> lat_t;
+
+    std::cout << "enter second lng" << '\n';
+    std::cin >> lng_t;
+
+    std::optional<NodePos> t = grid.findNextNode(Lat { lat_t }, Lng { lng_t });
+    if (!s) {
+      std::cout << "Did not find second point" << '\n';
+      continue;
+    }
+
+    std::cout << "enter slack:" << '\n';
+    std::cin >> slack;
+    auto important_metrics = parse_important_metric_list(slack);
+
+    EnumerateOptimals<Dim, OnlyExclusion> enumerate(&g, std::numeric_limits<size_t>::max());
+    enumerate.find(*s, *t);
+    enumerate.set_slack(important_metrics_to_array<Dim>(important_metrics));
+    auto res = enumerate.recommend_routes(false);
+
+    EdgeLoads load(std::get<std::vector<Route<Dim>>>(res));
+
+    std::stringstream filename;
+    filename << *s << "_" << *t << "_" << slack << ".csv";
+    std::ofstream outfile(filename.str());
+    load.write_csv(outfile);
+  }
+}
+
 template <int Dim>
 void enumerate(std::ifstream& file, std::ofstream& output, Graph<Dim>* g, size_t maxRoutes,
     double maxSimilarity, std::string type)
@@ -487,7 +534,8 @@ int main(int argc, char* argv[])
     ("enumerate,e", "enumerate paths")
     ("all", "enumerate all paths")
     ("st", "Run enumerate on s-t pairs")
-    ("restricted,r", po::value<std::string>(&restriction_parameter) , "Compare restricted enumeration to full enumeration") ;
+    ("restricted,r", po::value<std::string>(&restriction_parameter) , "Compare restricted enumeration to full enumeration")
+    ("load,l", "generate data for load histogramm") ;
   // clang-format on
   po::options_description all;
   all.add_options()("help,h", "prints help message");
@@ -653,6 +701,9 @@ int main(int argc, char* argv[])
   } else if (vm.count("restricted") > 0) {
     Grid grid = g.createGrid();
     restricted_exploration(params, output, grid, &g, loadFileName, restriction_parameter);
+  } else if (vm.count("load") > 0) {
+    Grid grid = g.createGrid();
+    load_histogramm(g, grid);
   }
   return 0;
 }

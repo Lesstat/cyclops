@@ -21,6 +21,7 @@
 #include "graph.hpp"
 
 #include <map>
+#include <ostream>
 #include <vector>
 
 template <int Dim> class EdgeLoads {
@@ -38,6 +39,7 @@ template <int Dim> class EdgeLoads {
   double operator[](EdgeId e);
   double max_load();
   double avg_load();
+  void write_csv(std::ostream&);
 
   protected:
   private:
@@ -88,6 +90,14 @@ template <int Dim> double EdgeLoads<Dim>::avg_load()
     return 0.0;
   }
   return static_cast<double>(sum) / count;
+}
+
+template <int Dim> void EdgeLoads<Dim>::write_csv(std::ostream& out)
+{
+  out << "edge,routecount" << '\n';
+  for (const auto& [edge, count] : loads) {
+    out << edge << ',' << count << '\n';
+  }
 }
 
 #endif /* EDGE_LOAD_H */
