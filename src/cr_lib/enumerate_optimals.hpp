@@ -230,16 +230,16 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
     for (size_t i = 0; i < Dim + 1; ++i) {
       process_routing_result(res_queue.receive());
     }
-  }
 
-  // RoutingResultFuture run_on_thread_pool(
-  //     const NodePos& s, const NodePos& t, const Config& c, size_t thread_num)
-  // {
-  //   return tp.enqueue([this, s, t, c, thread_num] {
-  //     auto route = d[thread_num].findBestRoute(s, t, c);
-  //     return std::make_tuple(c, route);
-  //   });
-  // }
+    for (size_t i = 0; i < configs.size(); ++i) {
+      for (size_t j = 0; j < Dim; ++j) {
+        if (configs[i].values[j] == 1) {
+          factor[j] = routes[i].costs.values[j];
+          break;
+        }
+      }
+    }
+  }
 
   std::optional<size_t> process_routing_result(RoutingResult<Dim>&& result)
   {
