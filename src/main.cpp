@@ -62,7 +62,10 @@ template <int Dim> void runWebServer(Graph<Dim>& g)
       = std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1;
 
   server.default_resource["GET"] = [](Response response, Request /*request*/) {
-    response->write(SimpleWeb::StatusCode::client_error_not_found, "No matching handler found");
+    SimpleWeb::CaseInsensitiveMultimap header;
+    header.emplace("Location", "/web");
+    response->write(
+        SimpleWeb::StatusCode::redirection_temporary_redirect, "No matching handler found", header);
   };
 
   server.resource["^/web/?.*"]["GET"] = [](Response response, Request request) {
