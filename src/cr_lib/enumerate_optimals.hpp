@@ -361,8 +361,7 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
   size_t found_route_count() const { return routes.size(); }
   size_t vertex_count() const { return this->number_of_vertices(); }
 
-  std::tuple<std::vector<Route>, std::vector<Config>, EnumerateOptimals::Edges> recommend_routes(
-      bool ilp)
+  std::tuple<std::vector<Route>, std::vector<Config>> recommend_routes(bool ilp)
   {
     auto [vertices, edges] = this->vertex_ids_and_edges();
     auto independent_set = extract_independent_set(vertices, ilp);
@@ -389,25 +388,12 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
 
       configs.push_back(std::move(c));
     }
-
-    std::map<size_t, size_t> id_to_pos;
-    for (size_t i = 0; i < independent_set.size(); ++i) {
-      id_to_pos[independent_set[i]] = i;
-    }
-    Edges final_edges;
-    for (auto& e : edges) {
-      try {
-        final_edges.emplace_back(id_to_pos.at(e.first), id_to_pos.at(e.second));
-      } catch (std::out_of_range& e) {
-        continue;
-      }
-    }
     if (routes.empty() && !this->routes.empty()) {
       routes.push_back(this->routes.front());
       configs.push_back(this->configs.front());
     }
 
-    return { routes, configs, edges };
+    return { routes, configs };
   }
   const Route& route(size_t i) const { return routes[i]; }
 };

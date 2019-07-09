@@ -214,7 +214,7 @@ template <int Dim> void runWebServer(Graph<Dim>& g)
     *log << "from " << *s << " to " << *t << "\\n";
 
     auto overlap = *maxOverlap / 100.0;
-    auto [routes, configs, edges] = [&]() {
+    auto [routes, configs] = [&]() {
       if (important_metrics.empty()) {
 
         EnumerateOptimals<Dim, SimilarityPrio> enumerate(&g, *maxRoutes);
@@ -256,16 +256,7 @@ template <int Dim> void runWebServer(Graph<Dim>& g)
         points.append(route);
       }
 
-      Json::Value js_edges(Json::arrayValue);
-      for (size_t i = 0; i < edges.size(); ++i) {
-        Json::Value edge(Json::arrayValue);
-        edge.append(static_cast<Json::UInt64>(edges[i].first));
-        edge.append(static_cast<Json::UInt64>(edges[i].second));
-        js_edges.append(edge);
-      }
-
       result["points"] = points;
-      result["edges"] = js_edges;
       result["debug"] = log->getInfo();
 
       SimpleWeb::CaseInsensitiveMultimap header;

@@ -182,11 +182,11 @@ void enumerate(std::ifstream& file, std::ofstream& output, Graph<Dim>* g, size_t
       std::vector<Route> routes;
       o.find(NodePos { from }, NodePos { to });
 
-      std::tie(routes, std::ignore, std::ignore) = o.recommend_routes(true);
+      std::tie(routes, std::ignore) = o.recommend_routes(true);
       auto routes_recommended_ilp = routes.size();
       auto ilp_time = o.recommendation_time;
 
-      std::tie(routes, std::ignore, std::ignore) = o.recommend_routes(false);
+      std::tie(routes, std::ignore) = o.recommend_routes(false);
       auto routes_recommended_greedy = routes.size();
       auto greedy_time = o.recommendation_time;
 
@@ -227,7 +227,7 @@ void enumerate_all(std::ifstream& file, std::ofstream& output, Graph<Dim>* g, st
       std::vector<Route> routes;
       o.find(NodePos { from }, NodePos { to });
 
-      std::tie(routes, std::ignore, std::ignore) = o.recommend_routes(true);
+      std::tie(routes, std::ignore) = o.recommend_routes(true);
 
       auto routes_recommended = routes.size();
 
@@ -463,7 +463,7 @@ void explore_s_t_pairs(std::ifstream& input, std::ofstream& output, Grid& g, Gra
 
     auto start = c::high_resolution_clock::now();
     e.find(*s, *t);
-    auto [routes, configs, edges] = e.recommend_routes(false);
+    auto [routes, configs] = e.recommend_routes(false);
     auto end = c::high_resolution_clock::now();
 
     auto time = c::duration_cast<ms>(end - start).count();
