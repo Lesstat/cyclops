@@ -30,9 +30,9 @@ make -j
 ```
 
 ## Usage
-The main executable of Cyclops is ``cr``. It has the following cli options:
+The main executable of Cyclops is ``cyclops``. It has the following cli options:
 ``` shell
-$ ./build/cr -h
+$ ./build/cyclops -h
   -h [ --help ]          prints help message
 
 loading options:

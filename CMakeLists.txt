@@ -15,7 +15,6 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-include(cotire)
 
 find_package (Threads)
 find_package(glpk REQUIRED) 
@@ -50,10 +49,10 @@ target_link_libraries(cr_lib PUBLIC threadpool)
 add_subdirectory(vendor/Simple-Web-Server)
 
 # Executable of project links against lib
-add_executable(cr src/main.cpp)
-target_link_libraries(cr cr_lib)
-target_link_libraries(cr simple-web-server)
-target_include_directories(cr PRIVATE ${JSONCPP_INCLUDE_DIRS})
+add_executable(cyclops src/main.cpp)
+target_link_libraries(cyclops cr_lib)
+target_link_libraries(cyclops simple-web-server)
+target_include_directories(cyclops PRIVATE ${JSONCPP_INCLUDE_DIRS})
 
 # Definition of Testing library catch
 add_library(catch INTERFACE)
@@ -73,4 +72,3 @@ target_link_libraries(cr_test cr_lib catch)
 add_test(NAME cr_test COMMAND cr_test)
 enable_testing()
 
-#cotire(cr_lib cr)

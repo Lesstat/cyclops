@@ -478,7 +478,8 @@ int main(int argc, char* argv[])
 
   po::options_description web { "web options" };
   web.add_options()("port", po::value<unsigned short>(&port), "port to listen on");
-  web.add_options()("max-refinements", po::value<size_t>(&max_refinements), "port to listen on");
+  web.add_options()("max-refinements", po::value<size_t>(&max_refinements),
+      "Maximal allowed refinement limit for route enumeration");
 
   po::options_description all;
   all.add_options()("help,h", "prints help message");
