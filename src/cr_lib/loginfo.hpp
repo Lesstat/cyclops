@@ -32,24 +32,15 @@ class Logger {
 
   void init();
 
-  template <typename T> Logger& operator<<(const T& /*s*/)
+  template <typename T> Logger& operator<<(const T& s)
   {
-    // info += s;
+    if constexpr (std::is_integral<T>::value || std::is_floating_point<T>::value) {
+      info += std::to_string(s);
+    } else {
+      info += s;
+    }
     return *this;
   }
-
-  Logger& operator<<(const double& /*d*/)
-  {
-    // info += std::to_string(d);
-    return *this;
-  }
-
-  Logger& operator<<(const size_t& /*d*/)
-  {
-    // info += std::to_string(d);
-    return *this;
-  }
-
   std::string& getInfo();
 
   virtual ~Logger();

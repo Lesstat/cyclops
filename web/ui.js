@@ -337,7 +337,7 @@ function addToDebugLog(requestType, message) {
   let debugLog = document.getElementById("debuglog");
   let content = "Debug log for " + requestType + " request\n";
   content += message;
-  content += "End of log for " + requestType + " request\n";
+  content += "\nEnd of log for " + requestType + " request\n";
   content += "=============================================\n";
   debugLog.value += content;
 }

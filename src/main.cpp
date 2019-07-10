@@ -45,7 +45,7 @@ template <int Dim> void saveToBinaryFile(Graph<Dim>& ch, std::string& filename)
   }
 }
 
-template <int Dim> void runWebServer(Graph<Dim>& g)
+template <int Dim> void runWebServer(Graph<Dim>& g, unsigned short port, size_t max_refinements)
 {
   using HttpServer = SimpleWeb::Server<SimpleWeb::HTTP>;
   using Response = std::shared_ptr<HttpServer::Response>;
@@ -57,7 +57,7 @@ template <int Dim> void runWebServer(Graph<Dim>& g)
   Grid grid = g.createGrid();
 
   HttpServer server;
-  server.config.port = 8080;
+  server.config.port = port;
   server.config.thread_pool_size
       = std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1;
 
@@ -163,7 +163,7 @@ template <int Dim> void runWebServer(Graph<Dim>& g)
       auto end = std::chrono::high_resolution_clock::now();
       size_t dur = std::chrono::duration_cast<ms>(end - start).count();
       *log << "Dijkstra took " << dur << "ms"
-           << "\\n";
+           << "\n \n";
 
       std::cout << "Finding the route took " << dur << "ms" << '\n';
       if (route) {
@@ -182,97 +182,108 @@ template <int Dim> void runWebServer(Graph<Dim>& g)
     }
   };
 
-  server.resource["^/enumerate"]["GET"] = [&g](Response response, Request request) {
-    auto log = Logger::initLogger();
+  server.resource["^/enumerate"]["GET"]
+      = [&g, max_refinements](Response response, Request request) {
+          auto log = Logger::initLogger();
 
-    std::optional<uint32_t> s {}, t {}, dummy {}, maxOverlap {}, maxRoutes {};
-    std::vector<ImportantMetric> important_metrics;
+          std::optional<uint32_t> s {}, t {}, dummy {}, maxOverlap {}, maxRoutes {};
+          std::vector<ImportantMetric> important_metrics;
 
-    auto queryParams = request->parse_query_string();
-    extractQueryFields(queryParams, s, t, dummy, dummy, dummy);
-    for (const auto& param : queryParams) {
-      if (param.first == "maxRoutes") {
-        maxRoutes = stoull(param.second);
-      } else if (param.first == "maxOverlap") {
-        maxOverlap = stoull(param.second);
-      } else if (param.first == "important") {
-        try {
-          important_metrics = parse_important_metric_list(param.second);
-        } catch (std::exception& e) {
-          response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
-          return;
-        }
-      }
-    }
-    if (s > g.getNodeCount() || t > g.getNodeCount()) {
-      response->write(
-          SimpleWeb::StatusCode::client_error_bad_request, "Request contains illegal node ids");
-      return;
-    }
-    if (!(s && t && maxOverlap && maxRoutes)) {
-      response->write(SimpleWeb::StatusCode::client_error_bad_request,
-          "Request needs to contain the parameters: s, t, maxOverlap, maxRoutes");
-      return;
-    }
-    *log << "from " << *s << " to " << *t << "\\n";
+          auto queryParams = request->parse_query_string();
+          extractQueryFields(queryParams, s, t, dummy, dummy, dummy);
+          for (const auto& param : queryParams) {
+            if (param.first == "maxRoutes") {
+              maxRoutes = stoull(param.second);
+            } else if (param.first == "maxOverlap") {
+              maxOverlap = stoull(param.second);
+            } else if (param.first == "important") {
+              try {
+                important_metrics = parse_important_metric_list(param.second);
+              } catch (std::exception& e) {
+                response->write(SimpleWeb::StatusCode::client_error_bad_request, e.what());
+                return;
+              }
+            }
+          }
+          if (s > g.getNodeCount() || t > g.getNodeCount()) {
+            response->write(SimpleWeb::StatusCode::client_error_bad_request,
+                "Request contains illegal node ids");
+            return;
+          }
+          if (!(s && t && maxOverlap && maxRoutes)) {
+            response->write(SimpleWeb::StatusCode::client_error_bad_request,
+                "Request needs to contain the parameters: s, t, maxOverlap, maxRoutes");
+            return;
+          }
+          uint32_t log_s = *s;
+          uint32_t log_t = *t;
+          *log << "enumerating routes from " << log_s << " to " << log_t << "\n";
 
-    auto overlap = *maxOverlap / 100.0;
-    auto [routes, configs] = [&]() {
-      if (important_metrics.empty()) {
+          if (*maxRoutes > max_refinements) {
+            size_t log_max_routes = *maxRoutes;
+            *log << "reduced max refinements from " << log_max_routes << " to " << max_refinements
+                 << " because of server options."
+                 << "\n";
+            maxRoutes = max_refinements;
+          }
 
-        EnumerateOptimals<Dim, SimilarityPrio> enumerate(&g, *maxRoutes);
-        enumerate.set_overlap(overlap);
+          auto overlap = *maxOverlap / 100.0;
+          auto [routes, configs] = [&]() {
+            if (important_metrics.empty()) {
 
-        enumerate.find(NodePos { *s }, NodePos { *t });
-        return enumerate.recommend_routes(false);
-      } else {
+              EnumerateOptimals<Dim, SimilarityPrio> enumerate(&g, *maxRoutes);
+              enumerate.set_overlap(overlap);
 
-        auto slacks = important_metrics_to_array<Dim>(important_metrics);
+              enumerate.find(NodePos { *s }, NodePos { *t });
+              return enumerate.recommend_routes(false);
+            } else {
 
-        EnumerateOptimals<Dim, SimilarityPrioExcludeIrrelevant> enumerate(&g, *maxRoutes);
-        enumerate.set_overlap(overlap);
-        enumerate.set_slack(slacks);
+              auto slacks = important_metrics_to_array<Dim>(important_metrics);
 
-        enumerate.find(NodePos { *s }, NodePos { *t });
-        return enumerate.recommend_routes(false);
-      }
-    }();
+              EnumerateOptimals<Dim, SimilarityPrioExcludeIrrelevant> enumerate(&g, *maxRoutes);
+              enumerate.set_overlap(overlap);
+              enumerate.set_slack(slacks);
 
-    try {
+              enumerate.find(NodePos { *s }, NodePos { *t });
+              return enumerate.recommend_routes(false);
+            }
+          }();
 
-      Json::Value result;
-      Json::Value points(Json::arrayValue);
+          try {
 
-      for (size_t i = 0; i < routes.size(); ++i) {
+            Json::Value result;
+            Json::Value points(Json::arrayValue);
 
-        Json::Value route;
-        Json::Value conf(Json::arrayValue);
+            for (size_t i = 0; i < routes.size(); ++i) {
 
-        for (const auto& v : configs[i].values) {
-          conf.append(v);
-        }
-        route["conf"] = conf;
+              Json::Value route;
+              Json::Value conf(Json::arrayValue);
 
-        route["route"] = routeToJson(routes[i], g);
-        route["selected"] = true;
+              for (const auto& v : configs[i].values) {
+                conf.append(v);
+              }
+              route["conf"] = conf;
 
-        points.append(route);
-      }
+              route["route"] = routeToJson(routes[i], g);
+              route["selected"] = true;
 
-      result["points"] = points;
-      result["debug"] = log->getInfo();
+              points.append(route);
+            }
 
-      SimpleWeb::CaseInsensitiveMultimap header;
-      header.emplace("Content-Type", "application/json");
+            result["points"] = points;
+            result["debug"] = log->getInfo();
 
-      Json::StreamWriterBuilder builder;
+            SimpleWeb::CaseInsensitiveMultimap header;
+            header.emplace("Content-Type", "application/json");
 
-      response->write(
-          SimpleWeb::StatusCode::success_ok, Json::writeString(builder, result), header);
-    } catch (std::exception& e) {
-      response->write(SimpleWeb::StatusCode::server_error_internal_server_error, e.what());
-    }
-  };
+            Json::StreamWriterBuilder builder;
+
+            response->write(
+                SimpleWeb::StatusCode::success_ok, Json::writeString(builder, result), header);
+          } catch (std::exception& e) {
+            response->write(SimpleWeb::StatusCode::server_error_internal_server_error, e.what());
+          }
+        };
 
   std::cout << "Starting web server at http://localhost:" << server.config.port << '\n';
   server.start();
@@ -350,7 +361,7 @@ template <int Dim> int testGraph(Graph<Dim>& g)
 
         size_t pos = 1;
         while (pos < nodeLevels.size()) {
-          std::cout << "Trying pos " << pos << "\n";
+          std::cout << "Trying pos " << pos << '\n';
           const Node* start = nullptr;
           start = nodeLevels[pos];
 
@@ -360,7 +371,7 @@ template <int Dim> int testGraph(Graph<Dim>& g)
             const auto dTest = d.findBestRoute(nextToLastPos, currentPos, c);
             const auto nTest = n.findBestRoute(nextToLastPos, currentPos, c);
             if (!(dTest->costs * c <= nTest->costs * c)) {
-              std::cout << "start id: " << start->id() << "\n";
+              std::cout << "start id: " << start->id() << '\n';
               std::cout << "did not find correct subpath between " << nextToLastPos << " and "
                         << currentPos << " at index " << i << '\n';
 
@@ -381,8 +392,7 @@ template <int Dim> int testGraph(Graph<Dim>& g)
 
               pos++;
             } else {
-              std::cout << "equal routes"
-                        << "\n";
+              std::cout << "equal routes" << '\n';
               return 1;
             }
           }
@@ -413,7 +423,8 @@ template <int Dim> int testGraph(Graph<Dim>& g)
 namespace po = boost::program_options;
 
 template <int Dim>
-int run(po::variables_map& vm, std::string& loadFileName, std::string& saveFileName)
+int run(po::variables_map& vm, std::string& loadFileName, std::string& saveFileName,
+    unsigned short port, size_t max_refinements)
 {
 
   Graph<Dim> g { std::vector<Node>(), std::vector<Edge<Dim>>() };
@@ -437,7 +448,7 @@ int run(po::variables_map& vm, std::string& loadFileName, std::string& saveFileN
   }
 
   if (vm.count("web") > 0) {
-    runWebServer(g);
+    runWebServer(g, port, max_refinements);
   }
   return 0;
 }
@@ -448,6 +459,8 @@ int main(int argc, char* argv[])
 
   std::string loadFileName {};
   std::string saveFileName {};
+  unsigned short port = 8080;
+  size_t max_refinements = 1000;
 
   unsigned short dim = 3;
 
@@ -463,9 +476,13 @@ int main(int argc, char* argv[])
   action.add_options()("test", "runs normal dijkstra and CH dijktra for comparison");
   action.add_options()("web,w", "start webserver for interaction via browser");
 
+  po::options_description web { "web options" };
+  web.add_options()("port", po::value<unsigned short>(&port), "port to listen on");
+  web.add_options()("max-refinements", po::value<size_t>(&max_refinements), "port to listen on");
+
   po::options_description all;
   all.add_options()("help,h", "prints help message");
-  all.add(loading).add(action);
+  all.add(loading).add(action).add(web);
 
   po::variables_map vm {};
   po::store(po::parse_command_line(argc, argv, all), vm);
@@ -476,20 +493,20 @@ int main(int argc, char* argv[])
     return 0;
   }
   switch (dim) {
-  // case 1: {
-  //   return run<1>(vm, loadFileName, saveFileName);
-  //   break;
-  // }
-  // case 2: {
-  //   return run<2>(vm, loadFileName, saveFileName);
-  //   break;
-  // }
+  case 1: {
+    return run<1>(vm, loadFileName, saveFileName, port, max_refinements);
+    break;
+  }
+  case 2: {
+    return run<2>(vm, loadFileName, saveFileName, port, max_refinements);
+    break;
+  }
   case 3: {
-    return run<3>(vm, loadFileName, saveFileName);
+    return run<3>(vm, loadFileName, saveFileName, port, max_refinements);
     break;
   }
   default:
-    std::cout << "Code is not compiled for Dimension " << dim << "\n";
+    std::cout << "Code is not compiled for Dimension " << dim << '\n';
     break;
   }
 

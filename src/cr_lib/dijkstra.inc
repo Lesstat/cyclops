@@ -129,7 +129,7 @@ std::optional<Route<Dim>> Dijkstra<Dim>::findBestRoute(NodePos from, NodePos to,
   while (true) {
     if ((heap.empty()) || (sBigger && tBigger)) {
       *log << "Dijkstra popped " << pqPops << " nodes from PQ"
-           << "\\n";
+           << "\n";
       if (minNode.has_value()) {
         return buildRoute(minNode.value(), previousEdgeS, previousEdgeT, from, to);
       }
