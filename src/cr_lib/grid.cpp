@@ -30,9 +30,9 @@ double haversine_distance(const PositionalNode& a, const PositionalNode& b)
   double theta2 = b.lat * RADIANS_CONVERSION;
   double deltaTheta = (b.lat - a.lat) * RADIANS_CONVERSION;
   double deltaLambda = (b.lng - a.lng) * RADIANS_CONVERSION;
-  double e = pow(sin(deltaTheta / 2.0), 2)
-      + std::cos(theta1) * std::cos(theta2) * pow(sin(deltaLambda / 2.0), 2);
-  double c = 2.0 * asin(sqrt(e));
+  double e = pow(sin(deltaTheta / 2), 2)
+      + std::cos(theta1) * std::cos(theta2) * pow(sin(deltaLambda / 2), 2);
+  double c = 2 * asin(sqrt(e));
   return EARTH_RADIUS * c;
 }
 
@@ -86,6 +86,8 @@ std::optional<NodePos> Grid::findNextNode(Lat lat, Lng lng)
   };
   NodePos dummy { 0 };
 
+  auto sideLength = static_cast<double>(this->sideLength);
+
   const double cell_width = haversine_distance(PositionalNode { bBox.lat_max, bBox.lng_max, dummy },
                                 PositionalNode { bBox.lat_min, bBox.lng_max, dummy })
       / sideLength;
@@ -108,7 +110,7 @@ std::optional<NodePos> Grid::findNextNode(Lat lat, Lng lng)
 
   size_t minDist = 0;
 
-  while (radius < sideLength) {
+  while (radius < this->sideLength) {
     if (foundDist && foundDist < minDist) {
       break;
     }
@@ -117,7 +119,7 @@ std::optional<NodePos> Grid::findNextNode(Lat lat, Lng lng)
       for (long xi = x - radius; xi <= x + radius; ++xi) {
         if (!(std::abs(static_cast<long>(xi - x)) == radius
                 || std::abs(static_cast<long>(yi - y)) == radius)
-            || xi >= sideLength || yi >= sideLength || xi < 0 || yi < 0) {
+            || xi >= this->sideLength || yi >= this->sideLength || xi < 0 || yi < 0) {
 
           continue;
         }
@@ -144,12 +146,12 @@ std::optional<NodePos> Grid::findNextNode(Lat lat, Lng lng)
 
 size_t Grid::coordsToIndex(Lat lat, Lng lng)
 {
-  double cell_width = (bBox.lat_max - bBox.lat_min) / sideLength;
-  double cell_height = (bBox.lng_max - bBox.lng_min) / sideLength;
+  double cell_width = (bBox.lat_max - bBox.lat_min) / static_cast<double>(sideLength);
+  double cell_height = (bBox.lng_max - bBox.lng_min) / static_cast<double>(sideLength);
   double lat_dif = lat - bBox.lat_min;
   double lng_dif = lng - bBox.lng_min;
-  long x = (lat_dif / cell_width);
-  long y = (lng_dif / cell_height);
+  auto x = static_cast<long>(lat_dif / cell_width);
+  auto y = static_cast<long>(lng_dif / cell_height);
   if (x == sideLength) {
     x -= 1;
   }
@@ -158,6 +160,8 @@ size_t Grid::coordsToIndex(Lat lat, Lng lng)
   }
   return NodePos { static_cast<size_t>(y * sideLength + x) };
 }
+
+BoundingBox Grid::bounding_box() { return bBox; }
 
 double haversine_distance(const Node& a, const Node& b)
 {
@@ -169,8 +173,8 @@ double haversine_distance(const Node& a, const Node& b)
   double theta2 = b.lat() * RADIANS_CONVERSION;
   double deltaTheta = (b.lat() - a.lat()) * RADIANS_CONVERSION;
   double deltaLambda = (b.lng() - a.lng()) * RADIANS_CONVERSION;
-  double e = pow(sin(deltaTheta / 2.0), 2)
-      + std::cos(theta1) * std::cos(theta2) * pow(sin(deltaLambda / 2.0), 2);
-  double c = 2.0 * asin(sqrt(e));
+  double e = pow(sin(deltaTheta / 2), 2)
+      + std::cos(theta1) * std::cos(theta2) * pow(sin(deltaLambda / 2), 2);
+  double c = 2 * asin(sqrt(e));
   return EARTH_RADIUS * c;
 }

@@ -127,6 +127,22 @@ template <int Dim> void runWebServer(Graph<Dim>& g, unsigned short port, size_t 
     response->write(SimpleWeb::StatusCode::success_ok, std::to_string(pos->get()), header);
   };
 
+  server.resource["^/graph_coords"]["GET"] = [&grid](Response response, Request /*request*/) {
+    auto b_box = grid.bounding_box();
+
+    Json::Value result;
+    result["lat_min"] = b_box.lat_min.get();
+    result["lat_max"] = b_box.lat_max.get();
+    result["lng_min"] = b_box.lng_min.get();
+    result["lng_max"] = b_box.lng_max.get();
+
+    SimpleWeb::CaseInsensitiveMultimap header;
+    header.emplace("Content-Type", "application/json");
+
+    Json::StreamWriterBuilder builder;
+    response->write(SimpleWeb::StatusCode::success_ok, Json::writeString(builder, result), header);
+  };
+
   server.resource["^/route"]["GET"] = [&g](Response response, Request request) {
     auto log = Logger::initLogger();
 

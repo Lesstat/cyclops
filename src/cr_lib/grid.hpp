@@ -40,10 +40,10 @@ struct PositionalNode {
 };
 
 struct BoundingBox {
-  Lat lat_min;
-  Lat lat_max;
-  Lng lng_min;
-  Lng lng_max;
+  Lat lat_min = Lat(std::numeric_limits<double>::max());
+  Lat lat_max = Lat(std::numeric_limits<double>::min());
+  Lng lng_min = Lng(std::numeric_limits<double>::max());
+  Lng lng_max = Lng(std::numeric_limits<double>::min());
 
   void addNode(PositionalNode& n)
   {
@@ -78,6 +78,7 @@ class Grid {
   Grid& operator=(Grid&& other) noexcept = default;
 
   std::optional<NodePos> findNextNode(Lat lat, Lng lng);
+  BoundingBox bounding_box();
 
   protected:
   private:

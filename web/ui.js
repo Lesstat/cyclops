@@ -513,4 +513,22 @@ function enumerateRoutes() {
   xmlhttp.send();
 }
 
+function zoomOutToFullGraph() {
+  console.log("zoom out");
+  let xmlhttp = new XMLHttpRequest();
+  xmlhttp.responseType = "json";
+  xmlhttp.onload = function() {
+    if (xmlhttp.status == 200) {
+      let bbox = xmlhttp.response;
+      map.fitBounds([
+        [bbox.lat_min, bbox.lng_min],
+        [bbox.lat_max, bbox.lng_max]
+      ]);
+    }
+  };
+  xmlhttp.open("GET", "/graph_coords");
+  xmlhttp.send();
+}
+
 overlapChange();
+zoomOutToFullGraph();
