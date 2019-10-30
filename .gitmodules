@@ -1,6 +1,6 @@
 [submodule "vendor/Simple-Web-Server"]
 	path = vendor/Simple-Web-Server
-	url = https://github.com/eidheim/Simple-Web-Server
+	url = https://gitlab.com/eidheim/Simple-Web-Server
 [submodule "vendor/ThreadPool"]
 	path = vendor/ThreadPool
 	url = https://github.com/progschj/ThreadPool/
