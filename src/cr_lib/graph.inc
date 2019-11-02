@@ -391,9 +391,9 @@ void printEdge(std::ofstream& dotFile, const HalfEdge<Dim>& edge,
   } else {
     color = "black";
   }
-  // printNode(dotFile, g, edge.begin);
+  printNode(dotFile, g, *g.nodePosById(Edge::getSourceId(edge.id)));
   dotFile << " -> ";
-  printNode(dotFile, g, edge.end);
+  printNode(dotFile, g, *g.nodePosById(Edge::getDestId(edge.id)));
   dotFile << " [label = \"";
   bool first = true;
   for (auto& c : edge.cost.values) {

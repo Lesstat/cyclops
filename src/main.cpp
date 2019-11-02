@@ -171,7 +171,6 @@ template <int Dim> void runWebServer(Graph<Dim>& g, unsigned short port, size_t 
         UnsuitabilityConfig { (static_cast<double>(*unsuitability) / 100.0) } };
 
       for (size_t i = 0; i < Dim; ++i) {
-        c.values[i] *= f[i];
       }
 
       auto start = std::chrono::high_resolution_clock::now();
@@ -314,7 +313,7 @@ template <int Dim> int testGraph(Graph<Dim>& g)
   auto n = g.createNormalDijkstra(true);
   std::random_device rd {};
   std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
-  Config c { std::vector<double>(Dim, 1.0 / Dim) };
+  // Config c { std::vector<double>(Dim, 1.0 / Dim) };
 
   size_t route = 0;
   size_t noRoute = 0;
@@ -328,6 +327,7 @@ template <int Dim> int testGraph(Graph<Dim>& g)
   for (int i = 0; i < 1000; ++i) {
     NodePos from { dist(rd) };
     NodePos to { dist(rd) };
+    Config c = generateRandomConfig<Dim>();
 
     auto dStart = std::chrono::high_resolution_clock::now();
     auto dRoute = d.findBestRoute(from, to, c);
@@ -350,6 +350,7 @@ template <int Dim> int testGraph(Graph<Dim>& g)
                   << "cost differ in route from " << from << " (" << g.getNode(from).id() << ") to "
                   << to << " (" << g.getNode(to).id() << ")" << '\n';
         std::cout << "Edge count: " << nRoute->edges.size() << '\n';
+        std::cout << "Preference: " << c << '\n';
         for (size_t i = 0; i < Dim; ++i) {
           std::cout << "cost " << i << " d: " << dRoute->costs.values[i] << ", cost " << i
                     << " n:" << nRoute->costs.values[i] << '\n';
@@ -375,10 +376,13 @@ template <int Dim> int testGraph(Graph<Dim>& g)
               return idToPos[edge.getSourceId()];
             });
 
-        size_t pos = 1;
-        while (pos < nodeLevels.size()) {
+        size_t lower = 0;
+        size_t upper = nodeLevels.size() - 1;
+        while (lower < upper) {
+          size_t pos = lower + (upper - lower) / 2;
           std::cout << "Trying pos " << pos << '\n';
           const Node* start = nullptr;
+
           start = nodeLevels[pos];
 
           if (start) {
@@ -386,7 +390,7 @@ template <int Dim> int testGraph(Graph<Dim>& g)
             auto currentPos = to;
             const auto dTest = d.findBestRoute(nextToLastPos, currentPos, c);
             const auto nTest = n.findBestRoute(nextToLastPos, currentPos, c);
-            if (!(dTest->costs * c <= nTest->costs * c)) {
+            if (std::abs(dTest->costs * c - nTest->costs * c) > 0.1) {
               std::cout << "start id: " << start->id() << '\n';
               std::cout << "did not find correct subpath between " << nextToLastPos << " and "
                         << currentPos << " at index " << i << '\n';
@@ -402,17 +406,21 @@ template <int Dim> int testGraph(Graph<Dim>& g)
               }
               std::cout << '\n';
 
+              std::cout << "total nCosts: " << nTest->costs * c << " dCosts: " << dTest->costs * c
+                        << '\n';
+
               std::ofstream falsePart { "/tmp/false-" + std::to_string(from) + "-"
                 + std::to_string(to) + ".dot" };
               printRoutes(falsePart, g, *nTest, *dTest, c);
 
-              pos++;
+              lower = pos + 1;
             } else {
+              upper = pos;
               std::cout << "equal routes" << '\n';
-              return 1;
             }
           }
         }
+        return 1;
       }
     } else if (nRoute && !dRoute) {
       std::cout << "Only Normal dijkstra found route form " << from << " to " << to << "!" << '\n';
@@ -520,6 +528,10 @@ int main(int argc, char* argv[])
   }
   case 3: {
     return run<3>(vm, loadFileName, saveFileName, port, max_refinements);
+    break;
+  }
+  case 4: {
+    return run<4>(vm, loadFileName, saveFileName, port, max_refinements);
     break;
   }
   default:
