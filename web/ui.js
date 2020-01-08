@@ -7,7 +7,6 @@ var start = true;
 var startPopup = L.popup({ autoClose: false });
 var endPopup = L.popup({ autoClose: false });
 var geoJson = L.layerGroup([]).addTo(map);
-var towerLayer = L.layerGroup([]).addTo(map);
 
 let canvasRgb = document.getElementById("triangleSelectorRGB");
 
