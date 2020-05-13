@@ -21,25 +21,14 @@
 #include "dijkstra.hpp"
 
 template <int Dim>
-double calculateSharing(const Route<Dim>& referenceRoute, const Route<Dim>& otherRoute);
+double calculateSharing(const Route<Dim>& referenceRoute, const Route<Dim>& otherRoute)
+{
+  std::unordered_set<EdgeId> edges(referenceRoute.edges.begin(), referenceRoute.edges.end());
 
-template <int Dim> class DiscreteFrechet {
-  public:
-  using Route = Route<Dim>;
-  using Graph = Graph<Dim>;
+  uint32_t sharedLength = std::count_if(otherRoute.edges.begin(), otherRoute.edges.end(),
+      [&edges](const auto& id) { return edges.find(id) != edges.end(); });
 
-  DiscreteFrechet(const Route& reference, const Route& other, const Graph& g);
-  virtual ~DiscreteFrechet() = default;
-
-  double calculate();
-
-  private:
-  std::vector<std::vector<double>> ca;
-  std::vector<Node> reference;
-  std::vector<Node> other;
-
-  double c(int i, int j);
-};
-
-#include "routeComparator.inc"
+  size_t maxLength = std::max(referenceRoute.edges.size(), otherRoute.edges.size());
+  return (double)sharedLength / maxLength;
+}
 #endif /* ROUTECOMPARATOR_H */
