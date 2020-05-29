@@ -19,6 +19,7 @@
 #define GRID_H
 
 #include "namedType.hpp"
+#include <cstdint>
 
 using NodePos = NamedType<uint32_t, struct NodePosParameter>;
 using Lat = NamedType<double, struct LatParameter>;
