@@ -44,12 +44,12 @@ std::ostream& operator<<(std::ostream& os, const Node& n)
 
 Node Node::createFromText(std::istream& text)
 {
-  size_t osmId;
+  // size_t osmId;
   uint32_t id, level;
-  double lat, lng;
-  double height;
+  double lat = 0.0, lng = 0.0;
+  double height = 0.0;
 
-  text >> id >> osmId >> lat >> lng >> height >> level;
+  text >> id >> /*osmId >> lat >> lng >> height >>*/ level;
 
   Node n { NodeId { id }, Lat(lat), Lng(lng), height };
   n.level = level;

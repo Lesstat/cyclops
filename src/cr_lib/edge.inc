@@ -61,11 +61,12 @@ template <int Dim> NodeId Edge<Dim>::getDestId(EdgeId id) { return destination_v
 template <int Dim> Edge<Dim> Edge<Dim>::createFromText(std::istream& text)
 {
 
+  std::string id;
   uint32_t source, dest;
   Cost c;
   long edgeA, edgeB;
 
-  text >> source >> dest;
+  text >> id >> source >> dest;
   for (auto& c : c.values) {
     text >> c;
   }

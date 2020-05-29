@@ -51,6 +51,10 @@ template <int Dim> void insertUnpackedEdge(const EdgeId& e, std::deque<EdgeId>& 
   const auto& edgeB = Edge<Dim>::getEdgeB(e);
 
   if (edgeA) {
+    if (Edge<Dim>::getDestId(*edgeA) != Edge<Dim>::getSourceId(*edgeB)) {
+      throw std::invalid_argument("Shortcut edges are not connected");
+    }
+
     if (front) {
       insertUnpackedEdge<Dim>(*edgeB, route, front);
       insertUnpackedEdge<Dim>(*edgeA, route, front);

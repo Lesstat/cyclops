@@ -188,6 +188,9 @@ template <int Dim> Graph<Dim> Graph<Dim>::createFromStream(std::istream& file)
               << '\n';
     throw std::runtime_error("Graph has wrong dimension");
   }
+  std::getline(file, line);
+  std::cout << "metrics: " << line << '\n';
+
   size_t nodeCount = Graph::readCount(file);
   nodes.reserve(nodeCount);
 
