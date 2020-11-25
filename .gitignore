@@ -34,3 +34,5 @@
 /debug/*
 Testing
 /.dir-locals.el
+/.ccls-cache/
+/compile_commands.json
