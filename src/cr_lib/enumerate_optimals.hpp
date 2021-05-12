@@ -77,8 +77,6 @@ template <int Dim> Config<Dim> find_equal_cost_config(const std::vector<Cost<Dim
   return Config<Dim>(conf_values);
 }
 
-auto compare_prio = [](auto left, auto right) { return left.data().prio() > right.data().prio(); };
-
 namespace c = std::chrono;
 
 template <int Dim, class Derived>
@@ -130,6 +128,8 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
   using TDS = typename CgalTypes<Dim>::TDS;
   const static int Dimension;
 
+  static auto compare_prio
+      = [](auto left, auto right) { return left.data().prio() > right.data().prio(); };
   using CellContainer = std::priority_queue<typename TDS::Full_cell,
       std::vector<typename TDS::Full_cell>, decltype(compare_prio)>;
 

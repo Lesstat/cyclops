@@ -20,7 +20,7 @@ find_package (Threads)
 find_package(glpk REQUIRED) 
 find_package(CGAL 4.11 REQUIRED)
 find_package(Eigen3 3.3 REQUIRED)
-find_library(gmp REQUIRED)
+find_package(GMP REQUIRED)
 
 find_package(Boost 1.58 REQUIRED COMPONENTS serialization program_options filesystem iostreams)
 

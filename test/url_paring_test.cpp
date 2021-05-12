@@ -17,7 +17,7 @@
 */
 
 #include "catch.hpp"
-#include "enumerate_optimals.hpp"
+#include "restriction_policy.hpp"
 #include "url_parsing.hpp"
 
 TEST_CASE("Empty metric Query String throws") { REQUIRE_THROWS(parse_important_metric("")); }
