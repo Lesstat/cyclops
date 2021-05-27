@@ -20,6 +20,8 @@
 
 #include "namedType.hpp"
 #include <cstdint>
+#include <limits>
+#include <optional>
 
 using NodePos = NamedType<uint32_t, struct NodePosParameter>;
 using Lat = NamedType<double, struct LatParameter>;

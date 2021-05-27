@@ -20,6 +20,7 @@
 
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/split_free.hpp>
+#include <optional>
 
 namespace boost {
 namespace serialization {
