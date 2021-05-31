@@ -19,7 +19,7 @@
 #include <fstream>
 #include <unordered_set>
 template <int Dim>
-NormalDijkstra<Dim>::NormalDijkstra(Graph* g, size_t nodeCount, bool unpack)
+NormalDijkstra<Dim>::NormalDijkstra(GraphD* g, size_t nodeCount, bool unpack)
     : cost(nodeCount, std::numeric_limits<double>::max())
     , paths(nodeCount, 0)
     , previousEdge(nodeCount)
@@ -33,7 +33,7 @@ NormalDijkstra<Dim>::NormalDijkstra(Graph* g, size_t nodeCount, bool unpack)
 
 template <int Dim>
 std::optional<RouteWithCount<Dim>> NormalDijkstra<Dim>::findBestRoute(
-    NodePos from, NodePos to, const Config& config)
+    NodePos from, NodePos to, const ConfigD& config)
 {
 
   usedConfig = config;
@@ -61,7 +61,7 @@ std::optional<RouteWithCount<Dim>> NormalDijkstra<Dim>::findBestRoute(
 
     const auto& outEdges = graph->getOutgoingEdgesOf(node);
     for (const auto& edge : outEdges) {
-      if (unpack && Edge::getEdgeA(edge.id)) {
+      if (unpack && EdgeD::getEdgeA(edge.id)) {
         continue;
       }
       const NodePos& nextNode = edge.end;
@@ -93,7 +93,7 @@ template <int Dim> void NormalDijkstra<Dim>::clearState()
     heap.pop();
   }
   touched.clear();
-  pathCost = Cost {};
+  pathCost = CostD {};
   pathCount = 0;
   pqPops = 0;
 }
@@ -102,18 +102,18 @@ template <int Dim>
 RouteWithCount<Dim> NormalDijkstra<Dim>::buildRoute(const NodePos& from, const NodePos& to)
 {
 
-  RouteWithCount route;
+  RouteWithCountD route;
   route.pathCount = paths[to];
   auto currentNode = to;
   while (currentNode != from) {
     auto& half_edge = previousEdge.at(currentNode).front();
-    route.costs = route.costs + Edge::getCost(half_edge.id);
+    route.costs = route.costs + EdgeD::getCost(half_edge.id);
     if (unpack) {
       insertUnpackedEdge<Dim>(half_edge.id, route.edges, true);
     } else {
       route.edges.push_front(half_edge.id);
     }
-    currentNode = Edge::sourcePos(half_edge.id);
+    currentNode = EdgeD::sourcePos(half_edge.id);
   }
 
   pathCost = route.costs;
@@ -126,14 +126,14 @@ template <int Dim> RouteIterator<Dim> NormalDijkstra<Dim>::routeIter(NodePos fro
 }
 template <int Dim>
 RouteIterator<Dim>::RouteIterator(
-    NormalDijkstra* dijkstra, NodePos from, NodePos to, size_t maxHeapSize)
+    NormalDijkstraD* dijkstra, NodePos from, NodePos to, size_t maxHeapSize)
     : dijkstra(dijkstra)
     , maxHeapSize(maxHeapSize)
     , from(from)
     , to(to)
     , heap(BiggerRouteCost(dijkstra->usedConfig))
 {
-  RouteWithCount route;
+  RouteWithCountD route;
   route.pathCount = dijkstra->pathCount;
   heap.emplace(route, to);
 }
@@ -146,7 +146,7 @@ template <int Dim> void RouteIterator<Dim>::doubleHeapsize() { maxHeapSize *= 2;
 
 template <int Dim> std::optional<RouteWithCount<Dim>> RouteIterator<Dim>::next()
 {
-  using Edge = Edge<Dim>;
+  using EdgeD = Edge<Dim>;
 
   while (!heap.empty()) {
     if (finished()) {
@@ -164,9 +164,9 @@ template <int Dim> std::optional<RouteWithCount<Dim>> RouteIterator<Dim>::next()
       return hRoute;
     }
     for (const auto& edge : dijkstra->previousEdge[hTo]) {
-      const auto& source = Edge::sourcePos(edge.id);
+      const auto& source = EdgeD::sourcePos(edge.id);
       if (std::find_if(hRoute.edges.begin(), hRoute.edges.end(),
-              [&source](const auto& e) { return source == Edge::sourcePos(e); })
+              [&source](const auto& e) { return source == EdgeD::sourcePos(e); })
           != hRoute.edges.end()) {
         continue;
       }

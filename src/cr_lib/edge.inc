@@ -62,7 +62,7 @@ template <int Dim> Edge<Dim> Edge<Dim>::createFromText(std::istream& text)
 {
 
   uint32_t source, dest;
-  Cost c;
+  CostD c;
   long edgeA, edgeB;
 
   text >> source >> dest;
@@ -86,7 +86,7 @@ template <int Dim> Edge<Dim> Edge<Dim>::createFromText(std::istream& text)
   return e;
 }
 
-template <int Dim> double Edge<Dim>::costByConfiguration(const Config& conf) const
+template <int Dim> double Edge<Dim>::costByConfiguration(const ConfigD& conf) const
 {
   return cost * conf;
 }
@@ -97,7 +97,7 @@ template <int Dim> const Cost<Dim>& Edge<Dim>::getCost() const { return cost; }
 
 template <int Dim> const Cost<Dim>& Edge<Dim>::getCost(EdgeId id) { return cost_vec[id]; }
 
-template <int Dim> void Edge<Dim>::setCost(Cost c) { this->cost = c; }
+template <int Dim> void Edge<Dim>::setCost(CostD c) { this->cost = c; }
 
 template <int Dim> const ReplacedEdge& Edge<Dim>::getEdgeA() const { return edgeA; }
 template <int Dim> const ReplacedEdge& Edge<Dim>::getEdgeB() const { return edgeB; }
@@ -106,7 +106,7 @@ template <int Dim> const ReplacedEdge& Edge<Dim>::getEdgeB(EdgeId id) { return e
 
 template <int Dim> HalfEdge<Dim> Edge<Dim>::makeHalfEdge(EdgeId id, NodePos, NodePos end)
 {
-  HalfEdge e;
+  HalfEdgeD e;
   e.id = id;
   e.end = end;
   e.cost = getCost(id);
@@ -115,7 +115,7 @@ template <int Dim> HalfEdge<Dim> Edge<Dim>::makeHalfEdge(EdgeId id, NodePos, Nod
 
 template <int Dim> void Edge<Dim>::setId(EdgeId id) { this->internalId = id; }
 
-template <int Dim> double HalfEdge<Dim>::costByConfiguration(const Config& conf) const
+template <int Dim> double HalfEdge<Dim>::costByConfiguration(const ConfigD& conf) const
 {
   return cost * conf;
 }
@@ -168,7 +168,7 @@ template <int Dim> const Edge<Dim> Edge<Dim>::getEdge(EdgeId id)
   return e;
 }
 
-template <int Dim> double Cost<Dim>::operator*(const Config& conf) const
+template <int Dim> double Cost<Dim>::operator*(const ConfigD& conf) const
 {
   double combinedCost = 0;
 

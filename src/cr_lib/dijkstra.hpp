@@ -96,20 +96,20 @@ template <int Dim> struct Route {
 
 template <int Dim> class Dijkstra {
   public:
-  using Graph = Graph<Dim>;
-  using Route = Route<Dim>;
-  using Config = Config<Dim>;
+  using GraphD = Graph<Dim>;
+  using RouteD = Route<Dim>;
+  using ConfigD = Config<Dim>;
 
   using ScalingFactor = std::array<double, Dim>;
 
-  Dijkstra(Graph* g, size_t nodeCount);
+  Dijkstra(GraphD* g, size_t nodeCount);
   Dijkstra(const Dijkstra& other) = default;
   Dijkstra(Dijkstra&& other) = default;
   virtual ~Dijkstra() noexcept = default;
   Dijkstra& operator=(const Dijkstra& other) = default;
   Dijkstra& operator=(Dijkstra&& other) = default;
 
-  std::optional<Route> findBestRoute(NodePos from, NodePos to, Config config);
+  std::optional<RouteD> findBestRoute(NodePos from, NodePos to, ConfigD config);
   void calcScalingFactor(NodePos from, NodePos to, ScalingFactor& f);
 
   size_t pqPops = 0;
@@ -125,7 +125,7 @@ template <int Dim> class Dijkstra {
   void clearState();
 
   using NodeToEdgeMap = std::unordered_map<NodePos, EdgeId>;
-  Route buildRoute(NodePos node, NodeToEdgeMap& previousEdgeS, NodeToEdgeMap& previousEdgeT,
+  RouteD buildRoute(NodePos node, NodeToEdgeMap& previousEdgeS, NodeToEdgeMap& previousEdgeT,
       NodePos from, NodePos to);
 
   void relaxEdges(const NodePos& node, double cost, Direction dir, Queue& heap,
@@ -138,8 +138,8 @@ template <int Dim> class Dijkstra {
   std::vector<double> costT;
   std::vector<NodePos> touchedS;
   std::vector<NodePos> touchedT;
-  Config config = Config(LengthConfig(0), HeightConfig(0), UnsuitabilityConfig(0));
-  Graph* graph;
+  ConfigD config = ConfigD(LengthConfig(0), HeightConfig(0), UnsuitabilityConfig(0));
+  GraphD* graph;
 };
 
 #include "dijkstra.inc"

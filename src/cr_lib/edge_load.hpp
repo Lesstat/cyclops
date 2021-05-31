@@ -26,7 +26,7 @@
 
 template <int Dim> class EdgeLoads {
   public:
-  using Route = Route<Dim>;
+  using RouteD = Route<Dim>;
 
   EdgeLoads() = delete;
   EdgeLoads(const EdgeLoads& other) = default;
@@ -34,7 +34,7 @@ template <int Dim> class EdgeLoads {
   virtual ~EdgeLoads() noexcept = default;
   EdgeLoads& operator=(const EdgeLoads& other) = default;
   EdgeLoads& operator=(EdgeLoads&& other) noexcept = default;
-  EdgeLoads(const std::vector<Route>&);
+  EdgeLoads(const std::vector<RouteD>&);
 
   double operator[](EdgeId e);
   double max_load();
@@ -48,7 +48,7 @@ template <int Dim> class EdgeLoads {
 };
 
 template <int Dim>
-EdgeLoads<Dim>::EdgeLoads(const std::vector<Route>& routes)
+EdgeLoads<Dim>::EdgeLoads(const std::vector<RouteD>& routes)
     : route_count(routes.size())
 {
   // Optimize away special casing for the empty routes case

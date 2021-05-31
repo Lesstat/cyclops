@@ -24,7 +24,7 @@ const double dmax = std::numeric_limits<double>::max();
 template <int Dim> constexpr Cost<Dim> maxCost() { return std::vector<double>(Dim, dmax); };
 
 template <int Dim>
-Dijkstra<Dim>::Dijkstra(Graph* g, size_t nodeCount)
+Dijkstra<Dim>::Dijkstra(GraphD* g, size_t nodeCount)
     : minCandidate(dmax)
     , costS(nodeCount, dmax)
     , costT(nodeCount, dmax)
@@ -71,23 +71,23 @@ template <int Dim>
 Route<Dim> Dijkstra<Dim>::buildRoute(NodePos node, NodeToEdgeMap& previousEdgeS,
     NodeToEdgeMap& previousEdgeT, NodePos from, NodePos to)
 {
-  using Edge = Edge<Dim>;
+  using EdgeD = Edge<Dim>;
 
-  Route route {};
+  RouteD route {};
   auto curNode = node;
   while (curNode != from) {
     const auto& edge_id = previousEdgeS[curNode];
-    route.costs = route.costs + Edge::getCost(edge_id);
+    route.costs = route.costs + EdgeD::getCost(edge_id);
     insertUnpackedEdge<Dim>(edge_id, route.edges, true);
-    curNode = Edge::sourcePos(edge_id);
+    curNode = EdgeD::sourcePos(edge_id);
   }
 
   curNode = node;
   while (curNode != to) {
     const auto& edge_id = previousEdgeT[curNode];
-    route.costs = route.costs + Edge::getCost(edge_id);
+    route.costs = route.costs + EdgeD::getCost(edge_id);
     insertUnpackedEdge<Dim>(edge_id, route.edges, false);
-    curNode = Edge::destPos(edge_id);
+    curNode = EdgeD::destPos(edge_id);
   }
 
   return route;
@@ -101,7 +101,7 @@ template <int Dim> bool Dijkstra<Dim>::QueueComparator::operator()(QueueElem lef
 }
 
 template <int Dim>
-std::optional<Route<Dim>> Dijkstra<Dim>::findBestRoute(NodePos from, NodePos to, Config config)
+std::optional<Route<Dim>> Dijkstra<Dim>::findBestRoute(NodePos from, NodePos to, ConfigD config)
 {
   auto log = Logger::getInstance();
 

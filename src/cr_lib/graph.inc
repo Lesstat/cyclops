@@ -37,13 +37,13 @@ void Graph<Dim>::connectEdgesToNodes(
   }
 
   std::for_each(begin(edges), end(edges), [&map, this](const auto& id) {
-    // auto& e = Edge::getMutEdge(id);
-    auto sourcePos = map[Edge::getSourceId(id)];
-    auto destPos = map[Edge::getDestId(id)];
-    inEdges.push_back(Edge::makeHalfEdge(id, destPos, sourcePos));
-    outEdges.push_back(Edge::makeHalfEdge(id, sourcePos, destPos));
-    Edge::sourcePos(id, sourcePos);
-    Edge::destPos(id, destPos);
+    // auto& e = EdgeD::getMutEdge(id);
+    auto sourcePos = map[EdgeD::getSourceId(id)];
+    auto destPos = map[EdgeD::getDestId(id)];
+    inEdges.push_back(EdgeD::makeHalfEdge(id, destPos, sourcePos));
+    outEdges.push_back(EdgeD::makeHalfEdge(id, sourcePos, destPos));
+    EdgeD::sourcePos(id, sourcePos);
+    EdgeD::destPos(id, destPos);
   });
 }
 
@@ -51,12 +51,12 @@ enum class Pos { source, dest };
 template <int Dim>
 void sortEdgesByNodePos(std::vector<HalfEdge<Dim>>& edges, const Graph<Dim>& g, Pos p)
 {
-  using HalfEdge = HalfEdge<Dim>;
-  using Edge = Edge<Dim>;
+  using HalfEdgeD = HalfEdge<Dim>;
+  using EdgeD = Edge<Dim>;
 
-  auto comparator = [&g, &p](const HalfEdge& a, const HalfEdge& b) {
-    const auto& a_begin = p == Pos::source ? Edge::sourcePos(a.id) : Edge::destPos(a.id);
-    const auto& b_begin = p == Pos::source ? Edge::sourcePos(b.id) : Edge::destPos(b.id);
+  auto comparator = [&g, &p](const HalfEdgeD& a, const HalfEdgeD& b) {
+    const auto& a_begin = p == Pos::source ? EdgeD::sourcePos(a.id) : EdgeD::destPos(a.id);
+    const auto& b_begin = p == Pos::source ? EdgeD::sourcePos(b.id) : EdgeD::destPos(b.id);
     if (a_begin == b_begin) {
       auto aLevel = g.getLevelOf(a.end);
       auto bLevel = g.getLevelOf(b.end);
@@ -74,10 +74,10 @@ template <int Dim>
 void calculateOffsets(
     std::vector<HalfEdge<Dim>>& edges, std::vector<NodeOffset>& offsets, Pos p, const Graph<Dim>& g)
 {
-  using Edge = Edge<Dim>;
+  using EdgeD = Edge<Dim>;
 
-  auto sourcePos = [&edges](size_t j) { return Edge::sourcePos(edges[j].id); };
-  auto destPos = [&edges](size_t j) { return Edge::destPos(edges[j].id); };
+  auto sourcePos = [&edges](size_t j) { return EdgeD::sourcePos(edges[j].id); };
+  auto destPos = [&edges](size_t j) { return EdgeD::destPos(edges[j].id); };
   auto setOut = [&offsets](size_t i, size_t j) { offsets[i].out = j; };
   auto setIn = [&offsets](size_t i, size_t j) { offsets[i].in = j; };
 
@@ -104,10 +104,10 @@ void calculateOffsets(
   }
 }
 template <int Dim>
-Graph<Dim>::Graph(std::vector<Node>&& nodes, std::vector<Edge>&& edges)
+Graph<Dim>::Graph(std::vector<Node>&& nodes, std::vector<EdgeD>&& edges)
     : edgeCount(edges.size())
 {
-  auto ids = Edge::administerEdges(std::move(edges));
+  auto ids = EdgeD::administerEdges(std::move(edges));
   init(std::move(nodes), std::move(ids));
 }
 template <int Dim>
@@ -174,7 +174,7 @@ template <class Obj> void parseLines(std::vector<Obj>& v, std::istream& file, si
 template <int Dim> Graph<Dim> Graph<Dim>::createFromStream(std::istream& file)
 {
   std::vector<Node> nodes {};
-  std::vector<Edge> edges {};
+  std::vector<EdgeD> edges {};
   std::string line {};
 
   std::getline(file, line);
@@ -208,7 +208,7 @@ template <int Dim> EdgeRange<Dim> Graph<Dim>::getOutgoingEdgesOf(NodePos pos) co
   std::advance(start, offsets[pos].out);
   auto end = outEdges.begin();
   std::advance(end, offsets[pos + 1].out);
-  return EdgeRange { start, end };
+  return EdgeRangeD { start, end };
 }
 
 template <int Dim> EdgeRange<Dim> Graph<Dim>::getIngoingEdgesOf(NodePos pos) const
@@ -217,7 +217,7 @@ template <int Dim> EdgeRange<Dim> Graph<Dim>::getIngoingEdgesOf(NodePos pos) con
   std::advance(start, offsets[pos].in);
   auto end = inEdges.begin();
   std::advance(end, offsets[pos + 1].in);
-  return EdgeRange { start, end };
+  return EdgeRangeD { start, end };
 }
 
 template <int Dim> size_t Graph<Dim>::getLevelOf(NodePos pos) const { return level[pos]; }
@@ -238,7 +238,7 @@ template <int Dim> uint32_t Graph<Dim>::getEdgeCount() const { return edgeCount;
 
 template <int Dim> Graph<Dim> Graph<Dim>::createFromBinaryFile(boost::archive::binary_iarchive& bin)
 {
-  Graph g { std::vector<Node>(), std::vector<Edge>() };
+  Graph g { std::vector<Node>(), std::vector<EdgeD>() };
   bin >> g;
   return g;
 }
@@ -277,15 +277,15 @@ template <int Dim>
 void printRoutes(std::ofstream& dotFile, const Graph<Dim>& graph, const RouteWithCount<Dim>& route1,
     const Route<Dim>& route2, const Config<Dim>& config, const std::set<NodePos>& set)
 {
-  using Edge = Edge<Dim>;
-  using HalfEdge = HalfEdge<Dim>;
+  using EdgeD = Edge<Dim>;
+  using HalfEdgeD = HalfEdge<Dim>;
 
   dotFile << "digraph G{" << '\n';
   dotFile << "rankdir=LR;" << '\n';
   dotFile << "size=8;" << '\n';
 
-  auto from = Edge::sourcePos(route1.edges.front());
-  auto to = Edge::destPos(route1.edges.back());
+  auto from = EdgeD::sourcePos(route1.edges.front());
+  auto to = EdgeD::destPos(route1.edges.back());
   dotFile << "node[ shape = doublecircle color = red]; ";
   printNode(dotFile, graph, from);
   dotFile << " ";
@@ -306,7 +306,7 @@ void printRoutes(std::ofstream& dotFile, const Graph<Dim>& graph, const RouteWit
       std::inserter(route2Edges, route2Edges.begin()), [](const auto& edge) { return edge; });
 
   for (auto& routeEdgeId : route1.edges) {
-    auto node = Edge::sourcePos(routeEdgeId);
+    auto node = EdgeD::sourcePos(routeEdgeId);
     for (auto& edge : graph.getOutgoingEdgesOf(node)) {
       if (printedEdges.count(edge.id) == 0) {
         printedEdges.insert(edge.id);
@@ -327,7 +327,7 @@ void printRoutes(std::ofstream& dotFile, const Graph<Dim>& graph, const RouteWit
     if (printedEdges.count(edge.id) == 0) {
       printedEdges.insert(edge.id);
       printedNodes.insert(edge.end);
-      HalfEdge e;
+      HalfEdgeD e;
       e.id = edge.id;
       // e.begin = edge.end;
       // e.end = edge.begin;
@@ -337,7 +337,7 @@ void printRoutes(std::ofstream& dotFile, const Graph<Dim>& graph, const RouteWit
   }
 
   for (auto& routeEdge : route2.edges) {
-    for (auto& edge : graph.getOutgoingEdgesOf(Edge::sourcePos(routeEdge))) {
+    for (auto& edge : graph.getOutgoingEdgesOf(EdgeD::sourcePos(routeEdge))) {
       if (printedEdges.count(edge.id) == 0) {
         printedEdges.insert(edge.id);
         printedNodes.insert(edge.end);
@@ -374,12 +374,12 @@ void printEdge(std::ofstream& dotFile, const HalfEdge<Dim>& edge,
     const std::set<EdgeId>& route1Edges, const std::set<EdgeId>& route2Edges,
     const Config<Dim>& config, const Graph<Dim>& g)
 {
-  using Edge = Edge<Dim>;
+  using EdgeD = Edge<Dim>;
 
   std::string color;
   bool partOfShortcut = route2Edges.count(edge.id) > 0;
   bool partOfRoute = route1Edges.count(edge.id) > 0;
-  bool isShortcut = Edge::getEdgeA(edge.id).has_value();
+  bool isShortcut = EdgeD::getEdgeA(edge.id).has_value();
   if (partOfRoute && partOfShortcut) {
     color = "green";
   } else if (partOfShortcut) {
@@ -391,9 +391,9 @@ void printEdge(std::ofstream& dotFile, const HalfEdge<Dim>& edge,
   } else {
     color = "black";
   }
-  printNode(dotFile, g, *g.nodePosById(Edge::getSourceId(edge.id)));
+  printNode(dotFile, g, *g.nodePosById(EdgeD::getSourceId(edge.id)));
   dotFile << " -> ";
-  printNode(dotFile, g, *g.nodePosById(Edge::getDestId(edge.id)));
+  printNode(dotFile, g, *g.nodePosById(EdgeD::getDestId(edge.id)));
   dotFile << " [label = \"";
   bool first = true;
   for (auto& c : edge.cost.values) {

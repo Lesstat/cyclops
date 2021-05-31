@@ -29,7 +29,7 @@ template <int Dim> struct FacetPrioPolicy {
 
 template <int Dim, class Derived> struct SimilarityPrioPolicy {
   using Base = FacetPrioPolicy<Dim>;
-  using Route = Route<Dim>;
+  using RouteD = Route<Dim>;
   using Vertex_handle = typename Base::Vertex_handle;
 
   double calc_prio(const std::vector<Vertex_handle>& vertices)

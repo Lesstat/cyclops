@@ -44,7 +44,8 @@ template <int Dim> class NormalDijkstra;
 template <int Dim> struct Config;
 
 template <int Dim> struct Cost {
-  using Config = Config<Dim>;
+  using ConfigD = Config<Dim>;
+  using CostD = Cost<Dim>;
 
   std::array<double, Dim> values;
   Cost(const std::vector<double>& values)
@@ -56,12 +57,14 @@ template <int Dim> struct Cost {
       }
     }
   }
+
   Cost()
   {
     for (size_t i = 0; i < Dim; ++i) {
       values[i] = 0;
     }
   }
+
   Cost(const double values[Dim])
   {
     for (size_t i = 0; i < Dim; ++i) {
@@ -71,9 +74,9 @@ template <int Dim> struct Cost {
       }
     }
   }
-  double operator*(const Config& conf) const;
+  double operator*(const ConfigD& conf) const;
 
-  Cost operator+(const Cost& c) const
+  CostD operator+(const CostD& c) const
   {
     double newValues[Dim];
     for (size_t i = 0; i < Dim; ++i) {
@@ -81,7 +84,7 @@ template <int Dim> struct Cost {
     }
     return newValues;
   };
-  Cost operator-(const Cost& c) const
+  CostD operator-(const CostD& c) const
   {
     double newValues[Dim];
     for (size_t i = 0; i < Dim; ++i) {
@@ -90,7 +93,7 @@ template <int Dim> struct Cost {
     return newValues;
   };
 
-  bool operator==(const Cost& c) const
+  bool operator==(const CostD& c) const
   {
     for (size_t i = 0; i < Dim; ++i) {
       if (std::abs(values[i] - c.values[i]) >= 0.0001) {
@@ -99,7 +102,7 @@ template <int Dim> struct Cost {
     }
     return true;
   };
-  bool operator!=(const Cost& c) const { return !(*this == c); }
+  bool operator!=(const CostD& c) const { return !(*this == c); }
 
   private:
   friend class boost::serialization::access;
@@ -111,14 +114,14 @@ template <int Dim> struct Cost {
 };
 
 template <int Dim> struct HalfEdge {
-  using Cost = Cost<Dim>;
-  using Config = Config<Dim>;
+  using CostD = Cost<Dim>;
+  using ConfigD = Config<Dim>;
 
   EdgeId id;
   NodePos end;
-  Cost cost;
+  CostD cost;
 
-  double costByConfiguration(const Config& conf) const;
+  double costByConfiguration(const ConfigD& conf) const;
 
   private:
   friend class boost::serialization::access;
@@ -153,9 +156,9 @@ using ReplacedEdge = std::optional<EdgeId>;
 
 template <int Dim> class Edge {
   public:
-  using Cost = Cost<Dim>;
-  using Config = Config<Dim>;
-  using HalfEdge = HalfEdge<Dim>;
+  using CostD = Cost<Dim>;
+  using ConfigD = Config<Dim>;
+  using HalfEdgeD = HalfEdge<Dim>;
 
   Edge() = default;
   Edge(NodeId source, NodeId dest);
@@ -188,12 +191,12 @@ template <int Dim> class Edge {
 
   EdgeId getId() const;
   void setId(EdgeId id);
-  const Cost& getCost() const;
-  static const Cost& getCost(EdgeId id);
-  double costByConfiguration(const Config& conf) const;
-  void setCost(Cost c);
+  const CostD& getCost() const;
+  static const CostD& getCost(EdgeId id);
+  double costByConfiguration(const ConfigD& conf) const;
+  void setCost(CostD c);
 
-  static HalfEdge makeHalfEdge(EdgeId id, NodePos begin, NodePos end);
+  static HalfEdgeD makeHalfEdge(EdgeId id, NodePos begin, NodePos end);
 
   static Edge createFromText(std::istream& text);
   static std::vector<EdgeId> administerEdges(std::vector<Edge>&& edges);
@@ -209,7 +212,7 @@ template <int Dim> class Edge {
   EdgeId internalId;
   NodeId source;
   NodeId destination;
-  Cost cost;
+  CostD cost;
   ReplacedEdge edgeA;
   ReplacedEdge edgeB;
   NodePos sourcePos_;
@@ -218,7 +221,7 @@ template <int Dim> class Edge {
   static std::vector<EdgeId> internalId_vec;
   static std::vector<NodeId> source_vec;
   static std::vector<NodeId> destination_vec;
-  static std::vector<Cost> cost_vec;
+  static std::vector<CostD> cost_vec;
   static std::vector<ReplacedEdge> edgeA_vec;
   static std::vector<ReplacedEdge> edgeB_vec;
   static std::vector<NodePos> sourcePos__vec;
@@ -279,14 +282,14 @@ class Grid;
 template <int Dim> class EdgeRange;
 template <int Dim> class Graph {
   public:
-  using Edge = Edge<Dim>;
-  using HalfEdge = HalfEdge<Dim>;
-  using Cost = Cost<Dim>;
-  using EdgeRange = EdgeRange<Dim>;
-  using Dijkstra = Dijkstra<Dim>;
-  using NormalDijkstra = NormalDijkstra<Dim>;
+  using EdgeD = Edge<Dim>;
+  using HalfEdgeD = HalfEdge<Dim>;
+  using CostD = Cost<Dim>;
+  using EdgeRangeD = EdgeRange<Dim>;
+  using DijkstraD = Dijkstra<Dim>;
+  using NormalDijkstraD = NormalDijkstra<Dim>;
 
-  Graph(std::vector<Node>&& nodes, std::vector<Edge>&& edges);
+  Graph(std::vector<Node>&& nodes, std::vector<EdgeD>&& edges);
   Graph(std::vector<Node>&& nodes, std::vector<EdgeId>&& edges);
   Graph(const Graph& other) = delete;
   Graph(Graph&& other) noexcept = default;
@@ -297,12 +300,12 @@ template <int Dim> class Graph {
   friend std::ostream& operator<<(std::ostream& /*s*/, const Graph& /*g*/);
 
   std::vector<NodeOffset> const& getOffsets() const;
-  Dijkstra createDijkstra();
-  NormalDijkstra createNormalDijkstra(bool unpack = false);
+  DijkstraD createDijkstra();
+  NormalDijkstraD createNormalDijkstra(bool unpack = false);
   Grid createGrid(uint32_t sideLength = 100) const;
 
-  EdgeRange getOutgoingEdgesOf(NodePos pos) const;
-  EdgeRange getIngoingEdgesOf(NodePos pos) const;
+  EdgeRangeD getOutgoingEdgesOf(NodePos pos) const;
+  EdgeRangeD getIngoingEdgesOf(NodePos pos) const;
 
   size_t getLevelOf(NodePos pos) const;
 
@@ -333,18 +336,18 @@ template <int Dim> class Graph {
 
   std::vector<Node> nodes;
   std::vector<NodeOffset> offsets;
-  std::vector<HalfEdge> inEdges;
-  std::vector<HalfEdge> outEdges;
+  std::vector<HalfEdgeD> inEdges;
+  std::vector<HalfEdgeD> outEdges;
   std::vector<uint32_t> level;
   size_t edgeCount;
 
   template <class Archive> void save(Archive& ar, const unsigned int /*version*/) const
   {
     ar& nodes;
-    std::vector<Edge> edges {};
+    std::vector<EdgeD> edges {};
     edges.reserve(edgeCount);
     for (const auto& e : inEdges) {
-      edges.push_back(Edge::getEdge(e.id));
+      edges.push_back(EdgeD::getEdge(e.id));
     }
     std::sort(edges.begin(), edges.end(),
         [](const auto& left, const auto& right) { return left.getId() < right.getId(); });
@@ -354,7 +357,7 @@ template <int Dim> class Graph {
   template <class Archive> void load(Archive& ar, const unsigned int /*version*/)
   {
     std::vector<Node> nodes;
-    std::vector<Edge> edges;
+    std::vector<EdgeD> edges;
     ar& nodes;
     ar& edges;
     std::sort(edges.begin(), edges.end(),
@@ -366,8 +369,8 @@ template <int Dim> class Graph {
 
 template <int Dim> class EdgeRange {
   public:
-  using HalfEdge = HalfEdge<Dim>;
-  using iterator = typename std::vector<HalfEdge>::const_iterator;
+  using HalfEdgeD = HalfEdge<Dim>;
+  using iterator = typename std::vector<HalfEdgeD>::const_iterator;
 
   EdgeRange(iterator begin, iterator end)
       : begin_(begin)

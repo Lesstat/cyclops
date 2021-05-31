@@ -43,45 +43,45 @@ using Queue = std::priority_queue<QueueElem, std::vector<QueueElem>, BiggerPathC
 
 template <int Dim> class NormalDijkstra {
   public:
-  using Graph = Graph<Dim>;
-  using Config = Config<Dim>;
-  using Cost = Cost<Dim>;
-  using Edge = Edge<Dim>;
-  using HalfEdge = HalfEdge<Dim>;
-  using RouteWithCount = RouteWithCount<Dim>;
-  using RouteIterator = RouteIterator<Dim>;
+  using GraphD = Graph<Dim>;
+  using ConfigD = Config<Dim>;
+  using CostD = Cost<Dim>;
+  using EdgeD = Edge<Dim>;
+  using HalfEdgeD = HalfEdge<Dim>;
+  using RouteWithCountD = RouteWithCount<Dim>;
+  using RouteIteratorD = RouteIterator<Dim>;
 
-  NormalDijkstra(Graph* g, size_t nodeCount, bool unpack = false);
+  NormalDijkstra(GraphD* g, size_t nodeCount, bool unpack = false);
   NormalDijkstra(const NormalDijkstra& other) = default;
   NormalDijkstra(NormalDijkstra&& other) = default;
   virtual ~NormalDijkstra() noexcept = default;
   NormalDijkstra& operator=(const NormalDijkstra& other) = default;
   NormalDijkstra& operator=(NormalDijkstra&& other) = default;
 
-  std::optional<RouteWithCount> findBestRoute(NodePos from, NodePos to, const Config& config);
-  RouteIterator routeIter(NodePos from, NodePos to);
+  std::optional<RouteWithCountD> findBestRoute(NodePos from, NodePos to, const ConfigD& config);
+  RouteIteratorD routeIter(NodePos from, NodePos to);
 
   void saveDotGraph(const EdgeId& inId, const EdgeId& outId);
 
-  friend RouteIterator;
+  friend RouteIteratorD;
   size_t pqPops = 0;
 
   private:
   void clearState();
-  RouteWithCount buildRoute(const NodePos& from, const NodePos& to);
+  RouteWithCountD buildRoute(const NodePos& from, const NodePos& to);
 
   std::vector<double> cost;
   std::vector<NodePos> touched;
   std::vector<size_t> paths;
-  std::vector<std::vector<HalfEdge>> previousEdge;
+  std::vector<std::vector<HalfEdgeD>> previousEdge;
 
   NodePos from, to;
 
-  Cost pathCost;
+  CostD pathCost;
   size_t pathCount;
 
-  Config usedConfig;
-  Graph* graph;
+  ConfigD usedConfig;
+  GraphD* graph;
   Queue heap;
 
   bool unpack;
@@ -89,46 +89,46 @@ template <int Dim> class NormalDijkstra {
 
 template <int Dim> using RouteQueueElem = std::tuple<RouteWithCount<Dim>, NodePos>;
 template <int Dim> struct BiggerRouteCost {
-  using Config = Config<Dim>;
-  using RouteQueueElem = RouteQueueElem<Dim>;
-  using RouteWithCount = RouteWithCount<Dim>;
+  using ConfigD = Config<Dim>;
+  using RouteQueueElemD = RouteQueueElem<Dim>;
+  using RouteWithCountD = RouteWithCount<Dim>;
 
-  BiggerRouteCost(Config usedConfig)
+  BiggerRouteCost(ConfigD usedConfig)
       : usedConfig(usedConfig)
   {
   }
-  bool operator()(RouteQueueElem left, RouteQueueElem right)
+  bool operator()(RouteQueueElemD left, RouteQueueElemD right)
   {
-    auto leftRoute = std::get<RouteWithCount>(left);
-    auto rightRoute = std::get<RouteWithCount>(right);
+    auto leftRoute = std::get<RouteWithCountD>(left);
+    auto rightRoute = std::get<RouteWithCountD>(right);
     return leftRoute.costs * usedConfig > rightRoute.costs * usedConfig;
   }
 
-  Config usedConfig;
+  ConfigD usedConfig;
 };
 
 template <int Dim> class RouteIterator {
   public:
-  using NormalDijkstra = NormalDijkstra<Dim>;
-  using RouteWithCount = RouteWithCount<Dim>;
-  using RouteQueueElem = RouteQueueElem<Dim>;
-  using BiggerRouteCost = BiggerRouteCost<Dim>;
+  using NormalDijkstraD = NormalDijkstra<Dim>;
+  using RouteWithCountD = RouteWithCount<Dim>;
+  using RouteQueueElemD = RouteQueueElem<Dim>;
+  using BiggerRouteCostD = BiggerRouteCost<Dim>;
 
-  RouteIterator(NormalDijkstra* dijkstra, NodePos from, NodePos to, size_t maxHeapSize = 500);
+  RouteIterator(NormalDijkstraD* dijkstra, NodePos from, NodePos to, size_t maxHeapSize = 500);
   ~RouteIterator() = default;
 
-  std::optional<RouteWithCount> next();
+  std::optional<RouteWithCountD> next();
   bool finished();
   void doubleHeapsize();
 
   private:
-  NormalDijkstra* dijkstra;
+  NormalDijkstraD* dijkstra;
   size_t maxHeapSize;
   NodePos from;
   NodePos to;
   size_t outputCount = 0;
   using RouteQueue
-      = std::priority_queue<RouteQueueElem, std::vector<RouteQueueElem>, BiggerRouteCost>;
+      = std::priority_queue<RouteQueueElemD, std::vector<RouteQueueElemD>, BiggerRouteCostD>;
   RouteQueue heap;
 };
 

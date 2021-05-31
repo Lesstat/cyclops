@@ -133,27 +133,27 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
   using CellContainer = std::priority_queue<typename TDS::Full_cell,
       std::vector<typename TDS::Full_cell>, decltype(compare_prio)>;
 
-  using Graph = Graph<Dim>;
-  using Route = Route<Dim>;
-  using Config = Config<Dim>;
-  using Dijkstra = Dijkstra<Dim>;
-  using Cost = Cost<Dim>;
+  using GraphD = Graph<Dim>;
+  using RouteD = Route<Dim>;
+  using ConfigD = Config<Dim>;
+  using DijkstraD = Dijkstra<Dim>;
+  using CostD = Cost<Dim>;
 
   typedef std::vector<std::pair<size_t, size_t>> Edges;
 
   private:
-  Graph* g;
-  std::vector<Route> routes;
-  std::vector<Config> configs;
+  GraphD* g;
+  std::vector<RouteD> routes;
+  std::vector<ConfigD> configs;
   size_t maxRoutes;
 
   size_t pending_requests = 0;
   std::vector<DijkstraThread<Dim>> d;
   MultiQueue<RoutingRequest<Dim>> req_queue;
   MultiQueue<RoutingResult<Dim>> res_queue;
-  typename Dijkstra::ScalingFactor factor;
+  typename DijkstraD::ScalingFactor factor;
 
-  Config findConfig(const std::vector<Cost>& costs) { return find_equal_cost_config(costs); }
+  ConfigD findConfig(const std::vector<CostD>& costs) { return find_equal_cost_config(costs); }
 
   void clear()
   {
@@ -219,12 +219,12 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
   {
 
     for (size_t i = 0; i < Dim; ++i) {
-      Config conf(std::vector(Dim, 0.0));
+      ConfigD conf(std::vector(Dim, 0.0));
       conf.values[i] = 1.0;
       schedule_routing(RoutingRequest<Dim>(s, t, conf));
     }
 
-    Config conf(std::vector(Dim, 1.0 / Dim));
+    ConfigD conf(std::vector(Dim, 1.0 / Dim));
     schedule_routing(RoutingRequest<Dim>(s, t, conf));
 
     for (size_t i = 0; i < Dim + 1; ++i) {
@@ -264,7 +264,7 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
   size_t enumeration_time;
   size_t recommendation_time;
 
-  EnumerateOptimals(Graph* g, size_t maxRoutes)
+  EnumerateOptimals(GraphD* g, size_t maxRoutes)
       : g(g)
       , maxRoutes(maxRoutes)
   {
@@ -299,7 +299,7 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
       value = maxValue / value;
     }
     while (routes.size() <= Dim) {
-      std::vector<Cost> costs;
+      std::vector<CostD> costs;
       std::transform(routes.begin(), routes.end(), std::back_inserter(costs),
           [](const auto& r) { return r.costs; });
       try {
@@ -332,7 +332,7 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
         FullCellId& cellData = const_cast<FullCellId&>(f.data());
         cellData.checked(true);
         try {
-          std::vector<Cost> costs;
+          std::vector<CostD> costs;
           for (const auto& v : this->cell_vertices(f)) {
             costs.push_back(routes[v->data().id].costs);
           }
@@ -361,14 +361,14 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
   size_t found_route_count() const { return routes.size(); }
   size_t vertex_count() const { return this->number_of_vertices(); }
 
-  std::tuple<std::vector<Route>, std::vector<Config>> recommend_routes(bool ilp)
+  std::tuple<std::vector<RouteD>, std::vector<ConfigD>> recommend_routes(bool ilp)
   {
     auto [vertices, edges] = this->vertex_ids_and_edges();
     auto independent_set = extract_independent_set(vertices, ilp);
 
-    std::vector<Route> routes;
+    std::vector<RouteD> routes;
     routes.reserve(independent_set.size());
-    std::vector<Config> configs;
+    std::vector<ConfigD> configs;
     configs.reserve(independent_set.size());
 
     for (auto id : independent_set) {
@@ -395,7 +395,7 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
 
     return { routes, configs };
   }
-  const Route& route(size_t i) const { return routes[i]; }
+  const RouteD& route(size_t i) const { return routes[i]; }
 };
 
 #endif /* ENUMERATE_OPTIMALS_H */

@@ -22,7 +22,7 @@
 #include "graph.hpp"
 
 template <int Dim, class Derived> class CostTriangulation {
-  using Cost = Cost<Dim>;
+  using CostD = Cost<Dim>;
 
   using CgalDim = typename CgalTypes<Dim>::CgalDim;
   using Traits = typename CgalTypes<Dim>::Traits;
@@ -33,14 +33,14 @@ template <int Dim, class Derived> class CostTriangulation {
   using Facet = typename CgalTypes<Dim>::Facet;
   using VertexIter = typename CgalTypes<Dim>::VertexIter;
   using Point = typename Triangulation::Point;
-  using Route = Route<Dim>;
+  using RouteD = Route<Dim>;
 
   Triangulation tri { Dim };
 
   public:
   void tri_clear() { tri.clear(); }
 
-  void add_route(const Cost& c, size_t id)
+  void add_route(const CostD& c, size_t id)
   {
     Point p(Dim, &c.values[0], &c.values[Dim]);
     auto vertex = tri.insert(p);
