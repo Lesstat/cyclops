@@ -202,8 +202,9 @@ template <int Dim> class Edge {
   static std::vector<EdgeId> administerEdges(std::vector<Edge>&& edges);
   static const Edge getEdge(EdgeId id);
 
-  friend void testEdgeInternals(const Edge<Dim>& e, NodeId source, NodeId destination,
-      Length length, Height height, Unsuitability unsuitability, const ReplacedEdge& edgeA,
+  template <int D>
+  friend void testEdgeInternals(const Edge<D>& e, NodeId source, NodeId destination, Length length,
+      Height height, Unsuitability unsuitability, const ReplacedEdge& edgeA,
       const ReplacedEdge& edgeB);
 
   private:
@@ -297,7 +298,7 @@ template <int Dim> class Graph {
   Graph& operator=(const Graph& other) = delete;
   Graph& operator=(Graph&& other) noexcept = default;
 
-  friend std::ostream& operator<<(std::ostream& /*s*/, const Graph& /*g*/);
+  template <int D> friend std::ostream& operator<<(std::ostream& /*s*/, const Graph<D>& /*g*/);
 
   std::vector<NodeOffset> const& getOffsets() const;
   DijkstraD createDijkstra();

@@ -128,7 +128,7 @@ class EnumerateOptimals : public Skills<Dim, EnumerateOptimals<Dim, Skills>> {
   using TDS = typename CgalTypes<Dim>::TDS;
   const static int Dimension;
 
-  static auto compare_prio
+  constexpr static auto compare_prio
       = [](auto left, auto right) { return left.data().prio() > right.data().prio(); };
   using CellContainer = std::priority_queue<typename TDS::Full_cell,
       std::vector<typename TDS::Full_cell>, decltype(compare_prio)>;

@@ -18,12 +18,14 @@
 #include "catch.hpp"
 #include "graph.hpp"
 
-void testEdgeInternals(const Edge<3>& e, NodeId source, NodeId destination, Length length,
+template <int D>
+void testEdgeInternals(const Edge<D>& e, NodeId source, NodeId destination, Length length,
     Height height, Unsuitability unsuitability, const ReplacedEdge& edgeA,
     const ReplacedEdge& edgeB)
 {
   REQUIRE(e.source == source);
   REQUIRE(e.destination == destination);
+  REQUIRE(D == 3);
   REQUIRE(e.cost.values[0] == length);
   REQUIRE(e.cost.values[1] == height);
   REQUIRE(e.cost.values[2] == unsuitability);

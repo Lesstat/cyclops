@@ -265,7 +265,8 @@ template <int Dim> void Dijkstra<Dim>::calcScalingFactor(NodePos from, NodePos t
   for (size_t i = 0; i < Dim; ++i) {
     std::vector conf(Dim, 0.0);
     conf[i] = 1.0;
-    auto& costs = findBestRoute(from, to, conf)->costs;
+    auto result = findBestRoute(from, to, conf);
+    auto& costs = result->costs;
     bestValues[i] = costs.values[i];
   }
   double maxCosts = *std::max_element(&bestValues[0], &bestValues[Dim]);
