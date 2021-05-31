@@ -32,7 +32,7 @@ void Graph<Dim>::connectEdgesToNodes(
       nodes.begin(), nodes.end(), [](const auto& a, const auto& b) { return a.id() < b.id(); });
 
   std::vector<NodePos> map(max_id->id() + 1, NodePos { 0 });
-  for (size_t i = 0; i < nodes.size(); ++i) {
+  for (uint32_t i = 0; i < nodes.size(); ++i) {
     map[nodes[i].id()] = NodePos { i };
   }
 
@@ -224,7 +224,7 @@ template <int Dim> size_t Graph<Dim>::getLevelOf(NodePos pos) const { return lev
 
 template <int Dim> std::optional<NodePos> Graph<Dim>::nodePosById(NodeId id) const
 {
-  for (size_t i = 0; i < nodes.size(); ++i) {
+  for (uint32_t i = 0; i < nodes.size(); ++i) {
     if (nodes[i].id() == id) {
       return NodePos { i };
     }
@@ -265,7 +265,7 @@ std::unordered_map<NodeId, const Node*> Graph<Dim>::getNodePosByIds(
 
 template <int Dim> NodePos Graph<Dim>::getNodePos(const Node* n) const
 {
-  return NodePos { static_cast<size_t>(n - nodes.data()) };
+  return NodePos { static_cast<uint32_t>(n - nodes.data()) };
 }
 
 template <int Dim> uint32_t Graph<Dim>::get_max_level()

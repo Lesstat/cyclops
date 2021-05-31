@@ -73,8 +73,8 @@ template <int Dim> Edge<Dim> Edge<Dim>::createFromText(std::istream& text)
 
   Edge e { NodeId(source), NodeId(dest) };
   if (edgeA > 0) {
-    e.edgeA = EdgeId { static_cast<size_t>(edgeA) };
-    e.edgeB = EdgeId { static_cast<size_t>(edgeB) };
+    e.edgeA = EdgeId { static_cast<uint32_t>(edgeA) };
+    e.edgeB = EdgeId { static_cast<uint32_t>(edgeB) };
   }
   e.cost = c;
   for (double c : e.cost.values) {
@@ -124,7 +124,7 @@ template <int Dim> std::vector<EdgeId> Edge<Dim>::administerEdges(std::vector<Ed
   std::vector<EdgeId> ids;
   ids.reserve(edges.size());
   for (size_t i = 0; i < edges.size(); ++i) {
-    size_t new_id = internalId_vec.size() + i;
+    uint32_t new_id = internalId_vec.size() + i;
     auto& edge = edges[i];
     if (edge.getId() == 0) {
       edge.setId(EdgeId { new_id });

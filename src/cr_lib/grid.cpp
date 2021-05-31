@@ -43,7 +43,7 @@ Grid::Grid(const std::vector<Node>& nodes, long sideLength)
     throw std::invalid_argument("Side length has to be positive");
   }
 
-  for (size_t i = 0; i < nodes.size(); ++i) {
+  for (uint32_t i = 0; i < nodes.size(); ++i) {
     const auto& node = nodes[i];
     this->nodes.emplace_back(node.lat(), node.lng(), NodePos { i });
   }
@@ -158,7 +158,7 @@ size_t Grid::coordsToIndex(Lat lat, Lng lng)
   if (y == sideLength) {
     y -= 1;
   }
-  return NodePos { static_cast<size_t>(y * sideLength + x) };
+  return NodePos { static_cast<uint32_t>(y * sideLength + x) };
 }
 
 BoundingBox Grid::bounding_box() { return bBox; }

@@ -49,8 +49,8 @@ void explore_random(std::ifstream& file, std::ofstream& output, Dijkstra<Dim>& d
 
   auto counter = 0;
   while (!file.eof()) {
-    size_t from;
-    size_t to;
+    uint32_t from;
+    uint32_t to;
     file >> from >> to;
     if (from == to) {
       continue;
@@ -155,8 +155,8 @@ void enumerate(std::ifstream& file, std::ofstream& output, Graph<Dim>* g, size_t
   auto d = g->createDijkstra();
   auto counter = 0;
   while (!file.eof()) {
-    size_t from;
-    size_t to;
+    uint32_t from;
+    uint32_t to;
     file >> from >> to;
     if (from == to) {
       continue;
@@ -205,8 +205,8 @@ template <int Dim>
 void enumerate_all(std::ifstream& file, std::ofstream& output, Graph<Dim>* g, std::string type)
 {
   using Route = Route<Dim>;
-  size_t from;
-  size_t to;
+  uint32_t from;
+  uint32_t to;
   int counter = 0;
   std::vector<double> conf(Dim, 0);
   conf[0] = 1;
@@ -249,7 +249,7 @@ template <int Dim> void search_candidates(Graph<Dim>& g, size_t count)
   candidates.seekp(0, std::ios_base::end);
 
   std::random_device rd {};
-  std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
+  std::uniform_int_distribution<uint32_t> dist(0, g.getNodeCount() - 1);
 
   auto d = g.createDijkstra();
   std::vector<double> conf(Dim, 0.0);
@@ -293,7 +293,7 @@ template <int Dim> void search_commuting_candidates(Graph<Dim>& g)
   Config c = values;
 
   std::random_device rd {};
-  std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
+  std::uniform_int_distribution<uint32_t> dist(0, g.getNodeCount() - 1);
 
   auto schlossPos = PositionalNode { Lat { 48.77846 }, Lng { 9.18018 }, NodePos { 1 } };
   for (int i = 0; i < 10000; ++i) {
@@ -332,7 +332,7 @@ void explore_naive(std::ifstream& route_input, std::ofstream& output, Dijkstra<D
     double epsilon, double maxSimilarity, std::string type)
 {
   int counter = 0;
-  for (size_t from, to; route_input >> from >> to;) {
+  for (uint32_t from, to; route_input >> from >> to;) {
     if (++counter % 20 == 0) {
       output.flush();
     }

@@ -170,8 +170,7 @@ template <int Dim> void runWebServer(Graph<Dim>& g, unsigned short port, size_t 
         HeightConfig { (static_cast<double>(*height) / 100.0) },
         UnsuitabilityConfig { (static_cast<double>(*unsuitability) / 100.0) } };
 
-      for (size_t i = 0; i < Dim; ++i) {
-      }
+      for (size_t i = 0; i < Dim; ++i) { }
 
       auto start = std::chrono::high_resolution_clock::now();
       auto route = dijkstra.findBestRoute(NodePos { *s }, NodePos { *t }, c);
@@ -312,7 +311,7 @@ template <int Dim> int testGraph(Graph<Dim>& g)
   auto d = g.createDijkstra();
   auto n = g.createNormalDijkstra(true);
   std::random_device rd {};
-  std::uniform_int_distribution<size_t> dist(0, g.getNodeCount() - 1);
+  std::uniform_int_distribution<uint32_t> dist(0, g.getNodeCount() - 1);
   // Config c { std::vector<double>(Dim, 1.0 / Dim) };
 
   size_t route = 0;
