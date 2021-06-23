@@ -340,6 +340,7 @@ template <int Dim> class Graph {
   std::vector<HalfEdgeD> inEdges;
   std::vector<HalfEdgeD> outEdges;
   std::vector<uint32_t> level;
+  uint32_t _max_level = 0;
   size_t edgeCount;
 
   template <class Archive> void save(Archive& ar, const unsigned int /*version*/) const

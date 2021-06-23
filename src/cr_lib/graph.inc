@@ -124,7 +124,10 @@ template <int Dim> void Graph<Dim>::init(std::vector<Node>&& nodes, std::vector<
   connectEdgesToNodes(nodes, edges);
   level.reserve(nodes.size());
   for (const auto& node : nodes) {
-    level.push_back(node.getLevel());
+    auto l = node.getLevel();
+    level.push_back(l);
+    if (l > _max_level)
+      _max_level = l;
   }
   this->nodes = std::move(nodes);
   offsets.reserve(this->nodes.size() + 1);
@@ -270,7 +273,8 @@ template <int Dim> NodePos Graph<Dim>::getNodePos(const Node* n) const
 
 template <int Dim> uint32_t Graph<Dim>::get_max_level()
 {
-  return *std::max_element(level.begin(), level.end());
+  // return *std::max_element(level.begin(), level.end());
+  return _max_level;
 }
 
 template <int Dim>

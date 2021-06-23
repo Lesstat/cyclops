@@ -218,6 +218,9 @@ bool Dijkstra<Dim>::stallOnDemand(
     const NodePos& node, double cost, Direction dir, std::vector<double>& costs)
 {
   auto myLevel = graph->getLevelOf(node);
+  if (myLevel == graph->get_max_level())
+    return false;
+
   const auto& edges
       = dir == Direction::S ? graph->getIngoingEdgesOf(node) : graph->getOutgoingEdgesOf(node);
   for (const auto& edge : edges) {
