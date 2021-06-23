@@ -36,6 +36,10 @@
 #include <fstream>
 #include <random>
 
+template <> double Cost<1>::operator*(const ConfigD&) const{
+  return values[0];
+}
+
 template <int Dim> void saveToBinaryFile(Graph<Dim>& ch, std::string& filename)
 {
   {
@@ -323,7 +327,7 @@ template <int Dim> int testGraph(Graph<Dim>& g)
   size_t dPops = 0;
   size_t nPops = 0;
 
-  for (int i = 0; i < 1000; ++i) {
+  for (int i = 0; i < 200; ++i) {
     NodePos from { dist(rd) };
     NodePos to { dist(rd) };
     Config c = generateRandomConfig<Dim>();
