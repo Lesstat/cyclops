@@ -18,7 +18,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 find_package (Threads)
 find_package(glpk REQUIRED) 
-find_package(CGAL 4.11 REQUIRED)
+find_package(CGAL REQUIRED)
 find_package(Eigen3 3.3 REQUIRED)
 find_package(GMP REQUIRED)
 

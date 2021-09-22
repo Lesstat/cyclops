@@ -1,0 +1,37 @@
+Bootstrap: library
+From: ubuntu:20.04
+
+%setup
+    git submodule update --remote --merge
+
+%files
+   src /cyclops/src
+   test /cyclops/test
+   vendor /cyclops/vendor
+   web /cyclops/web
+   cmake /cyclops/cmake
+   CMakeLists.txt /cyclops
+
+
+%post
+    echo "deb http://archive.ubuntu.com/ubuntu/ focal universe" >> /etc/apt/sources.list
+    apt-get -y update
+    apt-get -y install build-essential cmake libglpk-dev \
+                       libcgal-dev libboost-serialization-dev \
+                       libboost-program-options-dev libboost-filesystem-dev \
+                       libboost-iostreams-dev libeigen3-dev libgmp-dev \
+                       openssl libjsoncpp-dev
+    cd /cyclops
+    cmake -Bbuild -H.
+    cmake --build build -- cyclops -j
+
+
+%test
+    if [ -f /cyclops/build/cyclops ]; then
+       echo "compiling succeeded"
+    else
+       echo "something failed"
+    fi
+
+%runscript
+    /cyclops/build/cyclops $@
