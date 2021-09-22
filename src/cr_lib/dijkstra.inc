@@ -153,6 +153,10 @@ std::optional<Route<Dim>> Dijkstra<Dim>::findBestRoute(NodePos from, NodePos to,
         continue;
       }
 
+      if (stallOnDemand(node, cost, dir, my_costs)){
+        continue;
+      }
+
       if (other_costs[node] != dmax) {
         double candidate = other_costs[node] + my_costs[node];
         if (candidate < minCandidate) {
