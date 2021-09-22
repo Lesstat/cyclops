@@ -21,7 +21,7 @@
 
 const double dmax = std::numeric_limits<double>::max();
 
-template <int Dim> constexpr Cost<Dim> maxCost() { return std::vector<double>(Dim, dmax); };
+template <int Dim> constexpr Cost<Dim> maxCost() { return std::vector<double>(Dim, dmax); }
 
 template <int Dim>
 Dijkstra<Dim>::Dijkstra(GraphD* g, size_t nodeCount)
@@ -153,7 +153,7 @@ std::optional<Route<Dim>> Dijkstra<Dim>::findBestRoute(NodePos from, NodePos to,
         continue;
       }
 
-      if (stallOnDemand(node, cost, dir, my_costs)){
+      if (stallOnDemand(node, cost, dir, my_costs)) {
         continue;
       }
 

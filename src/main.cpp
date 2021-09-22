@@ -36,9 +36,7 @@
 #include <fstream>
 #include <random>
 
-template <> double Cost<1>::operator*(const ConfigD&) const{
-  return values[0];
-}
+template <> double Cost<1>::operator*(const ConfigD&) const { return values[0]; }
 
 template <int Dim> void saveToBinaryFile(Graph<Dim>& ch, std::string& filename)
 {
@@ -482,7 +480,11 @@ int run(po::variables_map& vm, std::string& loadFileName, std::string& saveFileN
 
 int main(int argc, char* argv[])
 {
-  std::cout.imbue(std::locale(""));
+  try {
+    std::cout.imbue(std::locale(""));
+  } catch (std::exception&) {
+    std::cout << "could not set locale" << '\n';
+  }
 
   std::string loadFileName {};
   std::string saveFileName {};
