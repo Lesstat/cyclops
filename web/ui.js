@@ -4,21 +4,21 @@ var map = L.map("mapid", { closePopupOnClick: false }).setView(
 );
 var start = true;
 
-var startPopup = L.popup({ autoClose: false });
-var endPopup = L.popup({ autoClose: false });
+var startMarker = L.marker();
+var endMarker = L.marker();
 var geoJson = L.layerGroup([]).addTo(map);
 
 let canvasRgb = document.getElementById("triangleSelectorRGB");
 
-L.tileLayer("http://{s}.tiles.wmflabs.org/osm/{z}/{x}/{y}.png", {
+L.tileLayer("https://b.tile.openstreetmap.de/{z}/{x}/{y}.png", {
   maxZoom: 18,
   attribution:
     'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
     '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ',
-  id: ""
+  id: "",
 }).addTo(map);
 
-document.addEventListener("keydown", event => {
+document.addEventListener("keydown", (event) => {
   if (event.ctrlKey && event.altKey && event.key == "d") {
     let debugLog = document.getElementById("debuglog");
     if (debugLog.hasAttribute("hidden")) {
@@ -39,18 +39,18 @@ function calcDistWithCurrentSelection() {
 function onMapClick(e) {
   let id;
   id = "start";
-  startPopup
+  startMarker
     .setLatLng(e.latlng)
-    .setContent("Start at " + e.latlng.toString())
+    .bindPopup("Start at " + e.latlng.toString())
     .addTo(map);
   getNode(id, e.latlng);
 }
 
 function onRightClick(e) {
   let id = "end";
-  endPopup
+  endMarker
     .setLatLng(e.latlng)
-    .setContent("End at " + e.latlng.toString())
+    .bindPopup("End at " + e.latlng.toString())
     .addTo(map);
   getNode(id, e.latlng);
 }
@@ -61,7 +61,7 @@ map.on("contextmenu", onRightClick);
 function getNode(id, latlng) {
   let xmlhttp = new XMLHttpRequest();
 
-  xmlhttp.onload = function() {
+  xmlhttp.onload = function () {
     if (xmlhttp.status == 200) {
       addToDebugLog("getNode", xmlhttp.response.debug);
       document.getElementById(id).innerHTML = xmlhttp.responseText;
@@ -81,13 +81,13 @@ function calcDist(length, height, unsuitability) {
   let xmlhttp = new XMLHttpRequest();
 
   xmlhttp.responseType = "json";
-  xmlhttp.onload = function() {
+  xmlhttp.onload = function () {
     if (xmlhttp.status == 200) {
       addToDebugLog("single route", xmlhttp.response.debug);
       let myStyle = {
         color: "#3333FF",
         weight: 5,
-        opacity: 0.65
+        opacity: 0.65,
       };
       document.getElementById("route_length").innerHTML =
         Math.round(xmlhttp.response.costs[0] / 100) / 10;
@@ -99,7 +99,7 @@ function calcDist(length, height, unsuitability) {
       geoJson.addLayer(
         L.geoJSON(xmlhttp.response.route, {
           style: myStyle,
-          onEachFeature: createHeightChart
+          onEachFeature: createHeightChart,
         })
       );
     } else {
@@ -130,7 +130,7 @@ function calcDist(length, height, unsuitability) {
 function panOutMap() {
   let xmlhttp = new XMLHttpRequest();
   xmlhttp.responseType = "json";
-  xmlhttp.onload = function() {
+  xmlhttp.onload = function () {
     if (xmlhttp.status == 200) {
       map.fitBounds(xmlhttp.response);
     }
@@ -163,13 +163,13 @@ function rainbow(number) {
     "#a6d96a",
     "#66bd63",
     "#1a9850",
-    "#006837"
+    "#006837",
   ];
   return colors[number % colors.length];
 }
 
 function gradientToColor(config) {
-  let rgb = config.map(val => Math.round(val * 255));
+  let rgb = config.map((val) => Math.round(val * 255));
   let myMax = Math.max(...rgb);
   var decColor =
     0x1000000 +
@@ -325,7 +325,7 @@ function configToCoords(values) {
     y:
       lengthCorner.y * values[0] +
       heightCorner.y * values[1] +
-      unsuitabilityCorner.y * values[2]
+      unsuitabilityCorner.y * values[2],
   };
 }
 
@@ -418,12 +418,12 @@ function createHeightChart(json, layer) {
           pointBackgroundColor: "rgb(0,0,0)",
           data: heightValues,
           lineTension: 0,
-          pointRadius: 3
-        }
-      ]
+          pointRadius: 3,
+        },
+      ],
     },
     options: {
-      onHover: function(event, points) {
+      onHover: function (event, points) {
         if (points.length > 0) {
           let index = points[0]._index;
 
@@ -434,8 +434,8 @@ function createHeightChart(json, layer) {
             heightMarker = L.marker(ll).addTo(map);
           }
         }
-      }
-    }
+      },
+    },
   });
   myLineChart.update();
 }
@@ -451,7 +451,7 @@ function enumerateRoutes() {
   let xmlhttp = new XMLHttpRequest();
 
   xmlhttp.responseType = "json";
-  xmlhttp.onload = function() {
+  xmlhttp.onload = function () {
     if (xmlhttp.status == 200) {
       addToDebugLog("enumeration", xmlhttp.response.debug);
       listOfRoutes = [];
@@ -473,17 +473,17 @@ function enumerateRoutes() {
         let myStyle = {
           color: col,
           weight: 4,
-          opacity: 0.7
+          opacity: 0.7,
         };
         let geoRoute = L.geoJSON(points[p].route.route.geometry, {
-          style: myStyle
+          style: myStyle,
         });
         geoJson.addLayer(geoRoute);
         listOfRoutes.push({
           point: coord,
           route: geoRoute,
           config: values,
-          cost: points[p].route.costs
+          cost: points[p].route.costs,
         });
       }
     }
@@ -516,12 +516,12 @@ function zoomOutToFullGraph() {
   console.log("zoom out");
   let xmlhttp = new XMLHttpRequest();
   xmlhttp.responseType = "json";
-  xmlhttp.onload = function() {
+  xmlhttp.onload = function () {
     if (xmlhttp.status == 200) {
       let bbox = xmlhttp.response;
       map.fitBounds([
         [bbox.lat_min, bbox.lng_min],
-        [bbox.lat_max, bbox.lng_max]
+        [bbox.lat_max, bbox.lng_max],
       ]);
     }
   };
