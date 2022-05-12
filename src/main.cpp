@@ -124,6 +124,10 @@ template <int Dim> void runWebServer(Graph<Dim>& g, unsigned short port, size_t 
       return;
     }
     auto pos = grid.findNextNode(Lat { lat }, Lng { lng });
+    if (pos) {
+      std::cout << "found node at " << pos.value() << '\n';
+    }
+
     SimpleWeb::CaseInsensitiveMultimap header;
     header.emplace("Content-Type", "text/plain");
     response->write(SimpleWeb::StatusCode::success_ok, std::to_string(pos->get()), header);

@@ -43,7 +43,7 @@ target_link_libraries(cr_lib PRIVATE ${GLPK_LIBRARIES})
 target_link_libraries(cr_lib PRIVATE ${Boost_LIBRARIES})
 target_link_libraries(cr_lib PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(cr_lib PRIVATE CGAL::CGAL)
-target_link_libraries(cr_lib PRIVATE ${GMP_LIBRARIES})
+target_link_libraries(cr_lib PRIVATE gmp)
 target_link_libraries(cr_lib PUBLIC threadpool)
 
 add_subdirectory(vendor/Simple-Web-Server)

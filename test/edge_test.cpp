@@ -17,6 +17,7 @@
 */
 #include "catch.hpp"
 #include "graph.hpp"
+#include <sstream>
 
 template <int D>
 void testEdgeInternals(const Edge<D>& e, NodeId source, NodeId destination, Length length,
